@@ -101,25 +101,37 @@ struct OpeningSplashView: View {
                 }
                 .shadow(color: Color.black.opacity(0.24), radius: 28, y: 22)
 
-            VStack(spacing: 16) {
-                HStack {
+            VStack(spacing: 14) {
+                ZStack(alignment: .topLeading) {
+                    Image("SplashScene")
+                        .resizable()
+                        .scaledToFill()
+                        .frame(height: 292)
+                        .clipShape(RoundedRectangle(cornerRadius: 34, style: .continuous))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 34, style: .continuous)
+                                .strokeBorder(.white.opacity(0.12), lineWidth: 1)
+                        }
+
                     Label("Opening \(petName)'s world", systemImage: "sparkles")
                         .font(.system(size: 12, weight: .bold, design: .rounded))
                         .foregroundStyle(Color(red: 0.10, green: 0.13, blue: 0.22))
                         .padding(.horizontal, 14)
                         .padding(.vertical, 10)
-                        .background(Color.white.opacity(0.72), in: Capsule())
-
-                    Spacer()
+                        .background(Color.white.opacity(0.76), in: Capsule())
+                        .padding(16)
                 }
 
-                BondPortraitArtwork()
-                    .frame(height: 250)
+                HStack(spacing: 10) {
+                    SplashPill(title: "Care", value: "Live")
+                    SplashPill(title: "Routines", value: "Saved")
+                    SplashPill(title: "Memories", value: "Ready")
+                }
             }
             .padding(18)
         }
-        .frame(maxWidth: 360)
-        .frame(height: 380)
+        .frame(maxWidth: 380)
+        .frame(height: 410)
         .scaleEffect(artworkLifted ? 1 : 0.90)
         .offset(y: artworkLifted ? 0 : 28)
         .rotationEffect(.degrees(artworkLifted ? 0 : -4))
@@ -216,5 +228,24 @@ struct OpeningSplashView: View {
                 onFinish()
             }
         }
+    }
+}
+
+private struct SplashPill: View {
+    let title: String
+    let value: String
+
+    var body: some View {
+        VStack(spacing: 4) {
+            Text(title)
+                .font(.system(size: 10, weight: .bold, design: .rounded))
+                .foregroundStyle(.white.opacity(0.56))
+            Text(value)
+                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .foregroundStyle(.white)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 12)
+        .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
 }

@@ -96,6 +96,8 @@ struct RoundedProfilePhoto: View {
     let role: ProfilePhotoRole
     var height: CGFloat = 156
     var cornerRadius: CGFloat = 28
+    var expandsHorizontally = false
+    var maxWidth: CGFloat? = UIScreen.main.bounds.width / 2 - 32
 
     var body: some View {
         Group {
@@ -107,7 +109,7 @@ struct RoundedProfilePhoto: View {
                 placeholder
             }
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: expandsHorizontally ? .infinity : maxWidth)
         .frame(height: height)
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         .overlay {
@@ -523,7 +525,7 @@ struct SlideMenuPanel: View {
                 MenuActionRow(
                     icon: "sparkles.rectangle.stack.fill",
                     title: "Bond AI",
-                    detail: "\(viewModel.insights.count) personalized tips ready from Sol's routine patterns.",
+                    detail: "\(viewModel.insights.count) personalized tips ready from \(viewModel.pet.name)'s routine patterns.",
                     tone: .lagoon
                 ) {
                     viewModel.openAI()

@@ -1,6 +1,6 @@
 import Foundation
 
-enum RootTab: String, CaseIterable, Identifiable {
+enum RootTab: String, CaseIterable, Identifiable, Codable {
     case dashboard
     case wellness
     case routines
@@ -53,14 +53,36 @@ enum RootTab: String, CaseIterable, Identifiable {
     }
 }
 
-enum AppSheet: String, Identifiable {
+enum AppSheet: Identifiable {
     case ai
     case profile
+    case routineEditor(UUID?)
+    case memoryEditor(UUID?)
+    case vaccineEditor(UUID?)
+    case medicalEntryEditor(UUID?)
+    case foodPreferenceEditor(UUID?)
 
-    var id: String { rawValue }
+    var id: String {
+        switch self {
+        case .ai:
+            return "ai"
+        case .profile:
+            return "profile"
+        case let .routineEditor(id):
+            return "routine-\(id?.uuidString ?? "new")"
+        case let .memoryEditor(id):
+            return "memory-\(id?.uuidString ?? "new")"
+        case let .vaccineEditor(id):
+            return "vaccine-\(id?.uuidString ?? "new")"
+        case let .medicalEntryEditor(id):
+            return "medical-\(id?.uuidString ?? "new")"
+        case let .foodPreferenceEditor(id):
+            return "food-\(id?.uuidString ?? "new")"
+        }
+    }
 }
 
-enum Weekday: Int, CaseIterable, Identifiable {
+enum Weekday: Int, CaseIterable, Identifiable, Codable {
     case monday = 1
     case tuesday = 2
     case wednesday = 3
@@ -120,7 +142,7 @@ enum Weekday: Int, CaseIterable, Identifiable {
     }
 }
 
-struct ClockTime: Hashable, Comparable {
+struct ClockTime: Hashable, Comparable, Codable {
     var hour: Int
     var minute: Int
 
@@ -152,39 +174,128 @@ struct ClockTime: Hashable, Comparable {
     }()
 }
 
-enum PaletteTone: String, CaseIterable, Identifiable {
+enum PaletteTone: String, CaseIterable, Identifiable, Codable {
     case apricot
     case meadow
     case lagoon
     case twilight
 
     var id: String { rawValue }
+
+    var title: String {
+        rawValue.capitalized
+    }
 }
 
-enum RoutineCategory: String {
+enum RoutineCategory: String, CaseIterable, Identifiable, Codable {
     case walk
     case meal
     case training
     case care
     case play
+
+    var id: String { rawValue }
+
+    var title: String {
+        rawValue.capitalized
+    }
+
+    var symbolName: String {
+        switch self {
+        case .walk: "figure.walk"
+        case .meal: "fork.knife"
+        case .training: "brain.head.profile"
+        case .care: "heart.text.square.fill"
+        case .play: "tennisball.fill"
+        }
+    }
 }
 
-enum InsightPriority: String {
+enum InsightPriority: String, Codable {
     case steady
     case watch
     case celebrate
 }
 
-struct OwnerProfile: Identifiable {
-    let id = UUID()
+enum VaccineStatus: String, CaseIterable, Identifiable, Codable {
+    case covered
+    case onTrack
+    case watch
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .covered: "Covered"
+        case .onTrack: "On track"
+        case .watch: "Watch"
+        }
+    }
+}
+
+enum OnboardingFocus: String, CaseIterable, Identifiable, Codable {
+    case wellness
+    case routines
+    case memories
+    case dashboard
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .wellness: "Wellness first"
+        case .routines: "Routines first"
+        case .memories: "Memories first"
+        case .dashboard: "Everything together"
+        }
+    }
+
+    var detail: String {
+        switch self {
+        case .wellness:
+            return "Keep vaccines, food notes, and vet context easy to update."
+        case .routines:
+            return "Start with a flexible week planner that actually adapts."
+        case .memories:
+            return "Turn birthdays and milestones into a living story."
+        case .dashboard:
+            return "See wellness, routines, and memories in one bond-centered home."
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .wellness: "cross.case.fill"
+        case .routines: "calendar.badge.clock"
+        case .memories: "film.stack.fill"
+        case .dashboard: "sparkles.tv"
+        }
+    }
+
+    var preferredTab: RootTab {
+        switch self {
+        case .wellness:
+            return .wellness
+        case .routines:
+            return .routines
+        case .memories:
+            return .memories
+        case .dashboard:
+            return .dashboard
+        }
+    }
+}
+
+struct OwnerProfile: Identifiable, Codable {
+    var id: UUID = UUID()
     var name: String
     var headline: String
     var location: String
     var note: String
 }
 
-struct PetProfile: Identifiable {
-    let id = UUID()
+struct PetProfile: Identifiable, Codable {
+    var id: UUID = UUID()
     var name: String
     var species: String
     var breed: String
@@ -195,7 +306,7 @@ struct PetProfile: Identifiable {
     var energySummary: String
 }
 
-struct BehaviorSnapshot: Identifiable {
+struct BehaviorSnapshot: Identifiable, Codable {
     var id: Weekday { day }
     let day: Weekday
     let energy: Double
@@ -204,41 +315,65 @@ struct BehaviorSnapshot: Identifiable {
     let sleepHours: Double
 }
 
-struct VaccineRecord: Identifiable {
-    let id = UUID()
-    let title: String
-    let lastGiven: String
-    let nextDue: String
-    let status: String
-    let note: String
+struct VaccineRecord: Identifiable, Codable {
+    var id: UUID = UUID()
+    var title: String
+    var lastGiven: Date
+    var nextDue: Date
+    var status: VaccineStatus
+    var note: String
+
+    var lastGivenLabel: String {
+        Self.dateFormatter.string(from: lastGiven)
+    }
+
+    var nextDueLabel: String {
+        Self.dateFormatter.string(from: nextDue)
+    }
+
+    private static let dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM dd, yyyy"
+        return formatter
+    }()
 }
 
-struct MedicalEntry: Identifiable {
-    let id = UUID()
-    let title: String
-    let dateLabel: String
-    let summary: String
-    let clinician: String
-    let tone: PaletteTone
+struct MedicalEntry: Identifiable, Codable {
+    var id: UUID = UUID()
+    var title: String
+    var date: Date
+    var summary: String
+    var clinician: String
+    var tone: PaletteTone
+
+    var dateLabel: String {
+        Self.dateFormatter.string(from: date)
+    }
+
+    private static let dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM d, yyyy"
+        return formatter
+    }()
 }
 
-struct FoodPreference: Identifiable {
-    let id = UUID()
-    let title: String
-    let detail: String
-    let systemImage: String
+struct FoodPreference: Identifiable, Codable {
+    var id: UUID = UUID()
+    var title: String
+    var detail: String
+    var systemImage: String
 }
 
-struct RoutineItem: Identifiable {
-    let id: UUID
-    let title: String
-    let subtitle: String
+struct RoutineItem: Identifiable, Codable {
+    var id: UUID = UUID()
+    var title: String
+    var subtitle: String
     var day: Weekday
     var time: ClockTime
-    let durationMinutes: Int
-    let systemImage: String
-    let category: RoutineCategory
-    let tone: PaletteTone
+    var durationMinutes: Int
+    var systemImage: String
+    var category: RoutineCategory
+    var tone: PaletteTone
     var isCompleted: Bool
 
     var durationLabel: String {
@@ -246,15 +381,54 @@ struct RoutineItem: Identifiable {
     }
 }
 
-struct MemoryMoment: Identifiable {
-    let id = UUID()
-    let title: String
-    let dateLabel: String
-    let caption: String
-    let detail: String
-    let systemImage: String
-    let tone: PaletteTone
-    let daysUntilNextCelebration: Int?
+struct MemoryMoment: Identifiable, Codable {
+    var id: UUID = UUID()
+    var title: String
+    var date: Date
+    var caption: String
+    var detail: String
+    var systemImage: String
+    var tone: PaletteTone
+    var isAnnualCelebration: Bool
+
+    var dateLabel: String {
+        if isAnnualCelebration {
+            return Self.annualDateFormatter.string(from: date)
+        }
+        return Self.fullDateFormatter.string(from: date)
+    }
+
+    var daysUntilNextCelebration: Int? {
+        guard isAnnualCelebration else { return nil }
+
+        let calendar = Calendar.current
+        let month = calendar.component(.month, from: date)
+        let day = calendar.component(.day, from: date)
+        let now = calendar.startOfDay(for: .now)
+
+        var nextComponents = calendar.dateComponents([.year], from: now)
+        nextComponents.month = month
+        nextComponents.day = day
+
+        guard var nextCelebration = calendar.date(from: nextComponents) else { return nil }
+        if nextCelebration < now {
+            nextCelebration = calendar.date(byAdding: .year, value: 1, to: nextCelebration) ?? nextCelebration
+        }
+
+        return calendar.dateComponents([.day], from: now, to: nextCelebration).day
+    }
+
+    private static let annualDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMMM d"
+        return formatter
+    }()
+
+    private static let fullDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMMM d, yyyy"
+        return formatter
+    }()
 }
 
 struct CompanionInsight: Identifiable {
@@ -264,6 +438,72 @@ struct CompanionInsight: Identifiable {
     let suggestedAction: String
     let priority: InsightPriority
     let systemImage: String
+}
+
+struct PersistedAppState: Codable {
+    var selectedTab: RootTab
+    var selectedDay: Weekday
+    var owner: OwnerProfile
+    var pet: PetProfile
+    var ownerPhotoData: Data?
+    var petPhotoData: Data?
+    var behaviorSnapshots: [BehaviorSnapshot]
+    var vaccinations: [VaccineRecord]
+    var medicalHistory: [MedicalEntry]
+    var foodPreferences: [FoodPreference]
+    var routines: [RoutineItem]
+    var memories: [MemoryMoment]
+    var onboardingFocus: OnboardingFocus
+    var hasCompletedOnboarding: Bool
+
+    init(
+        selectedTab: RootTab,
+        selectedDay: Weekday,
+        owner: OwnerProfile,
+        pet: PetProfile,
+        ownerPhotoData: Data?,
+        petPhotoData: Data?,
+        behaviorSnapshots: [BehaviorSnapshot],
+        vaccinations: [VaccineRecord],
+        medicalHistory: [MedicalEntry],
+        foodPreferences: [FoodPreference],
+        routines: [RoutineItem],
+        memories: [MemoryMoment],
+        onboardingFocus: OnboardingFocus,
+        hasCompletedOnboarding: Bool
+    ) {
+        self.selectedTab = selectedTab
+        self.selectedDay = selectedDay
+        self.owner = owner
+        self.pet = pet
+        self.ownerPhotoData = ownerPhotoData
+        self.petPhotoData = petPhotoData
+        self.behaviorSnapshots = behaviorSnapshots
+        self.vaccinations = vaccinations
+        self.medicalHistory = medicalHistory
+        self.foodPreferences = foodPreferences
+        self.routines = routines
+        self.memories = memories
+        self.onboardingFocus = onboardingFocus
+        self.hasCompletedOnboarding = hasCompletedOnboarding
+    }
+
+    init(seed: AppSeed) {
+        selectedTab = .dashboard
+        selectedDay = .current
+        owner = seed.owner
+        pet = seed.pet
+        ownerPhotoData = nil
+        petPhotoData = nil
+        behaviorSnapshots = seed.behaviorSnapshots
+        vaccinations = seed.vaccinations
+        medicalHistory = seed.medicalHistory
+        foodPreferences = seed.foodPreferences
+        routines = seed.routines
+        memories = seed.memories
+        onboardingFocus = .dashboard
+        hasCompletedOnboarding = false
+    }
 }
 
 struct AppSeed {
@@ -295,37 +535,37 @@ struct AppSeed {
         ),
         behaviorSnapshots: [
             BehaviorSnapshot(day: .monday, energy: 0.82, calmness: 0.78, appetite: 0.94, sleepHours: 12.0),
-            BehaviorSnapshot(day: .tuesday, energy: 0.88, calmness: 0.7, appetite: 0.9, sleepHours: 11.3),
+            BehaviorSnapshot(day: .tuesday, energy: 0.88, calmness: 0.70, appetite: 0.90, sleepHours: 11.3),
             BehaviorSnapshot(day: .wednesday, energy: 0.79, calmness: 0.85, appetite: 0.96, sleepHours: 12.4),
             BehaviorSnapshot(day: .thursday, energy: 0.91, calmness: 0.68, appetite: 0.89, sleepHours: 10.9),
             BehaviorSnapshot(day: .friday, energy: 0.75, calmness: 0.88, appetite: 0.97, sleepHours: 12.7),
             BehaviorSnapshot(day: .saturday, energy: 0.93, calmness: 0.73, appetite: 0.92, sleepHours: 11.2),
-            BehaviorSnapshot(day: .sunday, energy: 0.74, calmness: 0.9, appetite: 0.98, sleepHours: 13.0),
+            BehaviorSnapshot(day: .sunday, energy: 0.74, calmness: 0.90, appetite: 0.98, sleepHours: 13.0),
         ],
         vaccinations: [
-            VaccineRecord(title: "Rabies", lastGiven: "Jan 12, 2025", nextDue: "Jan 12, 2028", status: "Covered", note: "Three-year booster complete."),
-            VaccineRecord(title: "DHPP", lastGiven: "Feb 08, 2026", nextDue: "Feb 08, 2027", status: "On track", note: "Annual booster logged with no reactions."),
-            VaccineRecord(title: "Bordetella", lastGiven: "Mar 02, 2026", nextDue: "Sep 02, 2026", status: "Watch", note: "Needed before boarding and social daycare."),
-            VaccineRecord(title: "Leptospirosis", lastGiven: "Feb 08, 2026", nextDue: "Feb 08, 2027", status: "On track", note: "Tracked because of weekend trail exposure."),
+            VaccineRecord(title: "Rabies", lastGiven: date(2025, 1, 12), nextDue: date(2028, 1, 12), status: .covered, note: "Three-year booster complete."),
+            VaccineRecord(title: "DHPP", lastGiven: date(2026, 2, 8), nextDue: date(2027, 2, 8), status: .onTrack, note: "Annual booster logged with no reactions."),
+            VaccineRecord(title: "Bordetella", lastGiven: date(2026, 3, 2), nextDue: date(2026, 9, 2), status: .watch, note: "Needed before boarding and social daycare."),
+            VaccineRecord(title: "Leptospirosis", lastGiven: date(2026, 2, 8), nextDue: date(2027, 2, 8), status: .onTrack, note: "Tracked because of weekend trail exposure."),
         ],
         medicalHistory: [
             MedicalEntry(
                 title: "Annual wellness exam",
-                dateLabel: "Feb 8, 2026",
+                date: date(2026, 2, 8),
                 summary: "Heart, joints, and coat all looked strong. Vet suggested keeping recovery days after intense play.",
                 clinician: "Dr. Rivera",
                 tone: .lagoon
             ),
             MedicalEntry(
                 title: "Seasonal allergy flare",
-                dateLabel: "Nov 3, 2025",
+                date: date(2025, 11, 3),
                 summary: "Mild paw licking after park grass exposure. Added oat rinse and a post-walk wipe routine.",
                 clinician: "Dr. Rivera",
                 tone: .apricot
             ),
             MedicalEntry(
                 title: "Dental polish visit",
-                dateLabel: "Jul 18, 2025",
+                date: date(2025, 7, 18),
                 summary: "No extractions needed. Recommended frozen chew sessions twice weekly.",
                 clinician: "Pacific Pet Dental",
                 tone: .meadow
@@ -350,49 +590,58 @@ struct AppSeed {
         memories: [
             MemoryMoment(
                 title: "Gotcha Day",
-                dateLabel: "April 18",
+                date: date(2021, 4, 18),
                 caption: "The day Sol fell asleep in Maya’s lap on the way home.",
                 detail: "A quiet car ride turned into the first of a hundred tiny rituals. This anniversary is 21 days away.",
                 systemImage: "heart.circle.fill",
                 tone: .apricot,
-                daysUntilNextCelebration: 21
+                isAnnualCelebration: true
             ),
             MemoryMoment(
                 title: "Birthday picnic",
-                dateLabel: "May 9",
+                date: date(2021, 5, 9),
                 caption: "Blueberries, a tiny hat, and wind at Crissy Field.",
                 detail: "Build this into a yearly slideshow with old clips, vet growth notes, and favorite treats.",
                 systemImage: "birthday.cake.fill",
                 tone: .lagoon,
-                daysUntilNextCelebration: 42
+                isAnnualCelebration: true
             ),
             MemoryMoment(
                 title: "The first beach sprint",
-                dateLabel: "August 14, 2025",
+                date: date(2025, 8, 14),
                 caption: "Seven perfect minutes of fearless zoomies by the water.",
                 detail: "AuriTails turns moments like this into calm, cinematic keepsakes instead of burying them in the camera roll.",
                 systemImage: "sparkles.rectangle.stack.fill",
                 tone: .twilight,
-                daysUntilNextCelebration: nil
+                isAnnualCelebration: false
             ),
             MemoryMoment(
                 title: "Brave at the dentist",
-                dateLabel: "July 18, 2025",
+                date: date(2025, 7, 18),
                 caption: "Still asked politely for yogurt drops after the appointment.",
                 detail: "Medical milestones should feel human too. This one lives next to the clinical notes and the happy photo.",
                 systemImage: "cross.vial.fill",
                 tone: .meadow,
-                daysUntilNextCelebration: nil
+                isAnnualCelebration: false
             ),
             MemoryMoment(
                 title: "Rainy window nap",
-                dateLabel: "December 3, 2025",
+                date: date(2025, 12, 3),
                 caption: "The first day Sol chose the travel blanket all on his own.",
                 detail: "A simple home ritual that now marks whenever the family needs a low-stimulation reset evening.",
                 systemImage: "cloud.drizzle.fill",
                 tone: .lagoon,
-                daysUntilNextCelebration: nil
+                isAnnualCelebration: false
             ),
         ]
     )
+
+    private static func date(_ year: Int, _ month: Int, _ day: Int) -> Date {
+        var components = DateComponents()
+        components.calendar = Calendar(identifier: .gregorian)
+        components.year = year
+        components.month = month
+        components.day = day
+        return components.date ?? .now
+    }
 }

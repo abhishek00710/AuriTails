@@ -180,7 +180,7 @@ private struct EditablePhotoCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            RoundedProfilePhoto(imageData: imageData, role: role, height: 180, cornerRadius: 28)
+            RoundedProfilePhoto(imageData: imageData, role: role, height: 180, cornerRadius: 28, expandsHorizontally: true)
 
             Text(title)
                 .font(.system(size: 16, weight: .semibold, design: .rounded))

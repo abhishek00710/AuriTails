@@ -37,11 +37,26 @@ struct MemoriesView: View {
 
     private var heroCard: some View {
         GlassCard(tone: .twilight) {
-            SectionHeader(
-                eyebrow: "Slideshow",
-                title: "A keepsake space, not just a gallery",
-                detail: "Important dates become narrative moments with atmosphere, not isolated photos lost in a library."
-            )
+            HStack(alignment: .top, spacing: 12) {
+                SectionHeader(
+                    eyebrow: "Slideshow",
+                    title: "A keepsake space, not just a gallery",
+                    detail: "Important dates become narrative moments with atmosphere, not isolated photos lost in a library."
+                )
+
+                Spacer(minLength: 0)
+
+                Button {
+                    viewModel.openMemoryEditor()
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(Color(red: 0.10, green: 0.13, blue: 0.22))
+                        .frame(width: 42, height: 42)
+                        .background(Color.white, in: Circle())
+                }
+                .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.92))
+            }
 
             if let next = viewModel.nextCelebration {
                 HStack(spacing: 14) {
@@ -75,7 +90,7 @@ struct MemoriesView: View {
             )
 
             VStack(spacing: 16) {
-                ForEach(viewModel.memories) { memory in
+                ForEach(viewModel.memoryTimeline) { memory in
                     HStack(alignment: .top, spacing: 14) {
                         Image(systemName: memory.systemImage)
                             .font(.system(size: 16, weight: .semibold))
@@ -96,6 +111,15 @@ struct MemoriesView: View {
                         }
 
                         Spacer()
+
+                        Button {
+                            viewModel.openMemoryEditor(memory.id)
+                        } label: {
+                            Image(systemName: "pencil.circle.fill")
+                                .font(.system(size: 20, weight: .semibold))
+                                .foregroundStyle(.white.opacity(0.72))
+                        }
+                        .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.92))
                     }
                 }
             }

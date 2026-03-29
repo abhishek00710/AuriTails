@@ -32,7 +32,7 @@ struct AICompanionView: View {
 
                             BehaviorSparkline(snapshots: viewModel.behaviorSnapshots)
 
-                            Text("Energy peaks are healthy, but calmness dips later in the week hint that Sol does best when active rituals get a softer landing afterward.")
+                            Text("Energy peaks are healthy, but calmness dips later in the week hint that \(viewModel.pet.name) does best when active rituals get a softer landing afterward.")
                                 .font(.system(size: 14, weight: .medium, design: .rounded))
                                 .foregroundStyle(.white.opacity(0.76))
                         }

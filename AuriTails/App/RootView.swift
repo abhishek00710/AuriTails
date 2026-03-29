@@ -65,7 +65,20 @@ struct RootView: View {
                 AICompanionView(viewModel: viewModel)
             case .profile:
                 ProfileStudioView(viewModel: viewModel)
+            case let .routineEditor(routineID):
+                RoutineEditorView(viewModel: viewModel, routineID: routineID)
+            case let .memoryEditor(memoryID):
+                MemoryEditorView(viewModel: viewModel, memoryID: memoryID)
+            case let .vaccineEditor(vaccineID):
+                VaccineEditorView(viewModel: viewModel, vaccineID: vaccineID)
+            case let .medicalEntryEditor(entryID):
+                MedicalEntryEditorView(viewModel: viewModel, entryID: entryID)
+            case let .foodPreferenceEditor(preferenceID):
+                FoodPreferenceEditorView(viewModel: viewModel, preferenceID: preferenceID)
             }
+        }
+        .fullScreenCover(isPresented: onboardingBinding) {
+            OnboardingFlowView(viewModel: viewModel)
         }
     }
 
@@ -77,6 +90,13 @@ struct RootView: View {
         } else {
             0
         }
+    }
+
+    private var onboardingBinding: Binding<Bool> {
+        Binding(
+            get: { !viewModel.hasCompletedOnboarding && !isShowingSplash },
+            set: { _ in }
+        )
     }
 
     private var header: some View {

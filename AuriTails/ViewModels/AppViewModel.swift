@@ -1,42 +1,63 @@
 import Combine
 import SwiftUI
 
+@MainActor
 final class AppViewModel: ObservableObject {
-    @Published var selectedTab: RootTab = .dashboard
-    @Published var selectedDay: Weekday
+    @Published var selectedTab: RootTab { didSet { persist() } }
+    @Published var selectedDay: Weekday { didSet { persist() } }
     @Published var isMenuPresented = false
     @Published var activeSheet: AppSheet?
-    @Published var owner: OwnerProfile
-    @Published var pet: PetProfile
-    @Published var ownerPhotoData: Data?
-    @Published var petPhotoData: Data?
-    @Published var routines: [RoutineItem]
-    @Published var memories: [MemoryMoment]
+    @Published var owner: OwnerProfile { didSet { persist() } }
+    @Published var pet: PetProfile { didSet { persist() } }
+    @Published var ownerPhotoData: Data? { didSet { persist() } }
+    @Published var petPhotoData: Data? { didSet { persist() } }
+    @Published var behaviorSnapshots: [BehaviorSnapshot] { didSet { persist() } }
+    @Published var vaccinations: [VaccineRecord] { didSet { persist() } }
+    @Published var medicalHistory: [MedicalEntry] { didSet { persist() } }
+    @Published var foodPreferences: [FoodPreference] { didSet { persist() } }
+    @Published var routines: [RoutineItem] { didSet { persist() } }
+    @Published var memories: [MemoryMoment] { didSet { persist() } }
+    @Published var onboardingFocus: OnboardingFocus { didSet { persist() } }
+    @Published var hasCompletedOnboarding: Bool { didSet { persist() } }
 
-    let behaviorSnapshots: [BehaviorSnapshot]
-    let vaccinations: [VaccineRecord]
-    let medicalHistory: [MedicalEntry]
-    let foodPreferences: [FoodPreference]
-
+    private let store: AppStateStore
     private let insightEngine: PetInsightEngine
 
-    init(seed: AppSeed, insightEngine: PetInsightEngine = PetInsightEngine()) {
-        owner = seed.owner
-        pet = seed.pet
-        ownerPhotoData = nil
-        petPhotoData = nil
-        behaviorSnapshots = seed.behaviorSnapshots
-        vaccinations = seed.vaccinations
-        medicalHistory = seed.medicalHistory
-        foodPreferences = seed.foodPreferences
-        routines = seed.routines
-        memories = seed.memories
-        selectedDay = Weekday.current
+    init(
+        seed: AppSeed,
+        store: AppStateStore = AppStateStore(),
+        insightEngine: PetInsightEngine = PetInsightEngine(),
+        prefersPersistedState: Bool = true
+    ) {
+        let initialState = prefersPersistedState ? (store.load() ?? PersistedAppState(seed: seed)) : PersistedAppState(seed: seed)
+
+        selectedTab = initialState.selectedTab
+        selectedDay = initialState.selectedDay
+        owner = initialState.owner
+        pet = initialState.pet
+        ownerPhotoData = initialState.ownerPhotoData
+        petPhotoData = initialState.petPhotoData
+        behaviorSnapshots = initialState.behaviorSnapshots
+        vaccinations = initialState.vaccinations
+        medicalHistory = initialState.medicalHistory
+        foodPreferences = initialState.foodPreferences
+        routines = initialState.routines
+        memories = initialState.memories
+        onboardingFocus = initialState.onboardingFocus
+        hasCompletedOnboarding = initialState.hasCompletedOnboarding
+        self.store = store
         self.insightEngine = insightEngine
     }
 
     static func preview() -> AppViewModel {
-        AppViewModel(seed: .preview)
+        let previewDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("AuriTailsPreview-\(UUID().uuidString)", isDirectory: true)
+
+        return AppViewModel(
+            seed: .preview,
+            store: AppStateStore(baseDirectoryURL: previewDirectory),
+            prefersPersistedState: false
+        )
     }
 
     var insights: [CompanionInsight] {
@@ -61,8 +82,32 @@ final class AppViewModel: ObservableObject {
     }
 
     var featuredMemories: [MemoryMoment] {
-        memories.sorted {
-            ($0.daysUntilNextCelebration ?? .max) < ($1.daysUntilNextCelebration ?? .max)
+        memories.sorted { lhs, rhs in
+            let lhsCelebration = lhs.daysUntilNextCelebration ?? .max
+            let rhsCelebration = rhs.daysUntilNextCelebration ?? .max
+
+            if lhsCelebration != rhsCelebration {
+                return lhsCelebration < rhsCelebration
+            }
+
+            return lhs.date > rhs.date
+        }
+    }
+
+    var memoryTimeline: [MemoryMoment] {
+        memories.sorted { lhs, rhs in
+            if lhs.isAnnualCelebration != rhs.isAnnualCelebration {
+                return lhs.isAnnualCelebration && !rhs.isAnnualCelebration
+            }
+
+            if let lhsCelebration = lhs.daysUntilNextCelebration,
+               let rhsCelebration = rhs.daysUntilNextCelebration,
+               lhsCelebration != rhsCelebration
+            {
+                return lhsCelebration < rhsCelebration
+            }
+
+            return lhs.date > rhs.date
         }
     }
 
@@ -84,7 +129,11 @@ final class AppViewModel: ObservableObject {
     }
 
     var upcomingWellnessNote: String {
-        vaccinations.first(where: { $0.status == "Watch" })?.note ?? "No urgent health paperwork waiting."
+        upcomingWellnessRecord?.note ?? "No urgent health paperwork waiting."
+    }
+
+    var upcomingWellnessTitle: String {
+        upcomingWellnessRecord?.title ?? "All clear"
     }
 
     func toggleMenu() {
@@ -106,6 +155,10 @@ final class AppViewModel: ObservableObject {
         }
     }
 
+    func selectDay(_ day: Weekday) {
+        selectedDay = day
+    }
+
     func openAI() {
         closeMenu()
         activeSheet = .ai
@@ -116,6 +169,26 @@ final class AppViewModel: ObservableObject {
         activeSheet = .profile
     }
 
+    func openRoutineEditor(_ routineID: UUID? = nil) {
+        activeSheet = .routineEditor(routineID)
+    }
+
+    func openMemoryEditor(_ memoryID: UUID? = nil) {
+        activeSheet = .memoryEditor(memoryID)
+    }
+
+    func openVaccineEditor(_ vaccineID: UUID? = nil) {
+        activeSheet = .vaccineEditor(vaccineID)
+    }
+
+    func openMedicalEntryEditor(_ entryID: UUID? = nil) {
+        activeSheet = .medicalEntryEditor(entryID)
+    }
+
+    func openFoodPreferenceEditor(_ preferenceID: UUID? = nil) {
+        activeSheet = .foodPreferenceEditor(preferenceID)
+    }
+
     func updateProfile(owner: OwnerProfile, pet: PetProfile, ownerPhotoData: Data?, petPhotoData: Data?) {
         withAnimation(.spring(response: 0.34, dampingFraction: 0.9)) {
             self.owner = owner
@@ -123,6 +196,18 @@ final class AppViewModel: ObservableObject {
             self.ownerPhotoData = ownerPhotoData
             self.petPhotoData = petPhotoData
         }
+    }
+
+    func completeOnboarding(owner: OwnerProfile, pet: PetProfile, focus: OnboardingFocus) {
+        onboardingFocus = focus
+        updateProfile(
+            owner: owner,
+            pet: pet,
+            ownerPhotoData: ownerPhotoData,
+            petPhotoData: petPhotoData
+        )
+        selectedTab = focus.preferredTab
+        hasCompletedOnboarding = true
     }
 
     func toggleRoutine(_ routineID: UUID) {
@@ -144,7 +229,186 @@ final class AppViewModel: ObservableObject {
         withAnimation(.spring(response: 0.32, dampingFraction: 0.9)) {
             routines[index].day = day
             selectedDay = day
+            sortRoutines()
         }
+    }
+
+    func routine(for id: UUID?) -> RoutineItem? {
+        guard let id else { return nil }
+        return routines.first(where: { $0.id == id })
+    }
+
+    func saveRoutine(_ routine: RoutineItem) {
+        withAnimation(.spring(response: 0.34, dampingFraction: 0.88)) {
+            if let index = routines.firstIndex(where: { $0.id == routine.id }) {
+                routines[index] = routine
+            } else {
+                routines.append(routine)
+            }
+            sortRoutines()
+            selectedDay = routine.day
+        }
+    }
+
+    func deleteRoutine(_ routineID: UUID) {
+        withAnimation(.spring(response: 0.32, dampingFraction: 0.9)) {
+            routines.removeAll { $0.id == routineID }
+        }
+    }
+
+    func memory(for id: UUID?) -> MemoryMoment? {
+        guard let id else { return nil }
+        return memories.first(where: { $0.id == id })
+    }
+
+    func saveMemory(_ memory: MemoryMoment) {
+        withAnimation(.spring(response: 0.34, dampingFraction: 0.88)) {
+            if let index = memories.firstIndex(where: { $0.id == memory.id }) {
+                memories[index] = memory
+            } else {
+                memories.append(memory)
+            }
+            sortMemories()
+        }
+    }
+
+    func deleteMemory(_ memoryID: UUID) {
+        withAnimation(.spring(response: 0.32, dampingFraction: 0.9)) {
+            memories.removeAll { $0.id == memoryID }
+        }
+    }
+
+    func vaccine(for id: UUID?) -> VaccineRecord? {
+        guard let id else { return nil }
+        return vaccinations.first(where: { $0.id == id })
+    }
+
+    func saveVaccine(_ vaccine: VaccineRecord) {
+        withAnimation(.spring(response: 0.34, dampingFraction: 0.88)) {
+            if let index = vaccinations.firstIndex(where: { $0.id == vaccine.id }) {
+                vaccinations[index] = vaccine
+            } else {
+                vaccinations.append(vaccine)
+            }
+            vaccinations.sort { $0.nextDue < $1.nextDue }
+        }
+    }
+
+    func deleteVaccine(_ vaccineID: UUID) {
+        withAnimation(.spring(response: 0.32, dampingFraction: 0.9)) {
+            vaccinations.removeAll { $0.id == vaccineID }
+        }
+    }
+
+    func medicalEntry(for id: UUID?) -> MedicalEntry? {
+        guard let id else { return nil }
+        return medicalHistory.first(where: { $0.id == id })
+    }
+
+    func saveMedicalEntry(_ entry: MedicalEntry) {
+        withAnimation(.spring(response: 0.34, dampingFraction: 0.88)) {
+            if let index = medicalHistory.firstIndex(where: { $0.id == entry.id }) {
+                medicalHistory[index] = entry
+            } else {
+                medicalHistory.append(entry)
+            }
+            medicalHistory.sort { $0.date > $1.date }
+        }
+    }
+
+    func deleteMedicalEntry(_ entryID: UUID) {
+        withAnimation(.spring(response: 0.32, dampingFraction: 0.9)) {
+            medicalHistory.removeAll { $0.id == entryID }
+        }
+    }
+
+    func foodPreference(for id: UUID?) -> FoodPreference? {
+        guard let id else { return nil }
+        return foodPreferences.first(where: { $0.id == id })
+    }
+
+    func saveFoodPreference(_ preference: FoodPreference) {
+        withAnimation(.spring(response: 0.34, dampingFraction: 0.88)) {
+            if let index = foodPreferences.firstIndex(where: { $0.id == preference.id }) {
+                foodPreferences[index] = preference
+            } else {
+                foodPreferences.append(preference)
+            }
+            foodPreferences.sort { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
+        }
+    }
+
+    func deleteFoodPreference(_ preferenceID: UUID) {
+        withAnimation(.spring(response: 0.32, dampingFraction: 0.9)) {
+            foodPreferences.removeAll { $0.id == preferenceID }
+        }
+    }
+
+    private var upcomingWellnessRecord: VaccineRecord? {
+        vaccinations.sorted { lhs, rhs in
+            let lhsRank = priority(for: lhs.status)
+            let rhsRank = priority(for: rhs.status)
+
+            if lhsRank != rhsRank {
+                return lhsRank < rhsRank
+            }
+            return lhs.nextDue < rhs.nextDue
+        }.first
+    }
+
+    private func priority(for status: VaccineStatus) -> Int {
+        switch status {
+        case .watch: 0
+        case .onTrack: 1
+        case .covered: 2
+        }
+    }
+
+    private func sortRoutines() {
+        routines.sort {
+            if $0.day.rawValue != $1.day.rawValue {
+                return $0.day.rawValue < $1.day.rawValue
+            }
+            return $0.time < $1.time
+        }
+    }
+
+    private func sortMemories() {
+        memories.sort { lhs, rhs in
+            if lhs.isAnnualCelebration != rhs.isAnnualCelebration {
+                return lhs.isAnnualCelebration && !rhs.isAnnualCelebration
+            }
+
+            if let lhsCelebration = lhs.daysUntilNextCelebration,
+               let rhsCelebration = rhs.daysUntilNextCelebration,
+               lhsCelebration != rhsCelebration
+            {
+                return lhsCelebration < rhsCelebration
+            }
+
+            return lhs.date > rhs.date
+        }
+    }
+
+    private func persist() {
+        store.save(
+            PersistedAppState(
+                selectedTab: selectedTab,
+                selectedDay: selectedDay,
+                owner: owner,
+                pet: pet,
+                ownerPhotoData: ownerPhotoData,
+                petPhotoData: petPhotoData,
+                behaviorSnapshots: behaviorSnapshots,
+                vaccinations: vaccinations,
+                medicalHistory: medicalHistory,
+                foodPreferences: foodPreferences,
+                routines: routines,
+                memories: memories,
+                onboardingFocus: onboardingFocus,
+                hasCompletedOnboarding: hasCompletedOnboarding
+            )
+        )
     }
 }
 

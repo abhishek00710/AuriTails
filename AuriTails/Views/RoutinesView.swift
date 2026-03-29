@@ -40,11 +40,26 @@ struct RoutinesView: View {
 
     private var summaryCard: some View {
         GlassCard(tone: .meadow) {
-            SectionHeader(
-                eyebrow: "Weekly rhythm",
-                title: "A routine engine that feels human",
-                detail: "Most pet apps stop at reminders. This one lets the week breathe and still stay intentional."
-            )
+            HStack(alignment: .top, spacing: 12) {
+                SectionHeader(
+                    eyebrow: "Weekly rhythm",
+                    title: "A routine engine that feels human",
+                    detail: "Most pet apps stop at reminders. This one lets the week breathe and still stay intentional."
+                )
+
+                Spacer(minLength: 0)
+
+                Button {
+                    viewModel.openRoutineEditor()
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(Color(red: 0.10, green: 0.13, blue: 0.22))
+                        .frame(width: 42, height: 42)
+                        .background(Color.white, in: Circle())
+                }
+                .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.92))
+            }
 
             HStack(spacing: 12) {
                 StatChip(title: "Completed", value: "\(Int((viewModel.weeklyCompletionRatio * 100).rounded()))%")
@@ -71,6 +86,15 @@ struct RoutinesView: View {
                         Spacer()
 
                         Button {
+                            viewModel.openRoutineEditor(routine.id)
+                        } label: {
+                            Image(systemName: "pencil.circle.fill")
+                                .font(.system(size: 22, weight: .semibold))
+                                .foregroundStyle(.white.opacity(0.86))
+                        }
+                        .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.9, pressedBrightness: 0.08))
+
+                        Button {
                             viewModel.toggleRoutine(routine.id)
                         } label: {
                             Image(systemName: routine.isCompleted ? "checkmark.circle.fill" : "circle")
@@ -95,6 +119,12 @@ struct RoutinesView: View {
             }
 
             HStack(spacing: 10) {
+                Button {
+                    viewModel.openRoutineEditor(routine.id)
+                } label: {
+                    Label("Edit", systemImage: "pencil")
+                }
+
                 Button {
                     viewModel.shiftRoutine(routine.id, by: -30)
                 } label: {

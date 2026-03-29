@@ -23,6 +23,7 @@ struct DashboardView: View {
                     .offset(y: hasAppeared ? 0 : 44)
                     .opacity(hasAppeared ? 1 : 0)
             }
+            .frame(maxWidth: .infinity)
             .padding(.horizontal, 20)
             .padding(.bottom, 120)
         }
