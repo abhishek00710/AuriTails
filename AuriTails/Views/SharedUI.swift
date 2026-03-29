@@ -111,6 +111,7 @@ struct RoundedProfilePhoto: View {
         }
         .frame(maxWidth: expandsHorizontally ? .infinity : maxWidth)
         .frame(height: height)
+        .clipped()
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)

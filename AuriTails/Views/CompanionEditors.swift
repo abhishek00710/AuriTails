@@ -579,6 +579,10 @@ private struct ClockTimeEditor: View {
 
 private struct TonePicker: View {
     @Binding var selection: PaletteTone
+    
+    private let columns = [
+        GridItem(.adaptive(minimum: 108, maximum: 156), spacing: 10)
+    ]
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -586,7 +590,7 @@ private struct TonePicker: View {
                 .font(.system(size: 12, weight: .bold, design: .rounded))
                 .foregroundStyle(.white.opacity(0.72))
 
-            HStack(spacing: 10) {
+            LazyVGrid(columns: columns, alignment: .leading, spacing: 10) {
                 ForEach(PaletteTone.allCases) { tone in
                     Button {
                         selection = tone
@@ -597,11 +601,14 @@ private struct TonePicker: View {
                                 .frame(width: 12, height: 12)
                             Text(tone.title)
                                 .font(.system(size: 13, weight: .bold, design: .rounded))
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.82)
                         }
                         .foregroundStyle(selection == tone ? Color(red: 0.10, green: 0.13, blue: 0.22) : .white)
                         .padding(.horizontal, 14)
-                        .padding(.vertical, 12)
+                        .padding(.vertical, 13)
                         .frame(maxWidth: .infinity)
+                        .frame(height: 56)
                         .background(selection == tone ? AnyShapeStyle(.white) : AnyShapeStyle(.white.opacity(0.08)), in: Capsule())
                     }
                     .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.97))

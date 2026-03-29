@@ -11,6 +11,8 @@ struct ProfileStudioView: View {
     @State private var petPhotoData: Data?
     @State private var ownerPickerItem: PhotosPickerItem?
     @State private var petPickerItem: PhotosPickerItem?
+    
+    private let photoCardWidth = (UIScreen.main.bounds.width - 94) / 2
 
     init(viewModel: AppViewModel) {
         self.viewModel = viewModel
@@ -83,6 +85,7 @@ struct ProfileStudioView: View {
                     subtitle: ownerDraft.name,
                     imageData: ownerPhotoData,
                     role: .owner,
+                    photoWidth: photoCardWidth,
                     pickerItem: $ownerPickerItem,
                     removeAction: { ownerPhotoData = nil }
                 )
@@ -92,6 +95,7 @@ struct ProfileStudioView: View {
                     subtitle: petDraft.name,
                     imageData: petPhotoData,
                     role: .pet,
+                    photoWidth: photoCardWidth,
                     pickerItem: $petPickerItem,
                     removeAction: { petPhotoData = nil }
                 )
@@ -175,46 +179,62 @@ private struct EditablePhotoCard: View {
     let subtitle: String
     let imageData: Data?
     let role: ProfilePhotoRole
+    let photoWidth: CGFloat
     @Binding var pickerItem: PhotosPickerItem?
     let removeAction: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            RoundedProfilePhoto(imageData: imageData, role: role, height: 180, cornerRadius: 28, expandsHorizontally: true)
+            RoundedProfilePhoto(imageData: imageData, role: role, height: 180, cornerRadius: 28, maxWidth: photoWidth)
 
             Text(title)
                 .font(.system(size: 16, weight: .semibold, design: .rounded))
                 .foregroundStyle(.white)
+                .lineLimit(1)
 
             Text(subtitle)
                 .font(.system(size: 13, weight: .medium, design: .rounded))
                 .foregroundStyle(.white.opacity(0.74))
+                .lineLimit(1)
 
-            HStack(spacing: 10) {
-                PhotosPicker(selection: $pickerItem, matching: .images) {
-                    Label("Choose", systemImage: "photo.badge.plus")
-                        .font(.system(size: 12, weight: .bold, design: .rounded))
-                        .foregroundStyle(Color(red: 0.10, green: 0.13, blue: 0.22))
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 10)
-                        .background(Color.white, in: Capsule())
-                }
-                .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.96))
-
-                if imageData != nil {
-                    Button(action: removeAction) {
-                        Label("Reset", systemImage: "arrow.counterclockwise")
-                            .font(.system(size: 12, weight: .bold, design: .rounded))
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 10)
-                            .background(.white.opacity(0.10), in: Capsule())
-                    }
-                    .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.96))
-                }
+            if imageData != nil {
+                resetButton
+            } else {
+                chooseButton
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(width: photoWidth, alignment: .leading)
+    }
+
+    private var chooseButton: some View {
+        PhotosPicker(selection: $pickerItem, matching: .images) {
+            Label("Choose", systemImage: "photo.badge.plus")
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
+                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .foregroundStyle(Color(red: 0.10, green: 0.13, blue: 0.22))
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .frame(maxWidth: .infinity)
+                .background(Color.white, in: Capsule())
+        }
+        .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.96))
+    }
+
+    @ViewBuilder
+    private var resetButton: some View {
+        Button(action: removeAction) {
+            Label("Reset", systemImage: "arrow.counterclockwise")
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
+                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .frame(maxWidth: .infinity)
+                .background(.white.opacity(0.10), in: Capsule())
+        }
+        .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.96))
     }
 }
 

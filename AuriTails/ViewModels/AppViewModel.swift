@@ -50,12 +50,9 @@ final class AppViewModel: ObservableObject {
     }
 
     static func preview() -> AppViewModel {
-        let previewDirectory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("AuriTailsPreview-\(UUID().uuidString)", isDirectory: true)
-
         return AppViewModel(
             seed: .preview,
-            store: AppStateStore(baseDirectoryURL: previewDirectory),
+            store: AppStateStore(inMemory: true),
             prefersPersistedState: false
         )
     }
