@@ -26,7 +26,7 @@ final class AppViewModel: ObservableObject {
     init(
         seed: AppSeed,
         store: AppStateStore = AppStateStore(),
-        insightEngine: PetInsightEngine = PetInsightEngine(),
+        insightEngine: PetInsightEngine? = nil,
         prefersPersistedState: Bool = true
     ) {
         let initialState = prefersPersistedState ? (store.load() ?? PersistedAppState(seed: seed)) : PersistedAppState(seed: seed)
@@ -46,13 +46,14 @@ final class AppViewModel: ObservableObject {
         onboardingFocus = initialState.onboardingFocus
         hasCompletedOnboarding = initialState.hasCompletedOnboarding
         self.store = store
-        self.insightEngine = insightEngine
+        self.insightEngine = insightEngine ?? PetInsightEngine()
     }
 
-    static func preview() -> AppViewModel {
+    @MainActor static func preview() -> AppViewModel {
+        let store = AppStateStore(inMemory: true)
         return AppViewModel(
             seed: .preview,
-            store: AppStateStore(inMemory: true),
+            store: store,
             prefersPersistedState: false
         )
     }

@@ -251,6 +251,7 @@ struct GlassCard<Content: View>: View {
             content
         }
         .padding(20)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         .background {
             RoundedRectangle(cornerRadius: 28, style: .continuous)
                 .fill(
@@ -448,7 +449,7 @@ struct StatChip: View {
                 .font(.system(size: 18, weight: .semibold, design: .rounded))
                 .foregroundStyle(.white)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         .padding(14)
         .background(.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
