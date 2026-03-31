@@ -49,8 +49,8 @@ final class AppViewModel: ObservableObject {
         self.insightEngine = insightEngine ?? PetInsightEngine()
     }
 
-    @MainActor static func preview() -> AppViewModel {
-        let store = AppStateStore(inMemory: true)
+    @MainActor static func preview() async -> AppViewModel {
+        let store = await MainActor.run { AppStateStore(inMemory: true) }
         return AppViewModel(
             seed: .preview,
             store: store,

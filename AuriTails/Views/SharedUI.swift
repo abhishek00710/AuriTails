@@ -489,11 +489,17 @@ struct SlideMenuPanel: View {
     @ObservedObject var viewModel: AppViewModel
 
     var body: some View {
-        GlassCard(tone: .twilight) {
-            HStack {
-                Text("Companion Menu")
-                    .font(.system(size: 20, weight: .semibold, design: .serif))
-                    .foregroundStyle(.white)
+        VStack(alignment: .leading, spacing: 18) {
+            HStack(alignment: .center) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Menu")
+                        .font(.system(size: 24, weight: .semibold, design: .rounded))
+                        .foregroundStyle(.white)
+
+                    Text("Quick access for your companion space")
+                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                        .foregroundStyle(.white.opacity(0.66))
+                }
 
                 Spacer()
 
@@ -502,38 +508,177 @@ struct SlideMenuPanel: View {
                 } label: {
                     Image(systemName: "xmark")
                         .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(.white.opacity(0.8))
-                        .frame(width: 30, height: 30)
-                        .background(.white.opacity(0.08), in: Circle())
+                        .foregroundStyle(.white.opacity(0.82))
+                        .frame(width: 34, height: 34)
+                        .background(.white.opacity(0.10), in: Circle())
+                        .overlay {
+                            Circle()
+                                .strokeBorder(.white.opacity(0.12), lineWidth: 1)
+                        }
                 }
                 .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.9))
             }
 
-            Button {
-                viewModel.openProfile()
-            } label: {
-                OwnerPetRow(
-                    owner: viewModel.owner,
-                    pet: viewModel.pet,
-                    ownerPhotoData: viewModel.ownerPhotoData,
-                    petPhotoData: viewModel.petPhotoData,
-                    supportingText: "Open Profile Studio to edit details and add photos.",
-                    showsChevron: true
-                )
-            }
-            .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.97, pressedBrightness: 0.03))
+            VStack(alignment: .leading, spacing: 12) {
+                Text("ACCOUNT")
+                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .tracking(1.5)
+                    .foregroundStyle(.white.opacity(0.46))
 
-            VStack(spacing: 12) {
-                MenuActionRow(
-                    icon: "sparkles.rectangle.stack.fill",
+                Button {
+                    viewModel.openProfile()
+                } label: {
+                    MenuProfileCard(
+                        owner: viewModel.owner,
+                        pet: viewModel.pet,
+                        ownerPhotoData: viewModel.ownerPhotoData,
+                        petPhotoData: viewModel.petPhotoData
+                    )
+                }
+                .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.98, pressedBrightness: 0.02))
+            }
+
+            VStack(alignment: .leading, spacing: 12) {
+                Text("TOOLS")
+                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .tracking(1.5)
+                    .foregroundStyle(.white.opacity(0.46))
+
+                SocialMenuActionRow(
+                    icon: "sparkles",
+                    iconTint: .lagoon,
                     title: "Bond AI",
-                    detail: "\(viewModel.insights.count) personalized tips ready from \(viewModel.pet.name)'s routine patterns.",
-                    tone: .lagoon
+                    subtitle: "\(viewModel.insights.count) personalized tips ready for \(viewModel.pet.name)."
                 ) {
                     viewModel.openAI()
                 }
             }
+
+            Text("Designed to feel more like a companion hub than a settings drawer.")
+                .font(.system(size: 12, weight: .medium, design: .rounded))
+                .foregroundStyle(.white.opacity(0.52))
         }
+        .padding(18)
+        .background {
+            RoundedRectangle(cornerRadius: 30, style: .continuous)
+                .fill(.ultraThinMaterial)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 30, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    Color.white.opacity(0.14),
+                                    Color.white.opacity(0.07),
+                                    Color.black.opacity(0.08),
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                }
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 30, style: .continuous)
+                .strokeBorder(.white.opacity(0.14), lineWidth: 1)
+        }
+        .shadow(color: .black.opacity(0.22), radius: 28, y: 16)
+    }
+}
+
+private struct MenuProfileCard: View {
+    let owner: OwnerProfile
+    let pet: PetProfile
+    let ownerPhotoData: Data?
+    let petPhotoData: Data?
+
+    var body: some View {
+        HStack(spacing: 14) {
+            HStack(spacing: -10) {
+                CircularProfilePhoto(imageData: ownerPhotoData, role: .owner, size: 56)
+                CircularProfilePhoto(imageData: petPhotoData, role: .pet, size: 56)
+            }
+            .padding(.trailing, 4)
+
+            VStack(alignment: .leading, spacing: 5) {
+                Text("\(owner.name) & \(pet.name)")
+                    .font(.system(size: 17, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.white)
+
+                Text("View profile studio")
+                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.68))
+
+                Text("\(pet.breed) • \(owner.location)")
+                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.48))
+            }
+
+            Spacer(minLength: 0)
+
+            Image(systemName: "chevron.right")
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(.white.opacity(0.42))
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .fill(Color.white.opacity(0.08))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        .strokeBorder(Color.white.opacity(0.10), lineWidth: 1)
+                }
+        )
+    }
+}
+
+private struct SocialMenuActionRow: View {
+    let icon: String
+    let iconTint: PaletteTone
+    let title: String
+    let subtitle: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 14) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .fill(iconTint.primaryColor.opacity(0.22))
+
+                    Image(systemName: icon)
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(iconTint.secondaryColor)
+                }
+                .frame(width: 46, height: 46)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(.system(size: 16, weight: .semibold, design: .rounded))
+                        .foregroundStyle(.white)
+
+                    Text(subtitle)
+                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                        .foregroundStyle(.white.opacity(0.66))
+                        .multilineTextAlignment(.leading)
+                }
+
+                Spacer(minLength: 0)
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(.white.opacity(0.40))
+            }
+            .padding(16)
+            .background(
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .fill(Color.white.opacity(0.08))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 24, style: .continuous)
+                            .strokeBorder(Color.white.opacity(0.10), lineWidth: 1)
+                    }
+            )
+        }
+        .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.98, pressedBrightness: 0.02))
     }
 }
 

@@ -43,9 +43,9 @@ struct RootView: View {
 
             if viewModel.isMenuPresented {
                 SlideMenuPanel(viewModel: viewModel)
-                    .frame(width: 320)
-                    .padding(.top, 82)
-                    .padding(.trailing, 16)
+                    .frame(width: 336)
+                    .padding(.top, 74)
+                    .padding(.trailing, 14)
                     .transition(.move(edge: .trailing).combined(with: .opacity))
             }
 

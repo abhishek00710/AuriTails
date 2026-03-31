@@ -44,7 +44,7 @@ struct OnboardingFlowView: View {
 
                 Spacer()
 
-                Text("Step \(step + 1) of 3")
+                Text("Step  \(step + 1) of 3")
                     .font(.system(size: 12, weight: .bold, design: .rounded))
                     .foregroundStyle(.white.opacity(0.72))
                     .padding(.horizontal, 12)
