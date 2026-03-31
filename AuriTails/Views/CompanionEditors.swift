@@ -387,6 +387,7 @@ struct FoodPreferenceEditorView: View {
 }
 
 private struct EditorShell<Content: View>: View {
+    @Environment(\.colorScheme) private var colorScheme
     let title: String
     let saveLabel: String
     let isSaveDisabled: Bool
@@ -426,16 +427,17 @@ private struct EditorShell<Content: View>: View {
             }
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarColorScheme(colorScheme, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Close", action: onClose)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(colorScheme.topBarButtonColor)
                 }
 
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(saveLabel, action: onSave)
                         .font(.system(size: 15, weight: .bold, design: .rounded))
-                        .foregroundStyle(isSaveDisabled ? .white.opacity(0.45) : .white)
+                        .foregroundStyle(isSaveDisabled ? colorScheme.topBarButtonColor.opacity(0.45) : colorScheme.topBarButtonColor)
                         .disabled(isSaveDisabled)
                 }
             }

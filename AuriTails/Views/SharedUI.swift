@@ -1,6 +1,24 @@
 import SwiftUI
 import UIKit
 
+extension ColorScheme {
+    var topBarTitleColor: Color {
+        self == .dark ? .white : Color.black.opacity(0.9)
+    }
+
+    var topBarButtonColor: Color {
+        self == .dark ? Color.black.opacity(0.9) : .white
+    }
+
+    var topBarButtonBackground: Color {
+        self == .dark ? Color.white.opacity(0.78) : Color.black.opacity(0.28)
+    }
+
+    var topBarButtonStroke: Color {
+        self == .dark ? Color.white.opacity(0.16) : Color.white.opacity(0.10)
+    }
+}
+
 extension PaletteTone {
     var primaryColor: Color {
         switch self {

@@ -3,6 +3,7 @@ import SwiftUI
 struct RootView: View {
     @ObservedObject var viewModel: AppViewModel
     @State private var isShowingSplash = true
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         ZStack(alignment: .trailing) {
@@ -104,15 +105,15 @@ struct RootView: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text("AuriTails")
                     .font(.system(size: 14, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.white.opacity(0.78))
+                    .foregroundStyle(colorScheme.topBarTitleColor.opacity(0.78))
 
                 Text(viewModel.selectedTab.headerTitle(for: viewModel.pet.name))
                     .font(.system(size: 30, weight: .semibold, design: .serif))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(colorScheme.topBarTitleColor)
 
                 Text(viewModel.selectedTab.headerSubtitle(ownerName: viewModel.owner.name, petName: viewModel.pet.name))
                     .font(.system(size: 14, weight: .medium, design: .rounded))
-                    .foregroundStyle(.white.opacity(0.72))
+                    .foregroundStyle(colorScheme.topBarTitleColor.opacity(0.72))
             }
 
             Spacer()
@@ -122,12 +123,12 @@ struct RootView: View {
             } label: {
                 Image(systemName: "line.3.horizontal")
                     .font(.system(size: 18, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(colorScheme.topBarButtonColor)
                     .frame(width: 48, height: 48)
-                    .background(.white.opacity(0.14), in: Circle())
+                    .background(colorScheme.topBarButtonBackground, in: Circle())
                     .overlay {
                         Circle()
-                            .strokeBorder(.white.opacity(0.18), lineWidth: 1)
+                            .strokeBorder(colorScheme.topBarButtonStroke, lineWidth: 1)
                     }
             }
             .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.88, pressedBrightness: 0.08))

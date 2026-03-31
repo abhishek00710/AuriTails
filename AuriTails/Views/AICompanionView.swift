@@ -3,6 +3,7 @@ import SwiftUI
 struct AICompanionView: View {
     @ObservedObject var viewModel: AppViewModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         NavigationStack {
@@ -83,11 +84,13 @@ struct AICompanionView: View {
             }
             .navigationTitle("Bond AI")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarColorScheme(colorScheme, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") {
                         dismiss()
                     }
+                    .foregroundStyle(colorScheme.topBarButtonColor)
                 }
             }
         }

@@ -4,6 +4,7 @@ import SwiftUI
 struct ProfileStudioView: View {
     @ObservedObject var viewModel: AppViewModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
 
     @State private var ownerDraft: OwnerProfile
     @State private var petDraft: PetProfile
@@ -42,12 +43,13 @@ struct ProfileStudioView: View {
             }
             .navigationTitle("Profile Studio")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarColorScheme(colorScheme, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Close") {
                         dismiss()
                     }
-                    .foregroundStyle(.white)
+                    .foregroundStyle(colorScheme.topBarButtonColor)
                 }
 
                 ToolbarItem(placement: .topBarTrailing) {
@@ -55,7 +57,7 @@ struct ProfileStudioView: View {
                         saveChanges()
                     }
                     .font(.system(size: 16, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color.white)
+                    .foregroundStyle(colorScheme.topBarButtonColor)
                 }
             }
         }
