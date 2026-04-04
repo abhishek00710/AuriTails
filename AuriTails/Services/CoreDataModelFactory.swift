@@ -56,6 +56,7 @@ enum CoreDataModelFactory {
         let petEnergySummary = attribute(name: "petEnergySummary", type: .stringAttributeType, optional: false)
         let ownerPhotoData = attribute(name: "ownerPhotoData", type: .binaryDataAttributeType, optional: true, externalBinary: true)
         let petPhotoData = attribute(name: "petPhotoData", type: .binaryDataAttributeType, optional: true, externalBinary: true)
+        let bondPhotoData = attribute(name: "bondPhotoData", type: .binaryDataAttributeType, optional: true, externalBinary: true)
         let onboardingFocus = attribute(name: "onboardingFocus", type: .stringAttributeType, optional: false)
         let hasCompletedOnboarding = attribute(name: "hasCompletedOnboarding", type: .booleanAttributeType, optional: false)
 
@@ -63,7 +64,7 @@ enum CoreDataModelFactory {
             id, selectedTab, selectedDay,
             ownerID, ownerName, ownerHeadline, ownerLocation, ownerNote,
             petID, petName, petSpecies, petBreed, petAgeDescription, petWeightDescription, petFavoriteTreat, petBondStatement, petEnergySummary,
-            ownerPhotoData, petPhotoData, onboardingFocus, hasCompletedOnboarding,
+            ownerPhotoData, petPhotoData, bondPhotoData, onboardingFocus, hasCompletedOnboarding,
         ]
         entity.uniquenessConstraints = [["id"]]
         entity.indexes = [index(named: "appMetadataIDIndex", property: id)]

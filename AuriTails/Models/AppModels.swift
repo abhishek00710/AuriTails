@@ -447,6 +447,7 @@ struct PersistedAppState: Codable {
     var pet: PetProfile
     var ownerPhotoData: Data?
     var petPhotoData: Data?
+    var bondPhotoData: Data?
     var behaviorSnapshots: [BehaviorSnapshot]
     var vaccinations: [VaccineRecord]
     var medicalHistory: [MedicalEntry]
@@ -463,6 +464,7 @@ struct PersistedAppState: Codable {
         pet: PetProfile,
         ownerPhotoData: Data?,
         petPhotoData: Data?,
+        bondPhotoData: Data?,
         behaviorSnapshots: [BehaviorSnapshot],
         vaccinations: [VaccineRecord],
         medicalHistory: [MedicalEntry],
@@ -478,6 +480,7 @@ struct PersistedAppState: Codable {
         self.pet = pet
         self.ownerPhotoData = ownerPhotoData
         self.petPhotoData = petPhotoData
+        self.bondPhotoData = bondPhotoData
         self.behaviorSnapshots = behaviorSnapshots
         self.vaccinations = vaccinations
         self.medicalHistory = medicalHistory
@@ -495,6 +498,7 @@ struct PersistedAppState: Codable {
         pet = seed.pet
         ownerPhotoData = nil
         petPhotoData = nil
+        bondPhotoData = nil
         behaviorSnapshots = seed.behaviorSnapshots
         vaccinations = seed.vaccinations
         medicalHistory = seed.medicalHistory

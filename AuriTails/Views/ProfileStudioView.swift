@@ -10,8 +10,10 @@ struct ProfileStudioView: View {
     @State private var petDraft: PetProfile
     @State private var ownerPhotoData: Data?
     @State private var petPhotoData: Data?
+    @State private var bondPhotoData: Data?
     @State private var ownerPickerItem: PhotosPickerItem?
     @State private var petPickerItem: PhotosPickerItem?
+    @State private var bondPickerItem: PhotosPickerItem?
     
     private let photoCardWidth = (UIScreen.main.bounds.width - 94) / 2
 
@@ -21,6 +23,7 @@ struct ProfileStudioView: View {
         _petDraft = State(initialValue: viewModel.pet)
         _ownerPhotoData = State(initialValue: viewModel.ownerPhotoData)
         _petPhotoData = State(initialValue: viewModel.petPhotoData)
+        _bondPhotoData = State(initialValue: viewModel.bondPhotoData)
     }
 
     var body: some View {
@@ -32,6 +35,7 @@ struct ProfileStudioView: View {
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 22) {
                         heroCard
+                        bondPhotoSection
                         ownerSection
                         petSection
                         saveCard
@@ -69,6 +73,11 @@ struct ProfileStudioView: View {
         .task(id: petPickerItem) {
             if let petPickerItem, let data = try? await petPickerItem.loadTransferable(type: Data.self) {
                 petPhotoData = data
+            }
+        }
+        .task(id: bondPickerItem) {
+            if let bondPickerItem, let data = try? await bondPickerItem.loadTransferable(type: Data.self) {
+                bondPhotoData = data
             }
         }
     }
@@ -117,6 +126,24 @@ struct ProfileStudioView: View {
             ProfileInputField(title: "Headline", text: $ownerDraft.headline, icon: "sparkles")
             ProfileInputField(title: "Location", text: $ownerDraft.location, icon: "mappin.and.ellipse")
             ProfileInputEditor(title: "Notes", text: $ownerDraft.note, icon: "note.text", height: 110)
+        }
+    }
+
+    private var bondPhotoSection: some View {
+        GlassCard(tone: .twilight) {
+            SectionHeader(
+                eyebrow: "Together",
+                title: "Shared owner + pet photo",
+                detail: "This image shows on the home dashboard so the app can open with one real bond-centered moment."
+            )
+
+            WideBondPhotoCard(
+                imageData: bondPhotoData,
+                ownerName: ownerDraft.name,
+                petName: petDraft.name,
+                pickerItem: $bondPickerItem,
+                removeAction: { bondPhotoData = nil }
+            )
         }
     }
 
@@ -170,7 +197,8 @@ struct ProfileStudioView: View {
             owner: ownerDraft,
             pet: petDraft,
             ownerPhotoData: ownerPhotoData,
-            petPhotoData: petPhotoData
+            petPhotoData: petPhotoData,
+            bondPhotoData: bondPhotoData
         )
         dismiss()
     }
@@ -237,6 +265,52 @@ private struct EditablePhotoCard: View {
                 .background(.white.opacity(0.10), in: Capsule())
         }
         .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.96))
+    }
+}
+
+private struct WideBondPhotoCard: View {
+    let imageData: Data?
+    let ownerName: String
+    let petName: String
+    @Binding var pickerItem: PhotosPickerItem?
+    let removeAction: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            BondHeroPhoto(imageData: imageData, height: 220, cornerRadius: 30)
+
+            Text("\(ownerName) + \(petName)")
+                .font(.system(size: 18, weight: .semibold, design: .rounded))
+                .foregroundStyle(.white)
+
+            Text("Used as the main home image when you want one photo of both together.")
+                .font(.system(size: 13, weight: .medium, design: .rounded))
+                .foregroundStyle(.white.opacity(0.72))
+
+            if imageData != nil {
+                Button(action: removeAction) {
+                    Label("Reset Together Photo", systemImage: "arrow.counterclockwise")
+                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 11)
+                        .frame(maxWidth: .infinity)
+                        .background(.white.opacity(0.10), in: Capsule())
+                }
+                .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.96))
+            } else {
+                PhotosPicker(selection: $pickerItem, matching: .images) {
+                    Label("Choose Together Photo", systemImage: "photo.on.rectangle.angled")
+                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                        .foregroundStyle(Color(red: 0.10, green: 0.13, blue: 0.22))
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 11)
+                        .frame(maxWidth: .infinity)
+                        .background(Color.white, in: Capsule())
+                }
+                .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.96))
+            }
+        }
     }
 }
 

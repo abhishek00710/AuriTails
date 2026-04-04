@@ -149,6 +149,33 @@ struct RoundedProfilePhoto: View {
     }
 }
 
+struct BondHeroPhoto: View {
+    let imageData: Data?
+    var height: CGFloat = 250
+    var cornerRadius: CGFloat = 30
+
+    var body: some View {
+        Group {
+            if let imageData, let image = UIImage(data: imageData) {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+            } else {
+                BondPortraitArtwork()
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: height)
+        .clipped()
+        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                .strokeBorder(.white.opacity(0.16), lineWidth: 1)
+        }
+        .shadow(color: .black.opacity(0.16), radius: 18, y: 10)
+    }
+}
+
 extension RootTab {
     var selectionColors: [Color] {
         switch self {
@@ -916,7 +943,6 @@ struct BondPortraitArtwork: View {
                 .frame(width: 220, height: 26)
                 .offset(y: 92)
 
-            // Layered shapes create a poster-like owner and pet silhouette from behind.
             Group {
                 RoundedRectangle(cornerRadius: 30, style: .continuous)
                     .fill(Color.black.opacity(0.22))

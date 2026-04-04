@@ -122,6 +122,7 @@ extension AppStateStore {
             pet: pet,
             ownerPhotoData: metadata.value(forKey: "ownerPhotoData") as? Data,
             petPhotoData: metadata.value(forKey: "petPhotoData") as? Data,
+            bondPhotoData: metadata.value(forKey: "bondPhotoData") as? Data,
             behaviorSnapshots: behaviorSnapshots,
             vaccinations: vaccinations,
             medicalHistory: medicalHistory,
@@ -157,6 +158,7 @@ extension AppStateStore {
         object.setValue(state.pet.energySummary, forKey: "petEnergySummary")
         object.setValue(state.ownerPhotoData, forKey: "ownerPhotoData")
         object.setValue(state.petPhotoData, forKey: "petPhotoData")
+        object.setValue(state.bondPhotoData, forKey: "bondPhotoData")
         object.setValue(state.onboardingFocus.rawValue, forKey: "onboardingFocus")
         object.setValue(state.hasCompletedOnboarding, forKey: "hasCompletedOnboarding")
     }

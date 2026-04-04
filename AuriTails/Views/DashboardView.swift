@@ -71,7 +71,7 @@ struct DashboardView: View {
                 }
                 .frame(height: 152)
 
-                BondPortraitArtwork()
+                BondHeroPhoto(imageData: viewModel.bondPhotoData, height: 250, cornerRadius: 30)
 
                 HStack(spacing: 12) {
                     StatChip(title: "Bond Score", value: "\(viewModel.bondScore)")

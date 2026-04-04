@@ -30,6 +30,8 @@ enum PersistenceController {
         }
         description.type = NSSQLiteStoreType
         description.shouldAddStoreAsynchronously = false
+        description.shouldMigrateStoreAutomatically = true
+        description.shouldInferMappingModelAutomatically = true
         return description
     }
 }

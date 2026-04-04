@@ -11,6 +11,7 @@ final class AppViewModel: ObservableObject {
     @Published var pet: PetProfile { didSet { persist() } }
     @Published var ownerPhotoData: Data? { didSet { persist() } }
     @Published var petPhotoData: Data? { didSet { persist() } }
+    @Published var bondPhotoData: Data? { didSet { persist() } }
     @Published var behaviorSnapshots: [BehaviorSnapshot] { didSet { persist() } }
     @Published var vaccinations: [VaccineRecord] { didSet { persist() } }
     @Published var medicalHistory: [MedicalEntry] { didSet { persist() } }
@@ -37,6 +38,7 @@ final class AppViewModel: ObservableObject {
         pet = initialState.pet
         ownerPhotoData = initialState.ownerPhotoData
         petPhotoData = initialState.petPhotoData
+        bondPhotoData = initialState.bondPhotoData
         behaviorSnapshots = initialState.behaviorSnapshots
         vaccinations = initialState.vaccinations
         medicalHistory = initialState.medicalHistory
@@ -187,12 +189,13 @@ final class AppViewModel: ObservableObject {
         activeSheet = .foodPreferenceEditor(preferenceID)
     }
 
-    func updateProfile(owner: OwnerProfile, pet: PetProfile, ownerPhotoData: Data?, petPhotoData: Data?) {
+    func updateProfile(owner: OwnerProfile, pet: PetProfile, ownerPhotoData: Data?, petPhotoData: Data?, bondPhotoData: Data?) {
         withAnimation(.spring(response: 0.34, dampingFraction: 0.9)) {
             self.owner = owner
             self.pet = pet
             self.ownerPhotoData = ownerPhotoData
             self.petPhotoData = petPhotoData
+            self.bondPhotoData = bondPhotoData
         }
     }
 
@@ -202,7 +205,8 @@ final class AppViewModel: ObservableObject {
             owner: owner,
             pet: pet,
             ownerPhotoData: ownerPhotoData,
-            petPhotoData: petPhotoData
+            petPhotoData: petPhotoData,
+            bondPhotoData: bondPhotoData
         )
         selectedTab = focus.preferredTab
         hasCompletedOnboarding = true
@@ -397,6 +401,7 @@ final class AppViewModel: ObservableObject {
                 pet: pet,
                 ownerPhotoData: ownerPhotoData,
                 petPhotoData: petPhotoData,
+                bondPhotoData: bondPhotoData,
                 behaviorSnapshots: behaviorSnapshots,
                 vaccinations: vaccinations,
                 medicalHistory: medicalHistory,
