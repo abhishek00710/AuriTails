@@ -119,6 +119,7 @@ extension AppStateStore {
                 date: date,
                 caption: object.string("caption"),
                 detail: object.string("detail"),
+                photoData: object.value(forKey: "photoData") as? Data,
                 systemImage: object.string("systemImage"),
                 tone: tone,
                 isAnnualCelebration: object.bool("isAnnualCelebration"),

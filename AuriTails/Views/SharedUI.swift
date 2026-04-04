@@ -1060,15 +1060,36 @@ struct MemoryPostcard: View {
         .padding(22)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         .background {
-            RoundedRectangle(cornerRadius: 30, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [memory.tone.primaryColor, memory.tone.secondaryColor, Color.black.opacity(0.26)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
+            ZStack {
+                if let photoData = memory.photoData, let image = UIImage(data: photoData) {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFill()
+                        .overlay {
+                            LinearGradient(
+                                colors: [
+                                    Color.black.opacity(0.16),
+                                    Color.black.opacity(0.08),
+                                    memory.tone.primaryColor.opacity(0.18),
+                                    Color.black.opacity(0.46),
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        }
+                } else {
+                    RoundedRectangle(cornerRadius: 30, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [memory.tone.primaryColor, memory.tone.secondaryColor, Color.black.opacity(0.26)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                }
+            }
         }
+        .clipShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 30, style: .continuous)
                 .strokeBorder(.white.opacity(0.16), lineWidth: 1)

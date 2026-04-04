@@ -1,3 +1,4 @@
+import PhotosUI
 import SwiftUI
 
 struct RoutineEditorView: View {
@@ -106,6 +107,7 @@ struct MemoryEditorView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var draft: MemoryMoment
     @State private var showsDeleteAlert = false
+    @State private var photoPickerItem: PhotosPickerItem?
 
     init(viewModel: AppViewModel, memoryID: UUID?) {
         self.viewModel = viewModel
@@ -114,6 +116,7 @@ struct MemoryEditorView: View {
             date: .now,
             caption: "",
             detail: "",
+            photoData: nil,
             systemImage: "heart.circle.fill",
             tone: .twilight,
             isAnnualCelebration: false
@@ -164,6 +167,8 @@ struct MemoryEditorView: View {
                 }
                 .tint(.white)
 
+                MemoryPhotoEditor(imageData: $draft.photoData, pickerItem: $photoPickerItem)
+
                 EditorTextField(title: "Caption", text: $draft.caption, icon: "quote.bubble.fill")
                 EditorTextEditor(title: "Story", text: $draft.detail, icon: "text.book.closed.fill", height: 120)
 
@@ -190,6 +195,78 @@ struct MemoryEditorView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("The slideshow and timeline will remove this moment.")
+        }
+        .task(id: photoPickerItem) {
+            if let photoPickerItem, let data = try? await photoPickerItem.loadTransferable(type: Data.self) {
+                draft.photoData = data
+            }
+        }
+    }
+}
+
+private struct MemoryPhotoEditor: View {
+    @Binding var imageData: Data?
+    @Binding var pickerItem: PhotosPickerItem?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label("Memory photo", systemImage: "photo.stack.fill")
+                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .foregroundStyle(.white.opacity(0.72))
+
+            ZStack {
+                if let imageData, let image = UIImage(data: imageData) {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFill()
+                } else {
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        .fill(.white.opacity(0.08))
+                        .overlay {
+                            VStack(spacing: 8) {
+                                Image(systemName: "photo.on.rectangle.angled")
+                                    .font(.system(size: 24, weight: .semibold))
+                                    .foregroundStyle(.white.opacity(0.72))
+                                Text("Add a photo to fill the memory postcard")
+                                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                                    .foregroundStyle(.white.opacity(0.68))
+                            }
+                        }
+                }
+            }
+            .frame(height: 220)
+            .clipped()
+            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .strokeBorder(.white.opacity(0.12), lineWidth: 1)
+            }
+
+            if imageData != nil {
+                Button {
+                    imageData = nil
+                } label: {
+                    Label("Remove Photo", systemImage: "trash")
+                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 11)
+                        .frame(maxWidth: .infinity)
+                        .background(.white.opacity(0.10), in: Capsule())
+                }
+                .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.96))
+            } else {
+                PhotosPicker(selection: $pickerItem, matching: .images) {
+                    Label("Choose Photo", systemImage: "photo.badge.plus")
+                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                        .foregroundStyle(Color(red: 0.10, green: 0.13, blue: 0.22))
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 11)
+                        .frame(maxWidth: .infinity)
+                        .background(Color.white, in: Capsule())
+                }
+                .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.96))
+            }
         }
     }
 }
