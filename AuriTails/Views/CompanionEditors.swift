@@ -215,10 +215,10 @@ private struct MemoryPhotoEditor: View {
                 .foregroundStyle(.white.opacity(0.72))
 
             ZStack {
-                if let imageData, let image = UIImage(data: imageData) {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFill()
+                if imageData != nil {
+                    CachedDataImage(imageData: imageData) {
+                        EmptyView()
+                    }
                 } else {
                     RoundedRectangle(cornerRadius: 24, style: .continuous)
                         .fill(.white.opacity(0.08))

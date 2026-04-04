@@ -1,6 +1,39 @@
 import SwiftUI
 import UIKit
 
+private enum DecodedImageCache {
+    private static let cache = NSCache<NSData, UIImage>()
+
+    static func image(from data: Data) -> UIImage? {
+        let key = data as NSData
+        if let cachedImage = cache.object(forKey: key) {
+            return cachedImage
+        }
+
+        guard let image = UIImage(data: data) else {
+            return nil
+        }
+
+        cache.setObject(image, forKey: key)
+        return image
+    }
+}
+
+struct CachedDataImage<Placeholder: View>: View {
+    let imageData: Data?
+    @ViewBuilder let placeholder: () -> Placeholder
+
+    var body: some View {
+        if let imageData, let image = DecodedImageCache.image(from: imageData) {
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFill()
+        } else {
+            placeholder()
+        }
+    }
+}
+
 extension ColorScheme {
     var topBarTitleColor: Color {
         self == .dark ? .white : Color.black.opacity(0.9)
@@ -80,14 +113,8 @@ struct CircularProfilePhoto: View {
     var size: CGFloat = 54
 
     var body: some View {
-        Group {
-            if let imageData, let image = UIImage(data: imageData) {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFill()
-            } else {
+        CachedDataImage(imageData: imageData) {
                 placeholder
-            }
         }
         .frame(width: size, height: size)
         .clipShape(Circle())
@@ -118,14 +145,8 @@ struct RoundedProfilePhoto: View {
     var maxWidth: CGFloat? = UIScreen.main.bounds.width / 2 - 32
 
     var body: some View {
-        Group {
-            if let imageData, let image = UIImage(data: imageData) {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFill()
-            } else {
+        CachedDataImage(imageData: imageData) {
                 placeholder
-            }
         }
         .frame(maxWidth: expandsHorizontally ? .infinity : maxWidth)
         .frame(height: height)
@@ -155,14 +176,8 @@ struct BondHeroPhoto: View {
     var cornerRadius: CGFloat = 30
 
     var body: some View {
-        Group {
-            if let imageData, let image = UIImage(data: imageData) {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFill()
-            } else {
+        CachedDataImage(imageData: imageData) {
                 BondPortraitArtwork()
-            }
         }
         .frame(maxWidth: .infinity)
         .frame(height: height)
@@ -1061,22 +1076,22 @@ struct MemoryPostcard: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         .background {
             ZStack {
-                if let photoData = memory.photoData, let image = UIImage(data: photoData) {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFill()
-                        .overlay {
-                            LinearGradient(
-                                colors: [
-                                    Color.black.opacity(0.16),
-                                    Color.black.opacity(0.08),
-                                    memory.tone.primaryColor.opacity(0.18),
-                                    Color.black.opacity(0.46),
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        }
+                if memory.photoData != nil {
+                    CachedDataImage(imageData: memory.photoData) {
+                        EmptyView()
+                    }
+                    .overlay {
+                        LinearGradient(
+                            colors: [
+                                Color.black.opacity(0.16),
+                                Color.black.opacity(0.08),
+                                memory.tone.primaryColor.opacity(0.18),
+                                Color.black.opacity(0.46),
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    }
                 } else {
                     RoundedRectangle(cornerRadius: 30, style: .continuous)
                         .fill(

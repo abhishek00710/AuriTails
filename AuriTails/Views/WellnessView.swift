@@ -5,7 +5,7 @@ struct WellnessView: View {
 
     var body: some View {
         ScrollView(showsIndicators: false) {
-            VStack(spacing: 22) {
+            LazyVStack(spacing: 22) {
                 overviewCard
                 vaccinationSection
                 medicalTimeline

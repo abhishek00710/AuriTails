@@ -8,7 +8,7 @@ struct MemoriesView: View {
 
     var body: some View {
         ScrollView(showsIndicators: false) {
-            VStack(spacing: 22) {
+            LazyVStack(spacing: 22) {
                 heroCard
 
                 TabView(selection: $selectedSlide) {
@@ -89,7 +89,7 @@ struct MemoriesView: View {
                 detail: "The best pet products rarely make space for emotion. This one treats it like a first-class feature."
             )
 
-            VStack(spacing: 16) {
+            LazyVStack(spacing: 16) {
                 ForEach(viewModel.memoryTimeline) { memory in
                     HStack(alignment: .top, spacing: 14) {
                         Image(systemName: memory.systemImage)

@@ -5,7 +5,7 @@ struct RoutinesView: View {
 
     var body: some View {
         ScrollView(showsIndicators: false) {
-            VStack(spacing: 22) {
+            LazyVStack(spacing: 22) {
                 summaryCard
 
                 GlassCard {
@@ -26,7 +26,7 @@ struct RoutinesView: View {
                 if viewModel.selectedDayRoutines.isEmpty {
                     emptyState
                 } else {
-                    VStack(spacing: 16) {
+                    LazyVStack(spacing: 16) {
                         ForEach(viewModel.selectedDayRoutines) { routine in
                             routineCard(routine)
                         }

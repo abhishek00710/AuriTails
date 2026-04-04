@@ -6,7 +6,7 @@ struct DashboardView: View {
 
     var body: some View {
         ScrollView(showsIndicators: false) {
-            VStack(spacing: 22) {
+            LazyVStack(spacing: 22) {
                 heroCard
                     .offset(y: hasAppeared ? 0 : 20)
                     .opacity(hasAppeared ? 1 : 0)
