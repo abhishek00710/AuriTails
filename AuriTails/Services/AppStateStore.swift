@@ -49,6 +49,7 @@ final class AppStateStore {
                     object.setValue(vaccine.nextDue, forKey: "nextDue")
                     object.setValue(vaccine.status.rawValue, forKey: "status")
                     object.setValue(vaccine.note, forKey: "note")
+                    object.setValue(vaccine.notificationsEnabled, forKey: "notificationsEnabled")
                     object.setValue(Int32(index), forKey: "sortIndex")
                 }
             }
@@ -88,6 +89,7 @@ final class AppStateStore {
                     object.setValue(routine.category.rawValue, forKey: "category")
                     object.setValue(routine.tone.rawValue, forKey: "tone")
                     object.setValue(routine.isCompleted, forKey: "isCompleted")
+                    object.setValue(routine.notificationsEnabled, forKey: "notificationsEnabled")
                     object.setValue(Int32(index), forKey: "sortIndex")
                 }
             }
@@ -99,9 +101,11 @@ final class AppStateStore {
                     object.setValue(memory.date, forKey: "date")
                     object.setValue(memory.caption, forKey: "caption")
                     object.setValue(memory.detail, forKey: "detail")
+                    object.setValue(memory.photoData, forKey: "photoData")
                     object.setValue(memory.systemImage, forKey: "systemImage")
                     object.setValue(memory.tone.rawValue, forKey: "tone")
                     object.setValue(memory.isAnnualCelebration, forKey: "isAnnualCelebration")
+                    object.setValue(memory.notificationsEnabled, forKey: "notificationsEnabled")
                     object.setValue(Int32(index), forKey: "sortIndex")
                 }
             }

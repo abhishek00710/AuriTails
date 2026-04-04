@@ -95,6 +95,15 @@ struct RoutinesView: View {
                         .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.9, pressedBrightness: 0.08))
 
                         Button {
+                            viewModel.toggleRoutineNotifications(routine.id)
+                        } label: {
+                            Image(systemName: routine.notificationsEnabled ? "bell.fill" : "bell.slash.fill")
+                                .font(.system(size: 19, weight: .semibold))
+                                .foregroundStyle(.white.opacity(0.9))
+                        }
+                        .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.9, pressedBrightness: 0.08))
+
+                        Button {
                             viewModel.toggleRoutine(routine.id)
                         } label: {
                             Image(systemName: routine.isCompleted ? "checkmark.circle.fill" : "circle")

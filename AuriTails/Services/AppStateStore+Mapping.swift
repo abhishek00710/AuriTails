@@ -30,6 +30,14 @@ extension AppStateStore {
             bondStatement: metadata.string("petBondStatement"),
             energySummary: metadata.string("petEnergySummary")
         )
+        let notificationPreferences = NotificationPreferences(
+            routinesEnabled: metadata.value(forKey: "routinesNotificationsEnabled") as? Bool ?? true,
+            vaccinesEnabled: metadata.value(forKey: "vaccinesNotificationsEnabled") as? Bool ?? true,
+            memoriesEnabled: metadata.value(forKey: "memoriesNotificationsEnabled") as? Bool ?? true,
+            routineLeadMinutes: Int(metadata.int32("routineLeadMinutes") == 0 ? 30 : metadata.int32("routineLeadMinutes")),
+            vaccineLeadDays: Int(metadata.int32("vaccineLeadDays") == 0 ? 1 : metadata.int32("vaccineLeadDays")),
+            memoryLeadDays: Int(metadata.int32("memoryLeadDays") == 0 ? 1 : metadata.int32("memoryLeadDays"))
+        )
 
         let behaviorSnapshots: [BehaviorSnapshot] = fetchSorted(Entity.behaviorSnapshot.name, by: "day", ascending: true, in: context).compactMap { object in
             guard let day = Weekday(rawValue: Int(object.int16("day"))) else { return nil }
@@ -53,7 +61,8 @@ extension AppStateStore {
                 lastGiven: lastGiven,
                 nextDue: nextDue,
                 status: status,
-                note: object.string("note")
+                note: object.string("note"),
+                notificationsEnabled: object.value(forKey: "notificationsEnabled") as? Bool ?? true
             )
         }
 
@@ -95,7 +104,8 @@ extension AppStateStore {
                 systemImage: object.string("systemImage"),
                 category: category,
                 tone: tone,
-                isCompleted: object.bool("isCompleted")
+                isCompleted: object.bool("isCompleted"),
+                notificationsEnabled: object.value(forKey: "notificationsEnabled") as? Bool ?? true
             )
         }
 
@@ -111,7 +121,8 @@ extension AppStateStore {
                 detail: object.string("detail"),
                 systemImage: object.string("systemImage"),
                 tone: tone,
-                isAnnualCelebration: object.bool("isAnnualCelebration")
+                isAnnualCelebration: object.bool("isAnnualCelebration"),
+                notificationsEnabled: object.value(forKey: "notificationsEnabled") as? Bool ?? true
             )
         }
 
@@ -120,6 +131,7 @@ extension AppStateStore {
             selectedDay: selectedDay,
             owner: owner,
             pet: pet,
+            notificationPreferences: notificationPreferences,
             ownerPhotoData: metadata.value(forKey: "ownerPhotoData") as? Data,
             petPhotoData: metadata.value(forKey: "petPhotoData") as? Data,
             bondPhotoData: metadata.value(forKey: "bondPhotoData") as? Data,
@@ -159,6 +171,12 @@ extension AppStateStore {
         object.setValue(state.ownerPhotoData, forKey: "ownerPhotoData")
         object.setValue(state.petPhotoData, forKey: "petPhotoData")
         object.setValue(state.bondPhotoData, forKey: "bondPhotoData")
+        object.setValue(state.notificationPreferences.routinesEnabled, forKey: "routinesNotificationsEnabled")
+        object.setValue(state.notificationPreferences.vaccinesEnabled, forKey: "vaccinesNotificationsEnabled")
+        object.setValue(state.notificationPreferences.memoriesEnabled, forKey: "memoriesNotificationsEnabled")
+        object.setValue(Int32(state.notificationPreferences.routineLeadMinutes), forKey: "routineLeadMinutes")
+        object.setValue(Int32(state.notificationPreferences.vaccineLeadDays), forKey: "vaccineLeadDays")
+        object.setValue(Int32(state.notificationPreferences.memoryLeadDays), forKey: "memoryLeadDays")
         object.setValue(state.onboardingFocus.rawValue, forKey: "onboardingFocus")
         object.setValue(state.hasCompletedOnboarding, forKey: "hasCompletedOnboarding")
     }

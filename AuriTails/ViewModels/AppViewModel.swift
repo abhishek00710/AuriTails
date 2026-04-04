@@ -9,6 +9,7 @@ final class AppViewModel: ObservableObject {
     @Published var activeSheet: AppSheet?
     @Published var owner: OwnerProfile { didSet { persist() } }
     @Published var pet: PetProfile { didSet { persist() } }
+    @Published var notificationPreferences: NotificationPreferences { didSet { persist() } }
     @Published var ownerPhotoData: Data? { didSet { persist() } }
     @Published var petPhotoData: Data? { didSet { persist() } }
     @Published var bondPhotoData: Data? { didSet { persist() } }
@@ -23,11 +24,13 @@ final class AppViewModel: ObservableObject {
 
     private let store: AppStateStore
     private let insightEngine: PetInsightEngine
+    private let notificationScheduler: NotificationScheduler
 
     init(
         seed: AppSeed,
         store: AppStateStore = AppStateStore(),
         insightEngine: PetInsightEngine? = nil,
+        notificationScheduler: NotificationScheduler = NotificationScheduler(),
         prefersPersistedState: Bool = true
     ) {
         let initialState = prefersPersistedState ? (store.load() ?? PersistedAppState(seed: seed)) : PersistedAppState(seed: seed)
@@ -36,6 +39,7 @@ final class AppViewModel: ObservableObject {
         selectedDay = initialState.selectedDay
         owner = initialState.owner
         pet = initialState.pet
+        notificationPreferences = initialState.notificationPreferences
         ownerPhotoData = initialState.ownerPhotoData
         petPhotoData = initialState.petPhotoData
         bondPhotoData = initialState.bondPhotoData
@@ -49,6 +53,12 @@ final class AppViewModel: ObservableObject {
         hasCompletedOnboarding = initialState.hasCompletedOnboarding
         self.store = store
         self.insightEngine = insightEngine ?? PetInsightEngine()
+        self.notificationScheduler = notificationScheduler
+
+        Task {
+            await notificationScheduler.requestAuthorizationIfNeeded()
+            await notificationScheduler.refreshNotifications(for: snapshotState())
+        }
     }
 
     @MainActor static func preview() async -> AppViewModel {
@@ -169,6 +179,11 @@ final class AppViewModel: ObservableObject {
         activeSheet = .profile
     }
 
+    func openNotificationSettings() {
+        closeMenu()
+        activeSheet = .notificationSettings
+    }
+
     func openRoutineEditor(_ routineID: UUID? = nil) {
         activeSheet = .routineEditor(routineID)
     }
@@ -216,6 +231,13 @@ final class AppViewModel: ObservableObject {
         guard let index = routines.firstIndex(where: { $0.id == routineID }) else { return }
         withAnimation(.spring(response: 0.28, dampingFraction: 0.9)) {
             routines[index].isCompleted.toggle()
+        }
+    }
+
+    func toggleRoutineNotifications(_ routineID: UUID) {
+        guard let index = routines.firstIndex(where: { $0.id == routineID }) else { return }
+        withAnimation(.spring(response: 0.28, dampingFraction: 0.9)) {
+            routines[index].notificationsEnabled.toggle()
         }
     }
 
@@ -274,6 +296,13 @@ final class AppViewModel: ObservableObject {
         }
     }
 
+    func toggleMemoryNotifications(_ memoryID: UUID) {
+        guard let index = memories.firstIndex(where: { $0.id == memoryID }) else { return }
+        withAnimation(.spring(response: 0.28, dampingFraction: 0.9)) {
+            memories[index].notificationsEnabled.toggle()
+        }
+    }
+
     func deleteMemory(_ memoryID: UUID) {
         withAnimation(.spring(response: 0.32, dampingFraction: 0.9)) {
             memories.removeAll { $0.id == memoryID }
@@ -293,6 +322,13 @@ final class AppViewModel: ObservableObject {
                 vaccinations.append(vaccine)
             }
             vaccinations.sort { $0.nextDue < $1.nextDue }
+        }
+    }
+
+    func toggleVaccineNotifications(_ vaccineID: UUID) {
+        guard let index = vaccinations.firstIndex(where: { $0.id == vaccineID }) else { return }
+        withAnimation(.spring(response: 0.28, dampingFraction: 0.9)) {
+            vaccinations[index].notificationsEnabled.toggle()
         }
     }
 
@@ -393,24 +429,31 @@ final class AppViewModel: ObservableObject {
     }
 
     private func persist() {
-        store.save(
-            PersistedAppState(
-                selectedTab: selectedTab,
-                selectedDay: selectedDay,
-                owner: owner,
-                pet: pet,
-                ownerPhotoData: ownerPhotoData,
-                petPhotoData: petPhotoData,
-                bondPhotoData: bondPhotoData,
-                behaviorSnapshots: behaviorSnapshots,
-                vaccinations: vaccinations,
-                medicalHistory: medicalHistory,
-                foodPreferences: foodPreferences,
-                routines: routines,
-                memories: memories,
-                onboardingFocus: onboardingFocus,
-                hasCompletedOnboarding: hasCompletedOnboarding
-            )
+        let state = snapshotState()
+        store.save(state)
+        Task {
+            await notificationScheduler.refreshNotifications(for: state)
+        }
+    }
+
+    private func snapshotState() -> PersistedAppState {
+        PersistedAppState(
+            selectedTab: selectedTab,
+            selectedDay: selectedDay,
+            owner: owner,
+            pet: pet,
+            notificationPreferences: notificationPreferences,
+            ownerPhotoData: ownerPhotoData,
+            petPhotoData: petPhotoData,
+            bondPhotoData: bondPhotoData,
+            behaviorSnapshots: behaviorSnapshots,
+            vaccinations: vaccinations,
+            medicalHistory: medicalHistory,
+            foodPreferences: foodPreferences,
+            routines: routines,
+            memories: memories,
+            onboardingFocus: onboardingFocus,
+            hasCompletedOnboarding: hasCompletedOnboarding
         )
     }
 }

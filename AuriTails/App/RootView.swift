@@ -66,6 +66,8 @@ struct RootView: View {
                 AICompanionView(viewModel: viewModel)
             case .profile:
                 ProfileStudioView(viewModel: viewModel)
+            case .notificationSettings:
+                NotificationSettingsView(viewModel: viewModel)
             case let .routineEditor(routineID):
                 RoutineEditorView(viewModel: viewModel, routineID: routineID)
             case let .memoryEditor(memoryID):

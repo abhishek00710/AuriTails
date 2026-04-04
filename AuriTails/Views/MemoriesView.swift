@@ -120,6 +120,15 @@ struct MemoriesView: View {
                                 .foregroundStyle(.white.opacity(0.72))
                         }
                         .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.92))
+
+                        Button {
+                            viewModel.toggleMemoryNotifications(memory.id)
+                        } label: {
+                            Image(systemName: memory.notificationsEnabled ? "bell.fill" : "bell.slash.fill")
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundStyle(.white.opacity(0.72))
+                        }
+                        .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.92))
                     }
                 }
             }

@@ -86,6 +86,15 @@ struct WellnessView: View {
                                         .foregroundStyle(.white.opacity(0.84))
                                 }
                                 .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.92))
+
+                                Button {
+                                    viewModel.toggleVaccineNotifications(record.id)
+                                } label: {
+                                    Image(systemName: record.notificationsEnabled ? "bell.fill" : "bell.slash.fill")
+                                        .font(.system(size: 18, weight: .semibold))
+                                        .foregroundStyle(.white.opacity(0.84))
+                                }
+                                .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.92))
                             }
 
                             VStack(alignment: .leading, spacing: 8) {

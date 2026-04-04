@@ -57,6 +57,12 @@ enum CoreDataModelFactory {
         let ownerPhotoData = attribute(name: "ownerPhotoData", type: .binaryDataAttributeType, optional: true, externalBinary: true)
         let petPhotoData = attribute(name: "petPhotoData", type: .binaryDataAttributeType, optional: true, externalBinary: true)
         let bondPhotoData = attribute(name: "bondPhotoData", type: .binaryDataAttributeType, optional: true, externalBinary: true)
+        let routinesNotificationsEnabled = attribute(name: "routinesNotificationsEnabled", type: .booleanAttributeType, optional: false)
+        let vaccinesNotificationsEnabled = attribute(name: "vaccinesNotificationsEnabled", type: .booleanAttributeType, optional: false)
+        let memoriesNotificationsEnabled = attribute(name: "memoriesNotificationsEnabled", type: .booleanAttributeType, optional: false)
+        let routineLeadMinutes = attribute(name: "routineLeadMinutes", type: .integer32AttributeType, optional: false)
+        let vaccineLeadDays = attribute(name: "vaccineLeadDays", type: .integer32AttributeType, optional: false)
+        let memoryLeadDays = attribute(name: "memoryLeadDays", type: .integer32AttributeType, optional: false)
         let onboardingFocus = attribute(name: "onboardingFocus", type: .stringAttributeType, optional: false)
         let hasCompletedOnboarding = attribute(name: "hasCompletedOnboarding", type: .booleanAttributeType, optional: false)
 
@@ -64,7 +70,10 @@ enum CoreDataModelFactory {
             id, selectedTab, selectedDay,
             ownerID, ownerName, ownerHeadline, ownerLocation, ownerNote,
             petID, petName, petSpecies, petBreed, petAgeDescription, petWeightDescription, petFavoriteTreat, petBondStatement, petEnergySummary,
-            ownerPhotoData, petPhotoData, bondPhotoData, onboardingFocus, hasCompletedOnboarding,
+            ownerPhotoData, petPhotoData, bondPhotoData,
+            routinesNotificationsEnabled, vaccinesNotificationsEnabled, memoriesNotificationsEnabled,
+            routineLeadMinutes, vaccineLeadDays, memoryLeadDays,
+            onboardingFocus, hasCompletedOnboarding,
         ]
         entity.uniquenessConstraints = [["id"]]
         entity.indexes = [index(named: "appMetadataIDIndex", property: id)]
@@ -98,6 +107,7 @@ enum CoreDataModelFactory {
             attribute(name: "nextDue", type: .dateAttributeType, optional: false),
             attribute(name: "status", type: .stringAttributeType, optional: false),
             attribute(name: "note", type: .stringAttributeType, optional: false),
+            attribute(name: "notificationsEnabled", type: .booleanAttributeType, optional: false),
             attribute(name: "sortIndex", type: .integer32AttributeType, optional: false),
         ]
         entity.uniquenessConstraints = [["id"]]
@@ -158,6 +168,7 @@ enum CoreDataModelFactory {
             attribute(name: "category", type: .stringAttributeType, optional: false),
             attribute(name: "tone", type: .stringAttributeType, optional: false),
             attribute(name: "isCompleted", type: .booleanAttributeType, optional: false),
+            attribute(name: "notificationsEnabled", type: .booleanAttributeType, optional: false),
             attribute(name: "sortIndex", type: .integer32AttributeType, optional: false),
         ]
         entity.uniquenessConstraints = [["id"]]
@@ -176,9 +187,11 @@ enum CoreDataModelFactory {
             attribute(name: "date", type: .dateAttributeType, optional: false),
             attribute(name: "caption", type: .stringAttributeType, optional: false),
             attribute(name: "detail", type: .stringAttributeType, optional: false),
+            attribute(name: "photoData", type: .binaryDataAttributeType, optional: true, externalBinary: true),
             attribute(name: "systemImage", type: .stringAttributeType, optional: false),
             attribute(name: "tone", type: .stringAttributeType, optional: false),
             attribute(name: "isAnnualCelebration", type: .booleanAttributeType, optional: false),
+            attribute(name: "notificationsEnabled", type: .booleanAttributeType, optional: false),
             attribute(name: "sortIndex", type: .integer32AttributeType, optional: false),
         ]
         entity.uniquenessConstraints = [["id"]]

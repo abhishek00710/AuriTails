@@ -590,6 +590,15 @@ struct SlideMenuPanel: View {
                     .foregroundStyle(.white.opacity(0.46))
 
                 SocialMenuActionRow(
+                    icon: "bell.badge.fill",
+                    iconTint: .apricot,
+                    title: "Notifications",
+                    subtitle: "Control reminder timing and which moments should ping you."
+                ) {
+                    viewModel.openNotificationSettings()
+                }
+
+                SocialMenuActionRow(
                     icon: "sparkles",
                     iconTint: .lagoon,
                     title: "Bond AI",

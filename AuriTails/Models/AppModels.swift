@@ -56,6 +56,7 @@ enum RootTab: String, CaseIterable, Identifiable, Codable {
 enum AppSheet: Identifiable {
     case ai
     case profile
+    case notificationSettings
     case routineEditor(UUID?)
     case memoryEditor(UUID?)
     case vaccineEditor(UUID?)
@@ -68,6 +69,8 @@ enum AppSheet: Identifiable {
             return "ai"
         case .profile:
             return "profile"
+        case .notificationSettings:
+            return "notification-settings"
         case let .routineEditor(id):
             return "routine-\(id?.uuidString ?? "new")"
         case let .memoryEditor(id):
@@ -80,6 +83,15 @@ enum AppSheet: Identifiable {
             return "food-\(id?.uuidString ?? "new")"
         }
     }
+}
+
+struct NotificationPreferences: Codable {
+    var routinesEnabled: Bool = true
+    var vaccinesEnabled: Bool = true
+    var memoriesEnabled: Bool = true
+    var routineLeadMinutes: Int = 30
+    var vaccineLeadDays: Int = 1
+    var memoryLeadDays: Int = 1
 }
 
 enum Weekday: Int, CaseIterable, Identifiable, Codable {
@@ -322,6 +334,7 @@ struct VaccineRecord: Identifiable, Codable {
     var nextDue: Date
     var status: VaccineStatus
     var note: String
+    var notificationsEnabled: Bool = true
 
     var lastGivenLabel: String {
         Self.dateFormatter.string(from: lastGiven)
@@ -331,11 +344,40 @@ struct VaccineRecord: Identifiable, Codable {
         Self.dateFormatter.string(from: nextDue)
     }
 
+    init(
+        id: UUID = UUID(),
+        title: String,
+        lastGiven: Date,
+        nextDue: Date,
+        status: VaccineStatus,
+        note: String,
+        notificationsEnabled: Bool = true
+    ) {
+        self.id = id
+        self.title = title
+        self.lastGiven = lastGiven
+        self.nextDue = nextDue
+        self.status = status
+        self.note = note
+        self.notificationsEnabled = notificationsEnabled
+    }
+
     private static let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "MMM dd, yyyy"
         return formatter
     }()
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        title = try container.decode(String.self, forKey: .title)
+        lastGiven = try container.decode(Date.self, forKey: .lastGiven)
+        nextDue = try container.decode(Date.self, forKey: .nextDue)
+        status = try container.decode(VaccineStatus.self, forKey: .status)
+        note = try container.decode(String.self, forKey: .note)
+        notificationsEnabled = try container.decodeIfPresent(Bool.self, forKey: .notificationsEnabled) ?? true
+    }
 }
 
 struct MedicalEntry: Identifiable, Codable {
@@ -375,9 +417,51 @@ struct RoutineItem: Identifiable, Codable {
     var category: RoutineCategory
     var tone: PaletteTone
     var isCompleted: Bool
+    var notificationsEnabled: Bool = true
 
     var durationLabel: String {
         "\(durationMinutes) min"
+    }
+
+    init(
+        id: UUID = UUID(),
+        title: String,
+        subtitle: String,
+        day: Weekday,
+        time: ClockTime,
+        durationMinutes: Int,
+        systemImage: String,
+        category: RoutineCategory,
+        tone: PaletteTone,
+        isCompleted: Bool,
+        notificationsEnabled: Bool = true
+    ) {
+        self.id = id
+        self.title = title
+        self.subtitle = subtitle
+        self.day = day
+        self.time = time
+        self.durationMinutes = durationMinutes
+        self.systemImage = systemImage
+        self.category = category
+        self.tone = tone
+        self.isCompleted = isCompleted
+        self.notificationsEnabled = notificationsEnabled
+    }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        title = try container.decode(String.self, forKey: .title)
+        subtitle = try container.decode(String.self, forKey: .subtitle)
+        day = try container.decode(Weekday.self, forKey: .day)
+        time = try container.decode(ClockTime.self, forKey: .time)
+        durationMinutes = try container.decode(Int.self, forKey: .durationMinutes)
+        systemImage = try container.decode(String.self, forKey: .systemImage)
+        category = try container.decode(RoutineCategory.self, forKey: .category)
+        tone = try container.decode(PaletteTone.self, forKey: .tone)
+        isCompleted = try container.decode(Bool.self, forKey: .isCompleted)
+        notificationsEnabled = try container.decodeIfPresent(Bool.self, forKey: .notificationsEnabled) ?? true
     }
 }
 
@@ -387,9 +471,11 @@ struct MemoryMoment: Identifiable, Codable {
     var date: Date
     var caption: String
     var detail: String
+    var photoData: Data?
     var systemImage: String
     var tone: PaletteTone
     var isAnnualCelebration: Bool
+    var notificationsEnabled: Bool = true
 
     var dateLabel: String {
         if isAnnualCelebration {
@@ -429,6 +515,44 @@ struct MemoryMoment: Identifiable, Codable {
         formatter.dateFormat = "MMMM d, yyyy"
         return formatter
     }()
+
+    init(
+        id: UUID = UUID(),
+        title: String,
+        date: Date,
+        caption: String,
+        detail: String,
+        photoData: Data? = nil,
+        systemImage: String,
+        tone: PaletteTone,
+        isAnnualCelebration: Bool,
+        notificationsEnabled: Bool = true
+    ) {
+        self.id = id
+        self.title = title
+        self.date = date
+        self.caption = caption
+        self.detail = detail
+        self.photoData = photoData
+        self.systemImage = systemImage
+        self.tone = tone
+        self.isAnnualCelebration = isAnnualCelebration
+        self.notificationsEnabled = notificationsEnabled
+    }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        title = try container.decode(String.self, forKey: .title)
+        date = try container.decode(Date.self, forKey: .date)
+        caption = try container.decode(String.self, forKey: .caption)
+        detail = try container.decode(String.self, forKey: .detail)
+        photoData = try container.decodeIfPresent(Data.self, forKey: .photoData)
+        systemImage = try container.decode(String.self, forKey: .systemImage)
+        tone = try container.decode(PaletteTone.self, forKey: .tone)
+        isAnnualCelebration = try container.decode(Bool.self, forKey: .isAnnualCelebration)
+        notificationsEnabled = try container.decodeIfPresent(Bool.self, forKey: .notificationsEnabled) ?? true
+    }
 }
 
 struct CompanionInsight: Identifiable {
@@ -445,6 +569,7 @@ struct PersistedAppState: Codable {
     var selectedDay: Weekday
     var owner: OwnerProfile
     var pet: PetProfile
+    var notificationPreferences: NotificationPreferences
     var ownerPhotoData: Data?
     var petPhotoData: Data?
     var bondPhotoData: Data?
@@ -462,6 +587,7 @@ struct PersistedAppState: Codable {
         selectedDay: Weekday,
         owner: OwnerProfile,
         pet: PetProfile,
+        notificationPreferences: NotificationPreferences,
         ownerPhotoData: Data?,
         petPhotoData: Data?,
         bondPhotoData: Data?,
@@ -478,6 +604,7 @@ struct PersistedAppState: Codable {
         self.selectedDay = selectedDay
         self.owner = owner
         self.pet = pet
+        self.notificationPreferences = notificationPreferences
         self.ownerPhotoData = ownerPhotoData
         self.petPhotoData = petPhotoData
         self.bondPhotoData = bondPhotoData
@@ -496,6 +623,7 @@ struct PersistedAppState: Codable {
         selectedDay = .current
         owner = seed.owner
         pet = seed.pet
+        notificationPreferences = NotificationPreferences()
         ownerPhotoData = nil
         petPhotoData = nil
         bondPhotoData = nil
@@ -507,6 +635,26 @@ struct PersistedAppState: Codable {
         memories = seed.memories
         onboardingFocus = .dashboard
         hasCompletedOnboarding = false
+    }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        selectedTab = try container.decode(RootTab.self, forKey: .selectedTab)
+        selectedDay = try container.decode(Weekday.self, forKey: .selectedDay)
+        owner = try container.decode(OwnerProfile.self, forKey: .owner)
+        pet = try container.decode(PetProfile.self, forKey: .pet)
+        notificationPreferences = try container.decodeIfPresent(NotificationPreferences.self, forKey: .notificationPreferences) ?? NotificationPreferences()
+        ownerPhotoData = try container.decodeIfPresent(Data.self, forKey: .ownerPhotoData)
+        petPhotoData = try container.decodeIfPresent(Data.self, forKey: .petPhotoData)
+        bondPhotoData = try container.decodeIfPresent(Data.self, forKey: .bondPhotoData)
+        behaviorSnapshots = try container.decode([BehaviorSnapshot].self, forKey: .behaviorSnapshots)
+        vaccinations = try container.decode([VaccineRecord].self, forKey: .vaccinations)
+        medicalHistory = try container.decode([MedicalEntry].self, forKey: .medicalHistory)
+        foodPreferences = try container.decode([FoodPreference].self, forKey: .foodPreferences)
+        routines = try container.decode([RoutineItem].self, forKey: .routines)
+        memories = try container.decode([MemoryMoment].self, forKey: .memories)
+        onboardingFocus = try container.decodeIfPresent(OnboardingFocus.self, forKey: .onboardingFocus) ?? .dashboard
+        hasCompletedOnboarding = try container.decodeIfPresent(Bool.self, forKey: .hasCompletedOnboarding) ?? false
     }
 }
 
