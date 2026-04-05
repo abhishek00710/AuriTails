@@ -33,7 +33,14 @@ final class NearbyPetCareService: NSObject, CLLocationManagerDelegate {
     }
 
     func refresh() {
-        guard CLLocationManager.locationServicesEnabled() else {
+        Task {
+            let servicesEnabled = await Self.locationServicesEnabled()
+            applyRefresh(locationServicesEnabled: servicesEnabled)
+        }
+    }
+
+    private func applyRefresh(locationServicesEnabled: Bool) {
+        guard locationServicesEnabled else {
             places = []
             isLoading = false
             statusMessage = L10n.tr(
@@ -72,6 +79,12 @@ final class NearbyPetCareService: NSObject, CLLocationManagerDelegate {
                 default: "Nearby pet hospital search is temporarily unavailable."
             )
         }
+    }
+
+    nonisolated private static func locationServicesEnabled() async -> Bool {
+        await Task.detached(priority: .userInitiated) {
+            CLLocationManager.locationServicesEnabled()
+        }.value
     }
 
     private func requestNearbySearch() {

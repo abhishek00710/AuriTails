@@ -31,11 +31,21 @@ struct AICompanionView: View {
                                 .font(.system(size: 22, weight: .semibold, design: .serif))
                                 .foregroundStyle(.white)
 
-                            BehaviorSparkline(snapshots: viewModel.behaviorSnapshots)
+                            if viewModel.hasBehaviorData {
+                                BehaviorSparkline(snapshots: viewModel.behaviorSnapshots)
 
-                            Text("Energy peaks are healthy, but calmness dips later in the week hint that \(viewModel.pet.name) does best when active rituals get a softer landing afterward.")
-                                .font(.system(size: 14, weight: .medium, design: .rounded))
-                                .foregroundStyle(.white.opacity(0.76))
+                                Text("Energy peaks are healthy, but calmness dips later in the week hint that \(viewModel.displayPetName) does best when active rituals get a softer landing afterward.")
+                                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                                    .foregroundStyle(.white.opacity(0.76))
+                            } else {
+                                Text("Bond AI is waiting for real signals")
+                                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                                    .foregroundStyle(.white)
+
+                                Text("Once you log a few routines, food notes, vaccines, or daily check-ins, Bond AI will shift from setup guidance into real pattern-based insight.")
+                                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                                    .foregroundStyle(.white.opacity(0.76))
+                            }
                         }
 
                         ForEach(viewModel.insights) { insight in

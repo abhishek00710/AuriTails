@@ -27,9 +27,12 @@ enum RootTab: String, CaseIterable, Identifiable, Codable {
     }
 
     func headerTitle(for petName: String) -> String {
+        let resolvedPetName = petName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        ? L10n.tr("your pet", default: "your pet")
+        : petName
         switch self {
         case .dashboard:
-            return L10n.format("Life with %@", default: "Life with %@", petName)
+            return L10n.format("Life with %@", default: "Life with %@", resolvedPetName)
         case .wellness:
             return L10n.tr("Wellness Passport", default: "Wellness Passport")
         case .routines:
@@ -40,13 +43,19 @@ enum RootTab: String, CaseIterable, Identifiable, Codable {
     }
 
     func headerSubtitle(ownerName: String, petName: String) -> String {
+        let resolvedOwnerName = ownerName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        ? L10n.tr("you", default: "you")
+        : ownerName
+        let resolvedPetName = petName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        ? L10n.tr("your pet", default: "your pet")
+        : petName
         switch self {
         case .dashboard:
             return L10n.format(
                 "A calmer, more beautiful rhythm for %@ and %@.",
                 default: "A calmer, more beautiful rhythm for %@ and %@.",
-                ownerName,
-                petName
+                resolvedOwnerName,
+                resolvedPetName
             )
         case .wellness:
             return L10n.tr("Vaccines, notes, food rituals, and the tiny details that matter.", default: "Vaccines, notes, food rituals, and the tiny details that matter.")
@@ -676,6 +685,31 @@ struct AppSeed {
     let foodPreferences: [FoodPreference]
     let routines: [RoutineItem]
     let memories: [MemoryMoment]
+
+    static let empty = AppSeed(
+        owner: OwnerProfile(
+            name: "",
+            headline: "",
+            location: "",
+            note: ""
+        ),
+        pet: PetProfile(
+            name: "",
+            species: "",
+            breed: "",
+            ageDescription: "",
+            weightDescription: "",
+            favoriteTreat: "",
+            bondStatement: "",
+            energySummary: ""
+        ),
+        behaviorSnapshots: [],
+        vaccinations: [],
+        medicalHistory: [],
+        foodPreferences: [],
+        routines: [],
+        memories: []
+    )
 
     static let preview = AppSeed(
         owner: OwnerProfile(

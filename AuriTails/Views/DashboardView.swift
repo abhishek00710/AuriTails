@@ -42,7 +42,7 @@ struct DashboardView: View {
                     .font(.system(size: 32, weight: .semibold, design: .serif))
                     .foregroundStyle(.white)
 
-                Text("\(viewModel.owner.name) and \(viewModel.pet.name) get one cinematic dashboard instead of four disconnected pet tools.")
+                Text("\(viewModel.displayOwnerName) and \(viewModel.displayPetName) get one cinematic dashboard instead of four disconnected pet tools.")
                     .font(.system(size: 15, weight: .medium, design: .rounded))
                     .foregroundStyle(.white.opacity(0.8))
 
@@ -52,7 +52,7 @@ struct DashboardView: View {
                     HStack(spacing: 14) {
                         VStack(alignment: .leading, spacing: 10) {
                             RoundedProfilePhoto(imageData: viewModel.ownerPhotoData, role: .owner, height: 122, cornerRadius: 26)
-                            Text(viewModel.owner.name)
+                            Text(viewModel.displayOwnerName)
                                 .font(.system(size: 14, weight: .semibold, design: .rounded))
                                 .foregroundStyle(.white)
                                 .lineLimit(1)
@@ -61,7 +61,7 @@ struct DashboardView: View {
 
                         VStack(alignment: .leading, spacing: 10) {
                             RoundedProfilePhoto(imageData: viewModel.petPhotoData, role: .pet, height: 122, cornerRadius: 26)
-                            Text(viewModel.pet.name)
+                            Text(viewModel.displayPetName)
                                 .font(.system(size: 14, weight: .semibold, design: .rounded))
                                 .foregroundStyle(.white)
                                 .lineLimit(1)
@@ -76,7 +76,7 @@ struct DashboardView: View {
                 HStack(spacing: 12) {
                     StatChip(title: "Bond Score", value: "\(viewModel.bondScore)")
                     StatChip(title: "Today's Rhythm", value: "\(viewModel.todaysRoutines.count) rituals")
-                    StatChip(title: "Next Glow", value: viewModel.nextCelebration?.title ?? "Captured")
+                    StatChip(title: "Next Glow", value: viewModel.nextCelebration?.title ?? "Ready")
                 }
             }
         }
@@ -104,11 +104,11 @@ struct DashboardView: View {
                     .font(.system(size: 13, weight: .bold, design: .rounded))
                     .foregroundStyle(.white.opacity(0.72))
 
-                Text(viewModel.nextCelebration?.title ?? "Photo story ready")
+                Text(viewModel.nextCelebration?.title ?? "First memory ready")
                     .font(.system(size: 18, weight: .semibold, design: .rounded))
                     .foregroundStyle(.white)
 
-                Text(viewModel.nextCelebration?.detail ?? "Moments stay close to routines and care, so the story feels whole.")
+                Text(viewModel.nextCelebration?.detail ?? "Add one milestone and AuriTails will turn it into a richer story card.")
                     .font(.system(size: 13, weight: .medium, design: .rounded))
                     .foregroundStyle(.white.opacity(0.72))
             }
@@ -123,12 +123,21 @@ struct DashboardView: View {
                 title: "This week's emotional rhythm",
                 detail: "Bars show energy. The white marker shows calmness, so you can spot when busy days need softer landings."
             )
+            if viewModel.hasBehaviorData {
+                BehaviorSparkline(snapshots: viewModel.behaviorSnapshots)
 
-            BehaviorSparkline(snapshots: viewModel.behaviorSnapshots)
+                Text(viewModel.pet.bondStatement.trimmedOrNil ?? "A few daily check-ins will turn this area into a live read of energy, calmness, appetite, and recovery.")
+                    .font(.system(size: 15, weight: .medium, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.8))
+            } else {
+                Text("No behavior data yet")
+                    .font(.system(size: 22, weight: .semibold, design: .serif))
+                    .foregroundStyle(.white)
 
-            Text(viewModel.pet.bondStatement)
-                .font(.system(size: 15, weight: .medium, design: .rounded))
-                .foregroundStyle(.white.opacity(0.8))
+                Text("After a few check-ins or care records, this view will start mapping emotional rhythm instead of showing filler data.")
+                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.76))
+            }
         }
     }
 

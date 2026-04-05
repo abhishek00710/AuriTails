@@ -638,6 +638,24 @@ struct SlideMenuPanel: View {
                 }
             }
 
+            #if DEBUG
+            VStack(alignment: .leading, spacing: 12) {
+                Text("DEVELOPMENT")
+                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .tracking(1.5)
+                    .foregroundStyle(.white.opacity(0.46))
+
+                SocialMenuActionRow(
+                    icon: "arrow.triangle.2.circlepath.circle.fill",
+                    iconTint: .meadow,
+                    title: "Switch app mode",
+                    subtitle: "Re-open onboarding so you can jump back into demo mode or start fresh."
+                ) {
+                    viewModel.reopenOnboardingForDevelopment()
+                }
+            }
+            #endif
+
             Text("Designed to feel more like a companion hub than a settings drawer.")
                 .font(.system(size: 12, weight: .medium, design: .rounded))
                 .foregroundStyle(.white.opacity(0.52))

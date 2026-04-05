@@ -129,6 +129,25 @@ final class AppViewModel: ObservableObject {
         )
     }
 
+    var displayOwnerName: String {
+        owner.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        ? L10n.tr("Pet Parent", default: "Pet Parent")
+        : owner.name
+    }
+
+    var displayPetName: String {
+        pet.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        ? L10n.tr("Your Pet", default: "Your Pet")
+        : pet.name
+    }
+
+    var hasBehaviorData: Bool { !behaviorSnapshots.isEmpty }
+    var hasRoutineData: Bool { !routines.isEmpty }
+    var hasMemoryData: Bool { !memories.isEmpty }
+    var hasVaccinationData: Bool { !vaccinations.isEmpty }
+    var hasMedicalData: Bool { !medicalHistory.isEmpty }
+    var hasFoodData: Bool { !foodPreferences.isEmpty }
+
     var selectedDayRoutines: [RoutineItem] {
         routines
             .filter { $0.day == selectedDay }
@@ -506,6 +525,26 @@ final class AppViewModel: ObservableObject {
         hasCompletedOnboarding = true
     }
 
+    func enterDemoMode() {
+        load(seed: .preview, onboardingCompleted: true)
+    }
+
+    func beginCleanSetup() {
+        load(seed: .empty, onboardingCompleted: false)
+    }
+
+    func reopenOnboardingForDevelopment() {
+        closeMenu()
+        activeSheet = nil
+        isShowingVaccineScanner = false
+        isExportingBackup = false
+        isImportingBackup = false
+        isImportingVaccineDocument = false
+        sharePayload = nil
+        backupNotice = nil
+        hasCompletedOnboarding = false
+    }
+
     func toggleRoutine(_ routineID: UUID) {
         guard let index = routines.firstIndex(where: { $0.id == routineID }) else { return }
         withAnimation(.spring(response: 0.28, dampingFraction: 0.9)) {
@@ -718,6 +757,30 @@ final class AppViewModel: ObservableObject {
 
     private func persistIfNeeded() {
         guard !isApplyingState else { return }
+        persist()
+    }
+
+    private func load(seed: AppSeed, onboardingCompleted: Bool) {
+        let state = PersistedAppState(seed: seed)
+        isApplyingState = true
+        selectedTab = .dashboard
+        selectedDay = .current
+        owner = state.owner
+        pet = state.pet
+        notificationPreferences = state.notificationPreferences
+        ownerPhotoData = nil
+        petPhotoData = nil
+        bondPhotoData = nil
+        behaviorSnapshots = state.behaviorSnapshots
+        vaccinations = state.vaccinations
+        medicalHistory = state.medicalHistory
+        foodPreferences = state.foodPreferences
+        routines = state.routines
+        memories = state.memories
+        onboardingFocus = .dashboard
+        hasCompletedOnboarding = onboardingCompleted
+        vaccineEditorSeed = nil
+        isApplyingState = false
         persist()
     }
 

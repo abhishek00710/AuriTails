@@ -7,6 +7,9 @@ struct OnboardingFlowView: View {
     @State private var ownerDraft: OwnerProfile
     @State private var petDraft: PetProfile
     @State private var focus: OnboardingFocus
+    #if DEBUG
+    @State private var showsStartMode = true
+    #endif
 
     init(viewModel: AppViewModel) {
         self.viewModel = viewModel
@@ -38,13 +41,20 @@ struct OnboardingFlowView: View {
     private var progressHeader: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
-                Text("Welcome to AuriTails")
+                Text(
+                    {
+                        #if DEBUG
+                        if showsStartMode { return "Choose your start" }
+                        #endif
+                        return "Welcome to AuriTails"
+                    }()
+                )
                     .font(.system(size: 28, weight: .semibold, design: .serif))
                     .foregroundStyle(.white)
 
                 Spacer()
 
-                Text("Step  \(step + 1) of 3")
+                Text(progressText)
                     .font(.system(size: 12, weight: .bold, design: .rounded))
                     .foregroundStyle(.white.opacity(0.72))
                     .padding(.horizontal, 12)
@@ -55,7 +65,7 @@ struct OnboardingFlowView: View {
             HStack(spacing: 8) {
                 ForEach(0..<3, id: \.self) { index in
                     Capsule()
-                        .fill(index <= step ? .white : .white.opacity(0.18))
+                        .fill(index < max(0, step + 1) ? .white : .white.opacity(0.18))
                         .frame(height: 8)
                 }
             }
@@ -64,6 +74,24 @@ struct OnboardingFlowView: View {
 
     @ViewBuilder
     private var currentStep: some View {
+        #if DEBUG
+        if showsStartMode {
+            startModeStep
+                .transition(.opacity.combined(with: .move(edge: .trailing)))
+        } else {
+            switch step {
+            case 0:
+                welcomeStep
+                    .transition(.opacity.combined(with: .move(edge: .trailing)))
+            case 1:
+                detailStep
+                    .transition(.opacity.combined(with: .move(edge: .trailing)))
+            default:
+                focusStep
+                    .transition(.opacity.combined(with: .move(edge: .trailing)))
+            }
+        }
+        #else
         switch step {
         case 0:
             welcomeStep
@@ -75,7 +103,66 @@ struct OnboardingFlowView: View {
             focusStep
                 .transition(.opacity.combined(with: .move(edge: .trailing)))
         }
+        #endif
     }
+
+    #if DEBUG
+    private var startModeStep: some View {
+        VStack(spacing: 22) {
+            GlassCard(tone: .lagoon) {
+                SectionHeader(
+                    eyebrow: "Debug tools",
+                    title: "Choose a clean setup or a demo world",
+                    detail: "Release builds always start clean. Demo mode exists only in Debug so you can preview the app with seeded content while building."
+                )
+
+                VStack(spacing: 14) {
+                    Button {
+                        viewModel.beginCleanSetup()
+                        ownerDraft = viewModel.owner
+                        petDraft = viewModel.pet
+                        focus = viewModel.onboardingFocus
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) {
+                            showsStartMode = false
+                            step = 0
+                        }
+                    } label: {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Start Fresh")
+                                .font(.system(size: 18, weight: .semibold, design: .rounded))
+                            Text("Production-style empty data, polished onboarding, and no sample records.")
+                                .font(.system(size: 13, weight: .medium, design: .rounded))
+                                .foregroundStyle(Color(red: 0.10, green: 0.13, blue: 0.22).opacity(0.78))
+                        }
+                        .foregroundStyle(Color(red: 0.10, green: 0.13, blue: 0.22))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(18)
+                        .background(Color.white, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+                    }
+                    .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.97))
+
+                    Button {
+                        viewModel.enterDemoMode()
+                    } label: {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Open Demo Mode")
+                                .font(.system(size: 18, weight: .semibold, design: .rounded))
+                            Text("Loads seeded sample wellness, routines, memories, and Bond Pulse content for testing.")
+                                .font(.system(size: 13, weight: .medium, design: .rounded))
+                                .foregroundStyle(.white.opacity(0.76))
+                        }
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(18)
+                        .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+                    }
+                    .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.97))
+                }
+            }
+            Spacer()
+        }
+    }
+    #endif
 
     private var welcomeStep: some View {
         ScrollView(showsIndicators: false) {
@@ -220,7 +307,20 @@ struct OnboardingFlowView: View {
         }
     }
 
+    @ViewBuilder
     private var footer: some View {
+        #if DEBUG
+        if showsStartMode {
+            EmptyView()
+        } else {
+            footerContent
+        }
+        #else
+        footerContent
+        #endif
+    }
+
+    private var footerContent: some View {
         HStack(spacing: 12) {
             if step > 0 {
                 Button {
@@ -328,6 +428,15 @@ struct OnboardingFlowView: View {
             Spacer()
         }
     }
+
+    private var progressText: String {
+        #if DEBUG
+        if showsStartMode {
+            return "Debug only"
+        }
+        #endif
+        return "Step  \(step + 1) of 3"
+    }
 }
 
 private struct OnboardingField: View {
@@ -352,7 +461,7 @@ private struct OnboardingField: View {
     }
 }
 
-private extension String {
+extension String {
     var trimmedOrNil: String? {
         let trimmed = trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? nil : trimmed

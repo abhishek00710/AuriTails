@@ -11,22 +11,33 @@ struct MemoriesView: View {
             LazyVStack(spacing: 22) {
                 heroCard
 
-                TabView(selection: $selectedSlide) {
-                    ForEach(Array(viewModel.featuredMemories.prefix(4).enumerated()), id: \.element.id) { index, memory in
-                        MemoryPostcard(memory: memory) {
-                            viewModel.openMemoryShare(memory)
+                if viewModel.hasMemoryData {
+                    TabView(selection: $selectedSlide) {
+                        ForEach(Array(viewModel.featuredMemories.prefix(4).enumerated()), id: \.element.id) { index, memory in
+                            MemoryPostcard(memory: memory) {
+                                viewModel.openMemoryShare(memory)
+                            }
+                                .padding(.horizontal, 2)
+                                .tag(index)
                         }
-                            .padding(.horizontal, 2)
-                            .tag(index)
                     }
-                }
-                .frame(height: 310)
-                .tabViewStyle(.page(indexDisplayMode: .always))
-                .onReceive(timer) { _ in
-                    let count = min(viewModel.featuredMemories.count, 4)
-                    guard count > 0 else { return }
-                    withAnimation(.easeInOut(duration: 0.8)) {
-                        selectedSlide = (selectedSlide + 1) % count
+                    .frame(height: 310)
+                    .tabViewStyle(.page(indexDisplayMode: .always))
+                    .onReceive(timer) { _ in
+                        let count = min(viewModel.featuredMemories.count, 4)
+                        guard count > 0 else { return }
+                        withAnimation(.easeInOut(duration: 0.8)) {
+                            selectedSlide = (selectedSlide + 1) % count
+                        }
+                    }
+                } else {
+                    GlassCard(tone: .meadow) {
+                        Text("No memories yet")
+                            .font(.system(size: 24, weight: .semibold, design: .serif))
+                            .foregroundStyle(.white)
+                        Text("Add a birthday, gotcha day, or small everyday moment and this space will turn it into a keepsake instead of a plain list.")
+                            .font(.system(size: 14, weight: .medium, design: .rounded))
+                            .foregroundStyle(.white.opacity(0.76))
                     }
                 }
 
@@ -79,6 +90,10 @@ struct MemoriesView: View {
 
                     Spacer()
                 }
+            } else {
+                Text("Your first celebration or memory will appear here once you add it.")
+                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.76))
             }
         }
     }
@@ -91,9 +106,14 @@ struct MemoriesView: View {
                 detail: "The best pet products rarely make space for emotion. This one treats it like a first-class feature."
             )
 
-            LazyVStack(spacing: 16) {
-                ForEach(viewModel.memoryTimeline) { memory in
-                    HStack(alignment: .top, spacing: 14) {
+            if viewModel.memoryTimeline.isEmpty {
+                Text("No moments in the timeline yet. Add one memory to start building the story of your bond.")
+                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.76))
+            } else {
+                LazyVStack(spacing: 16) {
+                    ForEach(viewModel.memoryTimeline) { memory in
+                        HStack(alignment: .top, spacing: 14) {
                         Image(systemName: memory.systemImage)
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundStyle(memory.tone.secondaryColor)
@@ -140,6 +160,7 @@ struct MemoriesView: View {
                                 .foregroundStyle(.white.opacity(0.72))
                         }
                         .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.92))
+                        }
                     }
                 }
             }

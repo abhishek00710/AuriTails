@@ -7,11 +7,14 @@ struct PetInsightEngine {
         foodPreferences: [FoodPreference],
         pet: PetProfile
     ) -> [CompanionInsight] {
+        let petName = pet.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        ? L10n.tr("your pet", default: "your pet")
+        : pet.name
         guard !snapshots.isEmpty else {
             return [
                 CompanionInsight(
                     title: L10n.tr("Start with one easy rhythm", default: "Start with one easy rhythm"),
-                    detail: L10n.format("Once %@'s week has a few logged routines, AuriTails can turn those patterns into calmer suggestions.", default: "Once %@'s week has a few logged routines, AuriTails can turn those patterns into calmer suggestions.", pet.name),
+                    detail: L10n.format("Once %@'s week has a few logged routines, AuriTails can turn those patterns into calmer suggestions.", default: "Once %@'s week has a few logged routines, AuriTails can turn those patterns into calmer suggestions.", petName),
                     suggestedAction: L10n.tr("Capture meals, a walk, and one recovery ritual first.", default: "Capture meals, a walk, and one recovery ritual first."),
                     priority: .steady,
                     systemImage: "sparkles"
@@ -32,7 +35,7 @@ struct PetInsightEngine {
             insights.append(
                 CompanionInsight(
                     title: L10n.tr("Evening calm dips after stacked stimulation", default: "Evening calm dips after stacked stimulation"),
-                    detail: L10n.format("%@ stays bright and engaged, but calmness drops most on %@ after a fuller activity block.", default: "%@ stays bright and engaged, but calmness drops most on %@ after a fuller activity block.", pet.name, lowestCalmDay.day.title),
+                    detail: L10n.format("%@ stays bright and engaged, but calmness drops most on %@ after a fuller activity block.", default: "%@ stays bright and engaged, but calmness drops most on %@ after a fuller activity block.", petName, lowestCalmDay.day.title),
                     suggestedAction: L10n.tr("Pair one active evening with a slower lick-mat or sniff session the following night.", default: "Pair one active evening with a slower lick-mat or sniff session the following night."),
                     priority: .watch,
                     systemImage: "moon.zzz.fill"
@@ -56,7 +59,7 @@ struct PetInsightEngine {
             insights.append(
                 CompanionInsight(
                     title: L10n.tr("Protect the dinner window", default: "Protect the dinner window"),
-                    detail: L10n.format("%@'s appetite looks strongest when dinner stays predictable and the protein stays gentle.", default: "%@'s appetite looks strongest when dinner stays predictable and the protein stays gentle.", pet.name),
+                    detail: L10n.format("%@'s appetite looks strongest when dinner stays predictable and the protein stays gentle.", default: "%@'s appetite looks strongest when dinner stays predictable and the protein stays gentle.", petName),
                     suggestedAction: L10n.tr("Keep broth dinners before 6:30 PM on high-energy days and limit chicken-heavy extras.", default: "Keep broth dinners before 6:30 PM on high-energy days and limit chicken-heavy extras."),
                     priority: .steady,
                     systemImage: "fork.knife.circle.fill"
