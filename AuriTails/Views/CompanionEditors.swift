@@ -167,7 +167,15 @@ struct MemoryEditorView: View {
                 }
                 .tint(.white)
 
-                MemoryPhotoEditor(imageData: $draft.photoData, pickerItem: $photoPickerItem)
+                AttachmentImageEditor(
+                    imageData: $draft.photoData,
+                    pickerItem: $photoPickerItem,
+                    title: "Memory photo",
+                    emptyMessage: "Add a photo to fill the memory postcard",
+                    chooseLabel: "Choose Photo",
+                    removeLabel: "Remove Photo",
+                    placeholderIcon: "photo.stack.fill"
+                )
 
                 EditorTextField(title: "Caption", text: $draft.caption, icon: "quote.bubble.fill")
                 EditorTextEditor(title: "Story", text: $draft.detail, icon: "text.book.closed.fill", height: 120)
@@ -204,13 +212,18 @@ struct MemoryEditorView: View {
     }
 }
 
-private struct MemoryPhotoEditor: View {
+private struct AttachmentImageEditor: View {
     @Binding var imageData: Data?
     @Binding var pickerItem: PhotosPickerItem?
+    let title: LocalizedStringKey
+    let emptyMessage: LocalizedStringKey
+    let chooseLabel: LocalizedStringKey
+    let removeLabel: LocalizedStringKey
+    let placeholderIcon: String
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Label("Memory photo", systemImage: "photo.stack.fill")
+            Label(title, systemImage: placeholderIcon)
                 .font(.system(size: 12, weight: .bold, design: .rounded))
                 .foregroundStyle(.white.opacity(0.72))
 
@@ -224,13 +237,15 @@ private struct MemoryPhotoEditor: View {
                         .fill(.white.opacity(0.08))
                         .overlay {
                             VStack(spacing: 8) {
-                                Image(systemName: "photo.on.rectangle.angled")
+                                Image(systemName: placeholderIcon)
                                     .font(.system(size: 24, weight: .semibold))
                                     .foregroundStyle(.white.opacity(0.72))
-                                Text("Add a photo to fill the memory postcard")
+                                Text(emptyMessage)
                                     .font(.system(size: 13, weight: .medium, design: .rounded))
                                     .foregroundStyle(.white.opacity(0.68))
+                                    .multilineTextAlignment(.center)
                             }
+                            .padding(.horizontal, 16)
                         }
                 }
             }
@@ -246,7 +261,7 @@ private struct MemoryPhotoEditor: View {
                 Button {
                     imageData = nil
                 } label: {
-                    Label("Remove Photo", systemImage: "trash")
+                    Label(removeLabel, systemImage: "trash")
                         .font(.system(size: 13, weight: .bold, design: .rounded))
                         .foregroundStyle(.white)
                         .padding(.horizontal, 14)
@@ -257,7 +272,7 @@ private struct MemoryPhotoEditor: View {
                 .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.96))
             } else {
                 PhotosPicker(selection: $pickerItem, matching: .images) {
-                    Label("Choose Photo", systemImage: "photo.badge.plus")
+                    Label(chooseLabel, systemImage: "photo.badge.plus")
                         .font(.system(size: 13, weight: .bold, design: .rounded))
                         .foregroundStyle(Color(red: 0.10, green: 0.13, blue: 0.22))
                         .padding(.horizontal, 14)
@@ -276,15 +291,17 @@ struct VaccineEditorView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var draft: VaccineRecord
     @State private var showsDeleteAlert = false
+    @State private var certificatePickerItem: PhotosPickerItem?
 
-    init(viewModel: AppViewModel, vaccineID: UUID?) {
+    init(viewModel: AppViewModel, vaccineID: UUID?, initialDraft: VaccineRecord? = nil) {
         self.viewModel = viewModel
-        _draft = State(initialValue: viewModel.vaccine(for: vaccineID) ?? VaccineRecord(
+        _draft = State(initialValue: viewModel.vaccine(for: vaccineID) ?? initialDraft ?? VaccineRecord(
             title: "",
             lastGiven: .now,
             nextDue: Calendar.current.date(byAdding: .year, value: 1, to: .now) ?? .now,
             status: .onTrack,
-            note: ""
+            note: "",
+            certificateData: nil
         ))
     }
 
@@ -310,6 +327,15 @@ struct VaccineEditorView: View {
                 DateEditor(title: "Last given", icon: "checkmark.seal.fill", date: $draft.lastGiven)
                 DateEditor(title: "Next due", icon: "calendar.badge.clock", date: $draft.nextDue)
                 EditorEnumPicker(title: "Status", icon: "waveform.path.ecg", selection: $draft.status, options: VaccineStatus.allCases)
+                AttachmentImageEditor(
+                    imageData: $draft.certificateData,
+                    pickerItem: $certificatePickerItem,
+                    title: "Vaccine certificate",
+                    emptyMessage: "Add the certificate so it can appear behind the vaccine passport card.",
+                    chooseLabel: "Choose Certificate",
+                    removeLabel: "Remove Certificate",
+                    placeholderIcon: "doc.text.image.fill"
+                )
                 EditorTextEditor(title: "Care note", text: $draft.note, icon: "note.text", height: 110)
             }
 
@@ -327,6 +353,11 @@ struct VaccineEditorView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("This removes the vaccine from the wellness passport.")
+        }
+        .task(id: certificatePickerItem) {
+            if let certificatePickerItem, let data = try? await certificatePickerItem.loadTransferable(type: Data.self) {
+                draft.certificateData = data
+            }
         }
     }
 

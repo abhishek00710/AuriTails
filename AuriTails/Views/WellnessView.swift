@@ -8,6 +8,7 @@ struct WellnessView: View {
         ScrollView(showsIndicators: false) {
             LazyVStack(spacing: 22) {
                 overviewCard
+                vetVisitPackSection
                 petCareSection
                 vaccinationSection
                 medicalTimeline
@@ -133,6 +134,48 @@ struct WellnessView: View {
         }
     }
 
+    private var vetVisitPackSection: some View {
+        GlassCard(tone: .twilight) {
+            SectionHeader(
+                eyebrow: "Vet ready",
+                title: "Visit pack and fast import",
+                detail: "Share a polished care PDF for appointments, or scan a vaccine certificate to prefill a record in seconds."
+            )
+
+            Button {
+                viewModel.shareVetVisitPack()
+            } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: "square.and.arrow.up.on.square.fill")
+                    Text("Share Vet Visit Pack")
+                }
+                .font(.system(size: 14, weight: .bold, design: .rounded))
+                .foregroundStyle(Color(red: 0.10, green: 0.13, blue: 0.22))
+                .padding(.horizontal, 18)
+                .padding(.vertical, 14)
+                .frame(maxWidth: .infinity)
+                .background(Color.white, in: Capsule())
+            }
+            .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.95))
+
+            HStack(spacing: 12) {
+                Button {
+                    viewModel.startVaccineScanner()
+                } label: {
+                    VetVisitActionLabel(title: "Scan Certificate", systemImage: "doc.text.viewfinder")
+                }
+                .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.95))
+
+                Button {
+                    viewModel.importVaccineDocument()
+                } label: {
+                    VetVisitActionLabel(title: "Import File", systemImage: "tray.and.arrow.down.fill")
+                }
+                .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.95))
+            }
+        }
+    }
+
     private var vaccinationSection: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .top, spacing: 12) {
@@ -159,7 +202,7 @@ struct WellnessView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 14) {
                     ForEach(viewModel.vaccinations) { record in
-                        GlassCard(tone: tone(for: record.status)) {
+                        VaccinePassportCard(record: record, tone: tone(for: record.status)) {
                             HStack(alignment: .top) {
                                 VStack(alignment: .leading, spacing: 10) {
                                     Text(record.title)
@@ -206,7 +249,7 @@ struct WellnessView: View {
                                 .font(.system(size: 13, weight: .medium, design: .rounded))
                                 .foregroundStyle(.white.opacity(0.72))
                         }
-                        .frame(width: 240)
+                        .frame(width: 240, alignment: .topLeading)
                     }
                 }
                 .padding(.vertical, 2)
@@ -341,6 +384,72 @@ struct WellnessView: View {
         case .onTrack:
             return .lagoon
         }
+    }
+}
+
+private struct VaccinePassportCard<Content: View>: View {
+    let record: VaccineRecord
+    let tone: PaletteTone
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            content
+        }
+        .padding(20)
+        .background {
+            ZStack {
+                if record.certificateData != nil {
+                    CachedDataImage(imageData: record.certificateData) {
+                        EmptyView()
+                    }
+                    .overlay {
+                        LinearGradient(
+                            colors: [
+                                tone.primaryColor.opacity(0.30),
+                                Color.black.opacity(0.10),
+                                Color.black.opacity(0.42),
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    }
+                } else {
+                    RoundedRectangle(cornerRadius: 30, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [tone.primaryColor, tone.secondaryColor, Color.black.opacity(0.24)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                }
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 30, style: .continuous)
+                .strokeBorder(.white.opacity(0.16), lineWidth: 1)
+        }
+        .shadow(color: Color.black.opacity(0.10), radius: 20, x: 0, y: 12)
+    }
+}
+
+private struct VetVisitActionLabel: View {
+    let title: LocalizedStringKey
+    let systemImage: String
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: systemImage)
+            Text(title)
+        }
+        .font(.system(size: 13, weight: .bold, design: .rounded))
+        .foregroundStyle(.white)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity)
+        .background(.white.opacity(0.10), in: Capsule())
     }
 }
 

@@ -2,6 +2,7 @@ import Combine
 import MapKit
 import SwiftUI
 import UIKit
+import VisionKit
 
 @MainActor
 final class AppViewModel: ObservableObject {
@@ -37,8 +38,11 @@ final class AppViewModel: ObservableObject {
     @Published var exportBackupDocument: AppBackupDocument?
     @Published var isExportingBackup = false
     @Published var isImportingBackup = false
+    @Published var isImportingVaccineDocument = false
+    @Published var isShowingVaccineScanner = false
     @Published var backupNotice: BackupNotice?
     @Published var sharePayload: SharePayload?
+    @Published var vaccineEditorSeed: VaccineRecord?
     @Published private(set) var nearbyPetCare: [PetCarePlace] = []
     @Published private(set) var isLoadingNearbyPetCare = false
     @Published private(set) var nearbyPetCareStatusMessage = L10n.tr(
@@ -50,6 +54,8 @@ final class AppViewModel: ObservableObject {
     private let insightEngine: PetInsightEngine
     private let notificationScheduler: NotificationScheduler
     private let nearbyPetCareService: NearbyPetCareService
+    private let vetVisitPackBuilder = VetVisitPackBuilder()
+    private let vaccineDocumentImportService = VaccineDocumentImportService()
     private var isApplyingState = false
     private var cancellables = Set<AnyCancellable>()
 
@@ -257,6 +263,85 @@ final class AppViewModel: ObservableObject {
         sharePayload = SharePayload(items: items)
     }
 
+    func shareVetVisitPack() {
+        do {
+            let document = try vetVisitPackBuilder.makeDocument(
+                owner: owner,
+                pet: pet,
+                vaccinations: vaccinations,
+                medicalHistory: medicalHistory,
+                foodPreferences: foodPreferences,
+                routines: routines,
+                bondPhotoData: bondPhotoData
+            )
+            sharePayload = SharePayload(items: [document.url])
+        } catch {
+            backupNotice = BackupNotice(
+                title: L10n.tr("Vet Pack Failed", default: "Vet Pack Failed"),
+                message: L10n.tr("AuriTails couldn't prepare the vet visit PDF right now.", default: "AuriTails couldn't prepare the vet visit PDF right now.")
+            )
+        }
+    }
+
+    func startVaccineScanner() {
+        guard VNDocumentCameraViewController.isSupported else {
+            backupNotice = BackupNotice(
+                title: L10n.tr("Scanner Unavailable", default: "Scanner Unavailable"),
+                message: L10n.tr("Document scanning isn't available on this device, but you can still import a file.", default: "Document scanning isn't available on this device, but you can still import a file.")
+            )
+            return
+        }
+        isShowingVaccineScanner = true
+    }
+
+    func cancelVaccineScanner() {
+        isShowingVaccineScanner = false
+    }
+
+    func handleScannedVaccinePages(_ pages: [UIImage]) {
+        isShowingVaccineScanner = false
+        Task {
+            guard let draft = await vaccineDocumentImportService.importFromScannedPages(pages) else {
+                backupNotice = BackupNotice(
+                    title: L10n.tr("Import Failed", default: "Import Failed"),
+                    message: L10n.tr("AuriTails couldn't read enough vaccine detail from that scan.", default: "AuriTails couldn't read enough vaccine detail from that scan.")
+                )
+                return
+            }
+            openImportedVaccineEditor(draft)
+        }
+    }
+
+    func importVaccineDocument() {
+        isImportingVaccineDocument = true
+    }
+
+    func handleVaccineDocumentImport(result: Result<URL, Error>) {
+        isImportingVaccineDocument = false
+
+        guard case let .success(url) = result else {
+            return
+        }
+
+        let accessed = url.startAccessingSecurityScopedResource()
+        defer {
+            if accessed {
+                url.stopAccessingSecurityScopedResource()
+            }
+        }
+
+        Task {
+            guard let draft = await vaccineDocumentImportService.importFromFile(url: url) else {
+                backupNotice = BackupNotice(
+                    title: L10n.tr("Import Failed", default: "Import Failed"),
+                    message: L10n.tr("That file couldn't be turned into a vaccine draft.", default: "That file couldn't be turned into a vaccine draft.")
+                )
+                return
+            }
+            openImportedVaccineEditor(draft)
+        }
+    }
+
     var appShareMessage: String {
         L10n.tr(
             "Check out AuriTails, the bond-first pet app for wellness, routines, memories, and gentle Bond Pulse insights.",
@@ -379,7 +464,15 @@ final class AppViewModel: ObservableObject {
     }
 
     func openVaccineEditor(_ vaccineID: UUID? = nil) {
+        if vaccineID == nil {
+            vaccineEditorSeed = nil
+        }
         activeSheet = .vaccineEditor(vaccineID)
+    }
+
+    func openImportedVaccineEditor(_ draft: VaccineRecord) {
+        vaccineEditorSeed = draft
+        activeSheet = .vaccineEditor(nil)
     }
 
     func openMedicalEntryEditor(_ entryID: UUID? = nil) {
@@ -508,6 +601,7 @@ final class AppViewModel: ObservableObject {
                 vaccinations.append(vaccine)
             }
             vaccinations.sort { $0.nextDue < $1.nextDue }
+            vaccineEditorSeed = nil
         }
     }
 

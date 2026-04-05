@@ -62,6 +62,7 @@ extension AppStateStore {
                 nextDue: nextDue,
                 status: status,
                 note: object.string("note"),
+                certificateData: object.value(forKey: "certificateData") as? Data,
                 notificationsEnabled: object.value(forKey: "notificationsEnabled") as? Bool ?? true
             )
         }

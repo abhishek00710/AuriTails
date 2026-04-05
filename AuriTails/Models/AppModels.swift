@@ -339,6 +339,7 @@ struct VaccineRecord: Identifiable, Codable {
     var nextDue: Date
     var status: VaccineStatus
     var note: String
+    var certificateData: Data?
     var notificationsEnabled: Bool = true
 
     var lastGivenLabel: String {
@@ -356,6 +357,7 @@ struct VaccineRecord: Identifiable, Codable {
         nextDue: Date,
         status: VaccineStatus,
         note: String,
+        certificateData: Data? = nil,
         notificationsEnabled: Bool = true
     ) {
         self.id = id
@@ -364,6 +366,7 @@ struct VaccineRecord: Identifiable, Codable {
         self.nextDue = nextDue
         self.status = status
         self.note = note
+        self.certificateData = certificateData
         self.notificationsEnabled = notificationsEnabled
     }
 
@@ -381,6 +384,7 @@ struct VaccineRecord: Identifiable, Codable {
         nextDue = try container.decode(Date.self, forKey: .nextDue)
         status = try container.decode(VaccineStatus.self, forKey: .status)
         note = try container.decode(String.self, forKey: .note)
+        certificateData = try container.decodeIfPresent(Data.self, forKey: .certificateData)
         notificationsEnabled = try container.decodeIfPresent(Bool.self, forKey: .notificationsEnabled) ?? true
     }
 }

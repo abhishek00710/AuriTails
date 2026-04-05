@@ -84,7 +84,7 @@ struct RootView: View {
             case let .memoryEditor(memoryID):
                 MemoryEditorView(viewModel: viewModel, memoryID: memoryID)
             case let .vaccineEditor(vaccineID):
-                VaccineEditorView(viewModel: viewModel, vaccineID: vaccineID)
+                VaccineEditorView(viewModel: viewModel, vaccineID: vaccineID, initialDraft: viewModel.vaccineEditorSeed)
             case let .medicalEntryEditor(entryID):
                 MedicalEntryEditorView(viewModel: viewModel, entryID: entryID)
             case let .foodPreferenceEditor(preferenceID):
@@ -105,6 +105,12 @@ struct RootView: View {
         ) { result in
             viewModel.handleBackupImport(result: result)
         }
+        .fileImporter(
+            isPresented: $viewModel.isImportingVaccineDocument,
+            allowedContentTypes: [.pdf, .image]
+        ) { result in
+            viewModel.handleVaccineDocumentImport(result: result)
+        }
         .alert(item: $viewModel.backupNotice) { notice in
             Alert(
                 title: Text(notice.title),
@@ -116,6 +122,13 @@ struct RootView: View {
         }
         .sheet(item: $viewModel.sharePayload) { payload in
             ActivityView(activityItems: payload.items)
+        }
+        .fullScreenCover(isPresented: $viewModel.isShowingVaccineScanner) {
+            VaccineDocumentScannerView(
+                onCancel: { viewModel.cancelVaccineScanner() },
+                onScan: { pages in viewModel.handleScannedVaccinePages(pages) }
+            )
+            .ignoresSafeArea()
         }
         .fullScreenCover(isPresented: onboardingBinding) {
             OnboardingFlowView(viewModel: viewModel)

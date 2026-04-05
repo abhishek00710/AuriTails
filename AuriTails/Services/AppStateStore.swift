@@ -49,6 +49,7 @@ final class AppStateStore {
                     object.setValue(vaccine.nextDue, forKey: "nextDue")
                     object.setValue(vaccine.status.rawValue, forKey: "status")
                     object.setValue(vaccine.note, forKey: "note")
+                    object.setValue(vaccine.certificateData, forKey: "certificateData")
                     object.setValue(vaccine.notificationsEnabled, forKey: "notificationsEnabled")
                     object.setValue(Int32(index), forKey: "sortIndex")
                 }

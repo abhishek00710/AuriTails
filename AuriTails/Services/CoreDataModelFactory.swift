@@ -107,6 +107,7 @@ enum CoreDataModelFactory {
             attribute(name: "nextDue", type: .dateAttributeType, optional: false),
             attribute(name: "status", type: .stringAttributeType, optional: false),
             attribute(name: "note", type: .stringAttributeType, optional: false),
+            attribute(name: "certificateData", type: .binaryDataAttributeType, optional: true, externalBinary: true),
             attribute(name: "notificationsEnabled", type: .booleanAttributeType, optional: false),
             attribute(name: "sortIndex", type: .integer32AttributeType, optional: false),
         ]
