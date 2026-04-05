@@ -13,7 +13,9 @@ struct MemoriesView: View {
 
                 TabView(selection: $selectedSlide) {
                     ForEach(Array(viewModel.featuredMemories.prefix(4).enumerated()), id: \.element.id) { index, memory in
-                        MemoryPostcard(memory: memory)
+                        MemoryPostcard(memory: memory) {
+                            viewModel.openMemoryShare(memory)
+                        }
                             .padding(.horizontal, 2)
                             .tag(index)
                     }
@@ -116,6 +118,15 @@ struct MemoriesView: View {
                             viewModel.openMemoryEditor(memory.id)
                         } label: {
                             Image(systemName: "pencil.circle.fill")
+                                .font(.system(size: 20, weight: .semibold))
+                                .foregroundStyle(.white.opacity(0.72))
+                        }
+                        .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.92))
+
+                        Button {
+                            viewModel.openMemoryShare(memory)
+                        } label: {
+                            Image(systemName: "square.and.arrow.up.circle.fill")
                                 .font(.system(size: 20, weight: .semibold))
                                 .foregroundStyle(.white.opacity(0.72))
                         }

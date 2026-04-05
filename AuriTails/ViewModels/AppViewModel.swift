@@ -1,5 +1,6 @@
 import Combine
 import SwiftUI
+import UIKit
 
 @MainActor
 final class AppViewModel: ObservableObject {
@@ -7,6 +8,11 @@ final class AppViewModel: ObservableObject {
         let id = UUID()
         let title: String
         let message: String
+    }
+
+    struct SharePayload: Identifiable {
+        let id = UUID()
+        let items: [Any]
     }
 
     @Published var selectedTab: RootTab { didSet { persistIfNeeded() } }
@@ -31,6 +37,7 @@ final class AppViewModel: ObservableObject {
     @Published var isExportingBackup = false
     @Published var isImportingBackup = false
     @Published var backupNotice: BackupNotice?
+    @Published var sharePayload: SharePayload?
 
     private let store: AppStateStore
     private let insightEngine: PetInsightEngine
@@ -193,6 +200,48 @@ final class AppViewModel: ObservableObject {
     func openNotificationSettings() {
         closeMenu()
         activeSheet = .notificationSettings
+    }
+
+    func openAppShare() {
+        closeMenu()
+        sharePayload = SharePayload(items: [appShareMessage])
+    }
+
+    func openMemoryShare(_ memory: MemoryMoment) {
+        var items: [Any] = []
+        if let data = memory.photoData, let image = UIImage(data: data) {
+            items.append(image)
+        }
+        items.append(shareMessage(for: memory))
+        sharePayload = SharePayload(items: items)
+    }
+
+    var appShareMessage: String {
+        L10n.tr(
+            "Check out AuriTails, the bond-first pet app for wellness, routines, memories, and gentle Bond Pulse insights.",
+            default: "Check out AuriTails, the bond-first pet app for wellness, routines, memories, and gentle Bond Pulse insights."
+        )
+    }
+
+    func shareMessage(for memory: MemoryMoment) -> String {
+        if memory.detail.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return L10n.format(
+                "Memory from AuriTails\n%@\n%@\n%@",
+                default: "Memory from AuriTails\n%@\n%@\n%@",
+                memory.title,
+                memory.dateLabel,
+                memory.caption
+            )
+        }
+
+        return L10n.format(
+            "Memory from AuriTails\n%@\n%@\n%@\n\n%@",
+            default: "Memory from AuriTails\n%@\n%@\n%@\n\n%@",
+            memory.title,
+            memory.dateLabel,
+            memory.caption,
+            memory.detail
+        )
     }
 
     var backupFilename: String {

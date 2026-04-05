@@ -620,6 +620,15 @@ struct SlideMenuPanel: View {
                 )
 
                 SocialMenuActionRow(
+                    icon: "square.and.arrow.up.fill",
+                    iconTint: .twilight,
+                    title: "Share AuriTails",
+                    subtitle: "Invite someone else into the bond-first pet care experience."
+                ) {
+                    viewModel.openAppShare()
+                }
+
+                SocialMenuActionRow(
                     icon: "sparkles",
                     iconTint: .lagoon,
                     title: "Bond Pulse",
@@ -720,47 +729,157 @@ private struct SocialMenuActionRow: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 14) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .fill(iconTint.primaryColor.opacity(0.22))
-
-                    Image(systemName: icon)
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundStyle(iconTint.secondaryColor)
-                }
-                .frame(width: 46, height: 46)
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(title)
-                        .font(.system(size: 16, weight: .semibold, design: .rounded))
-                        .foregroundStyle(.white)
-
-                    Text(subtitle)
-                        .font(.system(size: 13, weight: .medium, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.66))
-                        .multilineTextAlignment(.leading)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-                Spacer(minLength: 0)
-
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(.white.opacity(0.40))
-            }
-            .padding(16)
-            .background(
-                RoundedRectangle(cornerRadius: 24, style: .continuous)
-                    .fill(Color.white.opacity(0.08))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 24, style: .continuous)
-                            .strokeBorder(Color.white.opacity(0.10), lineWidth: 1)
-                    }
+            SocialMenuActionRowLabel(
+                icon: icon,
+                iconTint: iconTint,
+                title: title,
+                subtitle: subtitle
             )
         }
         .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.98, pressedBrightness: 0.02))
+    }
+}
+
+private struct SocialMenuActionRowLabel: View {
+    let icon: String
+    let iconTint: PaletteTone
+    let title: LocalizedStringKey
+    let subtitle: LocalizedStringKey
+
+    var body: some View {
+        HStack(spacing: 14) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(iconTint.primaryColor.opacity(0.22))
+
+                Image(systemName: icon)
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(iconTint.secondaryColor)
+            }
+            .frame(width: 46, height: 46)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.white)
+
+                Text(subtitle)
+                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.66))
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Spacer(minLength: 0)
+
+            Image(systemName: "chevron.right")
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(.white.opacity(0.40))
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .fill(Color.white.opacity(0.08))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        .strokeBorder(Color.white.opacity(0.10), lineWidth: 1)
+                }
+        )
+    }
+}
+
+struct MemoryPostcard: View {
+    let memory: MemoryMoment
+    var onShare: (() -> Void)? = nil
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            HStack(spacing: 14) {
+                Label(memory.dateLabel, systemImage: memory.systemImage)
+                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .foregroundStyle(Color(red: 0.12, green: 0.15, blue: 0.22))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(.white.opacity(0.65), in: Capsule())
+
+                Spacer()
+
+                if let onShare {
+                    Button(action: onShare) {
+                        Image(systemName: "square.and.arrow.up")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundStyle(Color(red: 0.12, green: 0.15, blue: 0.22))
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 8)
+                            .background(.white.opacity(0.65), in: Capsule())
+                    }
+                    .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.95))
+                }
+
+                if let days = memory.daysUntilNextCelebration {
+                    Text("\(days)d")
+                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .foregroundStyle(Color(red: 0.12, green: 0.15, blue: 0.22))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 8)
+                        .background(.white.opacity(0.65), in: Capsule())
+                }
+            }
+
+            Spacer()
+
+            VStack(alignment: .leading, spacing: 10) {
+                Text(memory.title)
+                    .font(.system(size: 28, weight: .semibold, design: .serif))
+                    .foregroundStyle(.white)
+
+                Text(memory.caption)
+                    .font(.system(size: 15, weight: .medium, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.8))
+
+                Text(memory.detail)
+                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.74))
+            }
+        }
+        .padding(22)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        .background {
+            ZStack {
+                if memory.photoData != nil {
+                    CachedDataImage(imageData: memory.photoData) {
+                        EmptyView()
+                    }
+                    .overlay {
+                        LinearGradient(
+                            colors: [
+                                Color.black.opacity(0.16),
+                                Color.black.opacity(0.08),
+                                memory.tone.primaryColor.opacity(0.18),
+                                Color.black.opacity(0.46),
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    }
+                } else {
+                    RoundedRectangle(cornerRadius: 30, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [memory.tone.primaryColor, memory.tone.secondaryColor, Color.black.opacity(0.26)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                }
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 30, style: .continuous)
+                .strokeBorder(.white.opacity(0.16), lineWidth: 1)
+        }
     }
 }
 
@@ -1135,87 +1254,6 @@ struct BondPortraitArtwork: View {
             }
         }
         .frame(height: 250)
-    }
-}
-
-struct MemoryPostcard: View {
-    let memory: MemoryMoment
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            HStack {
-                Label(memory.dateLabel, systemImage: memory.systemImage)
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
-                    .foregroundStyle(Color(red: 0.12, green: 0.15, blue: 0.22))
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(.white.opacity(0.65), in: Capsule())
-
-                Spacer()
-
-                if let days = memory.daysUntilNextCelebration {
-                    Text("\(days)d")
-                        .font(.system(size: 12, weight: .bold, design: .rounded))
-                        .foregroundStyle(Color(red: 0.12, green: 0.15, blue: 0.22))
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 8)
-                        .background(.white.opacity(0.65), in: Capsule())
-                }
-            }
-
-            Spacer()
-
-            VStack(alignment: .leading, spacing: 10) {
-                Text(memory.title)
-                    .font(.system(size: 28, weight: .semibold, design: .serif))
-                    .foregroundStyle(.white)
-
-                Text(memory.caption)
-                    .font(.system(size: 15, weight: .medium, design: .rounded))
-                    .foregroundStyle(.white.opacity(0.8))
-
-                Text(memory.detail)
-                    .font(.system(size: 13, weight: .medium, design: .rounded))
-                    .foregroundStyle(.white.opacity(0.74))
-            }
-        }
-        .padding(22)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-        .background {
-            ZStack {
-                if memory.photoData != nil {
-                    CachedDataImage(imageData: memory.photoData) {
-                        EmptyView()
-                    }
-                    .overlay {
-                        LinearGradient(
-                            colors: [
-                                Color.black.opacity(0.16),
-                                Color.black.opacity(0.08),
-                                memory.tone.primaryColor.opacity(0.18),
-                                Color.black.opacity(0.46),
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    }
-                } else {
-                    RoundedRectangle(cornerRadius: 30, style: .continuous)
-                        .fill(
-                            LinearGradient(
-                                colors: [memory.tone.primaryColor, memory.tone.secondaryColor, Color.black.opacity(0.26)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                }
-            }
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 30, style: .continuous)
-                .strokeBorder(.white.opacity(0.16), lineWidth: 1)
-        }
     }
 }
 

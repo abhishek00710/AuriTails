@@ -1,5 +1,6 @@
 import SwiftUI
 import UniformTypeIdentifiers
+import UIKit
 
 struct RootView: View {
     @ObservedObject var viewModel: AppViewModel
@@ -44,11 +45,20 @@ struct RootView: View {
             }
 
             if viewModel.isMenuPresented {
-                SlideMenuPanel(viewModel: viewModel)
-                    .frame(width: 336)
-                    .padding(.top, 74)
-                    .padding(.trailing, 14)
-                    .transition(.move(edge: .trailing).combined(with: .opacity))
+                GeometryReader { proxy in
+                    HStack {
+                        Spacer()
+
+                        ScrollView(showsIndicators: false) {
+                            SlideMenuPanel(viewModel: viewModel)
+                        }
+                        .frame(width: 336)
+                        .frame(maxHeight: max(200, proxy.size.height - 92))
+                        .padding(.top, 74)
+                        .padding(.trailing, 14)
+                    }
+                }
+                .transition(.move(edge: .trailing).combined(with: .opacity))
             }
 
             if isShowingSplash {
@@ -103,6 +113,9 @@ struct RootView: View {
                     viewModel.clearBackupNotice()
                 }
             )
+        }
+        .sheet(item: $viewModel.sharePayload) { payload in
+            ActivityView(activityItems: payload.items)
         }
         .fullScreenCover(isPresented: onboardingBinding) {
             OnboardingFlowView(viewModel: viewModel)
@@ -182,4 +195,14 @@ struct RootView: View {
                 .transition(.opacity.combined(with: .move(edge: .trailing)))
         }
     }
+}
+
+private struct ActivityView: UIViewControllerRepresentable {
+    let activityItems: [Any]
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
+    }
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }

@@ -54,6 +54,9 @@
 "No urgent health paperwork waiting." = "No hay trámites de salud urgentes pendientes.";
 "All clear" = "Todo en orden";
 "AuriTails-Backup" = "AuriTails-Respaldo";
+"Check out AuriTails, the bond-first pet app for wellness, routines, memories, and gentle Bond Pulse insights." = "Descubre AuriTails, la app de mascotas centrada en el vínculo para bienestar, rutinas, recuerdos y suaves ideas de Bond Pulse.";
+"Memory from AuriTails\n%@\n%@\n%@" = "Recuerdo de AuriTails\n%@\n%@\n%@";
+"Memory from AuriTails\n%@\n%@\n%@\n\n%@" = "Recuerdo de AuriTails\n%@\n%@\n%@\n\n%@";
 "Backup Failed" = "Falló el respaldo";
 "AuriTails couldn't prepare the backup file. Please try again." = "AuriTails no pudo preparar el archivo de respaldo. Inténtalo de nuevo.";
 "Backup Saved" = "Respaldo guardado";
@@ -130,6 +133,8 @@
 "TOOLS" = "HERRAMIENTAS";
 "Control reminder timing and which moments should ping you." = "Controla el momento de los recordatorios y qué momentos deben avisarte.";
 "Bond Pulse" = "Pulso del vínculo";
+"Share AuriTails" = "Compartir AuriTails";
+"Invite someone else into the bond-first pet care experience." = "Invita a alguien más a la experiencia de cuidado de mascotas centrada en el vínculo.";
 "Designed to feel more like a companion hub than a settings drawer." = "Diseñado para sentirse más como un centro de compañía que como un panel de ajustes.";
 "View profile studio" = "Ver estudio de perfil";
 "Backup" = "Respaldo";
