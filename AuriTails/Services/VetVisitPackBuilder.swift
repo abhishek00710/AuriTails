@@ -201,17 +201,26 @@ struct VetVisitPackBuilder {
         yOffset += 36
 
         for row in rows {
-            let frame = CGRect(x: 36, y: yOffset, width: bounds.width - 72, height: 48)
+            let valueAttributes = attributed(fontSize: 13, weight: .medium, color: UIColor(red: 0.22, green: 0.27, blue: 0.34, alpha: 1))
+            let valueWidth = bounds.width - 72 - 188
+            let valueHeight = NSString(string: row.1).boundingRect(
+                with: CGSize(width: valueWidth, height: .greatestFiniteMagnitude),
+                options: [.usesLineFragmentOrigin, .usesFontLeading],
+                attributes: valueAttributes,
+                context: nil
+            ).height
+            let rowHeight = max(48, ceil(valueHeight) + 20)
+            let frame = CGRect(x: 36, y: yOffset, width: bounds.width - 72, height: rowHeight)
             fillRow(frame: frame)
             NSString(string: row.0).draw(
                 in: CGRect(x: 52, y: yOffset + 10, width: 170, height: 16),
                 withAttributes: attributed(fontSize: 13, weight: .bold, color: UIColor(red: 0.10, green: 0.13, blue: 0.22, alpha: 1))
             )
             NSString(string: row.1).draw(
-                in: CGRect(x: 224, y: yOffset + 10, width: frame.width - 188, height: 28),
-                withAttributes: attributed(fontSize: 13, weight: .medium, color: UIColor(red: 0.22, green: 0.27, blue: 0.34, alpha: 1))
+                in: CGRect(x: 224, y: yOffset + 10, width: valueWidth, height: rowHeight - 20),
+                withAttributes: valueAttributes
             )
-            yOffset += 58
+            yOffset += rowHeight + 10
         }
     }
 
