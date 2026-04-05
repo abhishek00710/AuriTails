@@ -1,3 +1,4 @@
+import MapKit
 import SwiftUI
 
 struct WellnessView: View {
@@ -7,6 +8,7 @@ struct WellnessView: View {
         ScrollView(showsIndicators: false) {
             LazyVStack(spacing: 22) {
                 overviewCard
+                petCareSection
                 vaccinationSection
                 medicalTimeline
                 foodSection
@@ -32,6 +34,102 @@ struct WellnessView: View {
             Text(viewModel.pet.energySummary)
                 .font(.system(size: 15, weight: .medium, design: .rounded))
                 .foregroundStyle(.white.opacity(0.82))
+        }
+    }
+
+    private var petCareSection: some View {
+        GlassCard(tone: .apricot) {
+            HStack(alignment: .top, spacing: 12) {
+                SectionHeader(
+                    eyebrow: "Nearby care",
+                    title: "Pet hospital locator",
+                    detail: "Find nearby veterinary hospitals and emergency clinics without leaving the wellness flow."
+                )
+
+                Spacer(minLength: 0)
+
+                Button {
+                    viewModel.refreshNearbyPetCare()
+                } label: {
+                    Image(systemName: "location.magnifyingglass")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(Color(red: 0.10, green: 0.13, blue: 0.22))
+                        .frame(width: 42, height: 42)
+                        .background(Color.white, in: Circle())
+                }
+                .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.92))
+            }
+
+            if viewModel.isLoadingNearbyPetCare {
+                HStack(spacing: 12) {
+                    ProgressView()
+                        .tint(.white)
+
+                    Text(viewModel.nearbyPetCareStatusMessage)
+                        .font(.system(size: 14, weight: .medium, design: .rounded))
+                        .foregroundStyle(.white.opacity(0.8))
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            } else if viewModel.nearbyPetCare.isEmpty {
+                Text(viewModel.nearbyPetCareStatusMessage)
+                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.8))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(16)
+                    .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+            } else {
+                LazyVStack(spacing: 12) {
+                    ForEach(viewModel.nearbyPetCare.prefix(4)) { place in
+                        VStack(alignment: .leading, spacing: 12) {
+                            HStack(alignment: .top, spacing: 12) {
+                                VStack(alignment: .leading, spacing: 6) {
+                                    Text(place.name)
+                                        .font(.system(size: 17, weight: .semibold, design: .rounded))
+                                        .foregroundStyle(.white)
+
+                                    Text(place.address)
+                                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                                        .foregroundStyle(.white.opacity(0.72))
+
+                                    Text(place.distanceText)
+                                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                                        .foregroundStyle(.white.opacity(0.56))
+                                }
+
+                                Spacer(minLength: 0)
+                            }
+
+                            HStack(spacing: 10) {
+                                Button {
+                                    viewModel.openDirections(to: place)
+                                } label: {
+                                    LocatorActionLabel(title: "Directions", systemImage: "car.fill")
+                                }
+                                .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.95))
+
+                                if place.phoneNumber != nil {
+                                    Button {
+                                        viewModel.call(place)
+                                    } label: {
+                                        LocatorActionLabel(title: "Call", systemImage: "phone.fill")
+                                    }
+                                    .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.95))
+                                }
+
+                                Button {
+                                    place.mapItem.openInMaps()
+                                } label: {
+                                    LocatorActionLabel(title: "Maps", systemImage: "map.fill")
+                                }
+                                .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.95))
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(16)
+                        .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+                    }
+                }
+            }
         }
     }
 
@@ -243,5 +341,20 @@ struct WellnessView: View {
         case .onTrack:
             return .lagoon
         }
+    }
+}
+
+private struct LocatorActionLabel: View {
+    let title: LocalizedStringKey
+    let systemImage: String
+
+    var body: some View {
+        Label(title, systemImage: systemImage)
+            .font(.system(size: 13, weight: .bold, design: .rounded))
+            .foregroundStyle(Color(red: 0.10, green: 0.13, blue: 0.22))
+            .fixedSize(horizontal: true, vertical: false)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 11)
+            .background(Color.white, in: Capsule())
     }
 }

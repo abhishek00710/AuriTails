@@ -1,4 +1,5 @@
 import Combine
+import MapKit
 import SwiftUI
 import UIKit
 
@@ -38,20 +39,30 @@ final class AppViewModel: ObservableObject {
     @Published var isImportingBackup = false
     @Published var backupNotice: BackupNotice?
     @Published var sharePayload: SharePayload?
+    @Published private(set) var nearbyPetCare: [PetCarePlace] = []
+    @Published private(set) var isLoadingNearbyPetCare = false
+    @Published private(set) var nearbyPetCareStatusMessage = L10n.tr(
+        "Find nearby pet hospitals and emergency care around you.",
+        default: "Find nearby pet hospitals and emergency care around you."
+    )
 
     private let store: AppStateStore
     private let insightEngine: PetInsightEngine
     private let notificationScheduler: NotificationScheduler
+    private let nearbyPetCareService: NearbyPetCareService
     private var isApplyingState = false
+    private var cancellables = Set<AnyCancellable>()
 
     init(
         seed: AppSeed,
         store: AppStateStore = AppStateStore(),
         insightEngine: PetInsightEngine? = nil,
         notificationScheduler: NotificationScheduler = NotificationScheduler(),
+        nearbyPetCareService: NearbyPetCareService? = nil,
         prefersPersistedState: Bool = true
     ) {
         let initialState = prefersPersistedState ? (store.load() ?? PersistedAppState(seed: seed)) : PersistedAppState(seed: seed)
+        let nearbyPetCareService = nearbyPetCareService ?? NearbyPetCareService()
 
         selectedTab = initialState.selectedTab
         selectedDay = initialState.selectedDay
@@ -72,11 +83,26 @@ final class AppViewModel: ObservableObject {
         self.store = store
         self.insightEngine = insightEngine ?? PetInsightEngine()
         self.notificationScheduler = notificationScheduler
+        self.nearbyPetCareService = nearbyPetCareService
+
+        nearbyPetCareService.$places
+            .sink { [weak self] in self?.nearbyPetCare = $0 }
+            .store(in: &cancellables)
+
+        nearbyPetCareService.$isLoading
+            .sink { [weak self] in self?.isLoadingNearbyPetCare = $0 }
+            .store(in: &cancellables)
+
+        nearbyPetCareService.$statusMessage
+            .sink { [weak self] in self?.nearbyPetCareStatusMessage = $0 }
+            .store(in: &cancellables)
 
         Task {
             await notificationScheduler.requestAuthorizationIfNeeded()
             await notificationScheduler.refreshNotifications(for: snapshotState())
         }
+
+        nearbyPetCareService.refresh()
     }
 
     @MainActor static func preview() async -> AppViewModel {
@@ -200,6 +226,21 @@ final class AppViewModel: ObservableObject {
     func openNotificationSettings() {
         closeMenu()
         activeSheet = .notificationSettings
+    }
+
+    func refreshNearbyPetCare() {
+        nearbyPetCareService.refresh()
+    }
+
+    func openDirections(to place: PetCarePlace) {
+        place.mapItem.openInMaps(launchOptions: [MKLaunchOptionsDirectionsModeKey: MKLaunchOptionsDirectionsModeDriving])
+    }
+
+    func call(_ place: PetCarePlace) {
+        guard let phoneNumber = place.phoneNumber else { return }
+        let digits = phoneNumber.filter { $0.isNumber || $0 == "+" }
+        guard let url = URL(string: "tel://\(digits)") else { return }
+        UIApplication.shared.open(url)
     }
 
     func openAppShare() {
