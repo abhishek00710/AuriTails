@@ -1,4 +1,5 @@
 import SwiftUI
+import Foundation
 import UIKit
 
 private enum DecodedImageCache {
@@ -83,9 +84,9 @@ extension InsightPriority {
 
     var title: String {
         switch self {
-        case .steady: "Steady"
-        case .watch: "Watch"
-        case .celebrate: "Celebrate"
+        case .steady: L10n.tr("Steady", default: "Steady")
+        case .watch: L10n.tr("Watch", default: "Watch")
+        case .celebrate: L10n.tr("Celebrate", default: "Celebrate")
         }
     }
 }
@@ -347,12 +348,12 @@ struct GlassCard<Content: View>: View {
 
 struct SectionHeader: View {
     let eyebrow: String
-    let title: String
-    let detail: String
+    let title: LocalizedStringKey
+    let detail: LocalizedStringKey
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(eyebrow.uppercased())
+            Text(L10n.tr(eyebrow, default: eyebrow).uppercased())
                 .font(.system(size: 11, weight: .bold, design: .rounded))
                 .tracking(1.4)
                 .foregroundStyle(.white.opacity(0.55))
@@ -496,7 +497,7 @@ struct FloatingTabBar: View {
 }
 
 struct StatChip: View {
-    let title: String
+    let title: LocalizedStringKey
     let value: String
 
     var body: some View {
@@ -613,11 +614,16 @@ struct SlideMenuPanel: View {
                     viewModel.openNotificationSettings()
                 }
 
+                BackupActionsRow(
+                    exportAction: viewModel.exportBackup,
+                    restoreAction: viewModel.importBackup
+                )
+
                 SocialMenuActionRow(
                     icon: "sparkles",
                     iconTint: .lagoon,
-                    title: "Bond AI",
-                    subtitle: "\(viewModel.insights.count) personalized tips ready for \(viewModel.pet.name)."
+                    title: "Bond Pulse",
+                    subtitle: "\(viewModel.insights.count) relationship signals ready for \(viewModel.pet.name)."
                 ) {
                     viewModel.openAI()
                 }
@@ -626,6 +632,8 @@ struct SlideMenuPanel: View {
             Text("Designed to feel more like a companion hub than a settings drawer.")
                 .font(.system(size: 12, weight: .medium, design: .rounded))
                 .foregroundStyle(.white.opacity(0.52))
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(18)
         .background {
@@ -676,11 +684,14 @@ private struct MenuProfileCard: View {
                 Text("View profile studio")
                     .font(.system(size: 13, weight: .medium, design: .rounded))
                     .foregroundStyle(.white.opacity(0.68))
+                    .fixedSize(horizontal: false, vertical: true)
 
                 Text("\(pet.breed) • \(owner.location)")
                     .font(.system(size: 12, weight: .medium, design: .rounded))
                     .foregroundStyle(.white.opacity(0.48))
+                    .fixedSize(horizontal: false, vertical: true)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
 
             Spacer(minLength: 0)
 
@@ -703,8 +714,8 @@ private struct MenuProfileCard: View {
 private struct SocialMenuActionRow: View {
     let icon: String
     let iconTint: PaletteTone
-    let title: String
-    let subtitle: String
+    let title: LocalizedStringKey
+    let subtitle: LocalizedStringKey
     let action: () -> Void
 
     var body: some View {
@@ -729,7 +740,9 @@ private struct SocialMenuActionRow: View {
                         .font(.system(size: 13, weight: .medium, design: .rounded))
                         .foregroundStyle(.white.opacity(0.66))
                         .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
 
                 Spacer(minLength: 0)
 
@@ -748,6 +761,100 @@ private struct SocialMenuActionRow: View {
             )
         }
         .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.98, pressedBrightness: 0.02))
+    }
+}
+
+private struct BackupActionsRow: View {
+    let exportAction: () -> Void
+    let restoreAction: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 14) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .fill(PaletteTone.meadow.primaryColor.opacity(0.22))
+
+                    Image(systemName: "externaldrive.badge.icloud")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(PaletteTone.meadow.secondaryColor)
+                }
+                .frame(width: 46, height: 46)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Backup")
+                        .font(.system(size: 16, weight: .semibold, design: .rounded))
+                        .foregroundStyle(.white)
+
+                    Text("Export or restore your full pet journey from one safe file.")
+                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                        .foregroundStyle(.white.opacity(0.66))
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                Spacer(minLength: 0)
+            }
+
+            HStack(spacing: 10) {
+                BackupActionButton(
+                    icon: "square.and.arrow.up.fill",
+                    title: "Export",
+                    tone: .meadow,
+                    action: exportAction
+                )
+
+                BackupActionButton(
+                    icon: "square.and.arrow.down.fill",
+                    title: "Restore",
+                    tone: .apricot,
+                    action: restoreAction
+                )
+            }
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .fill(Color.white.opacity(0.08))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        .strokeBorder(Color.white.opacity(0.10), lineWidth: 1)
+                }
+        )
+    }
+}
+
+private struct BackupActionButton: View {
+    let icon: String
+    let title: LocalizedStringKey
+    let tone: PaletteTone
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.system(size: 14, weight: .bold))
+
+                Text(title)
+                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.9)
+            }
+            .foregroundStyle(.white)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+            .background(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(tone.primaryColor.opacity(0.24))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .strokeBorder(tone.secondaryColor.opacity(0.32), lineWidth: 1)
+                    }
+            )
+        }
+        .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.97, pressedBrightness: 0.02))
     }
 }
 
@@ -807,8 +914,8 @@ struct AvatarBadge: View {
 
 struct MenuActionRow: View {
     let icon: String
-    let title: String
-    let detail: String
+    let title: LocalizedStringKey
+    let detail: LocalizedStringKey
     let tone: PaletteTone
     let action: () -> Void
 

@@ -3,28 +3,39 @@ import SwiftUI
 
 @MainActor
 final class AppViewModel: ObservableObject {
-    @Published var selectedTab: RootTab { didSet { persist() } }
-    @Published var selectedDay: Weekday { didSet { persist() } }
+    struct BackupNotice: Identifiable {
+        let id = UUID()
+        let title: String
+        let message: String
+    }
+
+    @Published var selectedTab: RootTab { didSet { persistIfNeeded() } }
+    @Published var selectedDay: Weekday { didSet { persistIfNeeded() } }
     @Published var isMenuPresented = false
     @Published var activeSheet: AppSheet?
-    @Published var owner: OwnerProfile { didSet { persist() } }
-    @Published var pet: PetProfile { didSet { persist() } }
-    @Published var notificationPreferences: NotificationPreferences { didSet { persist() } }
-    @Published var ownerPhotoData: Data? { didSet { persist() } }
-    @Published var petPhotoData: Data? { didSet { persist() } }
-    @Published var bondPhotoData: Data? { didSet { persist() } }
-    @Published var behaviorSnapshots: [BehaviorSnapshot] { didSet { persist() } }
-    @Published var vaccinations: [VaccineRecord] { didSet { persist() } }
-    @Published var medicalHistory: [MedicalEntry] { didSet { persist() } }
-    @Published var foodPreferences: [FoodPreference] { didSet { persist() } }
-    @Published var routines: [RoutineItem] { didSet { persist() } }
-    @Published var memories: [MemoryMoment] { didSet { persist() } }
-    @Published var onboardingFocus: OnboardingFocus { didSet { persist() } }
-    @Published var hasCompletedOnboarding: Bool { didSet { persist() } }
+    @Published var owner: OwnerProfile { didSet { persistIfNeeded() } }
+    @Published var pet: PetProfile { didSet { persistIfNeeded() } }
+    @Published var notificationPreferences: NotificationPreferences { didSet { persistIfNeeded() } }
+    @Published var ownerPhotoData: Data? { didSet { persistIfNeeded() } }
+    @Published var petPhotoData: Data? { didSet { persistIfNeeded() } }
+    @Published var bondPhotoData: Data? { didSet { persistIfNeeded() } }
+    @Published var behaviorSnapshots: [BehaviorSnapshot] { didSet { persistIfNeeded() } }
+    @Published var vaccinations: [VaccineRecord] { didSet { persistIfNeeded() } }
+    @Published var medicalHistory: [MedicalEntry] { didSet { persistIfNeeded() } }
+    @Published var foodPreferences: [FoodPreference] { didSet { persistIfNeeded() } }
+    @Published var routines: [RoutineItem] { didSet { persistIfNeeded() } }
+    @Published var memories: [MemoryMoment] { didSet { persistIfNeeded() } }
+    @Published var onboardingFocus: OnboardingFocus { didSet { persistIfNeeded() } }
+    @Published var hasCompletedOnboarding: Bool { didSet { persistIfNeeded() } }
+    @Published var exportBackupDocument: AppBackupDocument?
+    @Published var isExportingBackup = false
+    @Published var isImportingBackup = false
+    @Published var backupNotice: BackupNotice?
 
     private let store: AppStateStore
     private let insightEngine: PetInsightEngine
     private let notificationScheduler: NotificationScheduler
+    private var isApplyingState = false
 
     init(
         seed: AppSeed,
@@ -139,11 +150,11 @@ final class AppViewModel: ObservableObject {
     }
 
     var upcomingWellnessNote: String {
-        upcomingWellnessRecord?.note ?? "No urgent health paperwork waiting."
+        upcomingWellnessRecord?.note ?? L10n.tr("No urgent health paperwork waiting.", default: "No urgent health paperwork waiting.")
     }
 
     var upcomingWellnessTitle: String {
-        upcomingWellnessRecord?.title ?? "All clear"
+        upcomingWellnessRecord?.title ?? L10n.tr("All clear", default: "All clear")
     }
 
     func toggleMenu() {
@@ -182,6 +193,91 @@ final class AppViewModel: ObservableObject {
     func openNotificationSettings() {
         closeMenu()
         activeSheet = .notificationSettings
+    }
+
+    var backupFilename: String {
+        L10n.tr("AuriTails-Backup", default: "AuriTails-Backup")
+    }
+
+    func exportBackup() {
+        closeMenu()
+
+        do {
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+            encoder.dateEncodingStrategy = .iso8601
+            let data = try encoder.encode(snapshotState())
+            exportBackupDocument = AppBackupDocument(data: data)
+            isExportingBackup = true
+        } catch {
+            backupNotice = BackupNotice(
+                title: L10n.tr("Backup Failed", default: "Backup Failed"),
+                message: L10n.tr("AuriTails couldn't prepare the backup file. Please try again.", default: "AuriTails couldn't prepare the backup file. Please try again.")
+            )
+        }
+    }
+
+    func importBackup() {
+        closeMenu()
+        isImportingBackup = true
+    }
+
+    func handleBackupExport(result: Result<URL, Error>) {
+        isExportingBackup = false
+        exportBackupDocument = nil
+
+        switch result {
+        case .success:
+            backupNotice = BackupNotice(
+                title: L10n.tr("Backup Saved", default: "Backup Saved"),
+                message: L10n.tr("Your AuriTails data was exported successfully.", default: "Your AuriTails data was exported successfully.")
+            )
+        case .failure:
+            backupNotice = BackupNotice(
+                title: L10n.tr("Backup Failed", default: "Backup Failed"),
+                message: L10n.tr("AuriTails couldn't save the backup file.", default: "AuriTails couldn't save the backup file.")
+            )
+        }
+    }
+
+    func handleBackupImport(result: Result<URL, Error>) {
+        isImportingBackup = false
+
+        guard case let .success(url) = result else {
+            backupNotice = BackupNotice(
+                title: L10n.tr("Restore Cancelled", default: "Restore Cancelled"),
+                message: L10n.tr("No backup file was imported.", default: "No backup file was imported.")
+            )
+            return
+        }
+
+        let accessed = url.startAccessingSecurityScopedResource()
+        defer {
+            if accessed {
+                url.stopAccessingSecurityScopedResource()
+            }
+        }
+
+        do {
+            let data = try Data(contentsOf: url)
+            let decoder = JSONDecoder()
+            decoder.dateDecodingStrategy = .iso8601
+            let importedState = try decoder.decode(PersistedAppState.self, from: data)
+            apply(state: importedState)
+            backupNotice = BackupNotice(
+                title: L10n.tr("Backup Restored", default: "Backup Restored"),
+                message: L10n.tr("Your AuriTails data was restored from the selected backup.", default: "Your AuriTails data was restored from the selected backup.")
+            )
+        } catch {
+            backupNotice = BackupNotice(
+                title: L10n.tr("Restore Failed", default: "Restore Failed"),
+                message: L10n.tr("That backup file couldn't be read by AuriTails.", default: "That backup file couldn't be read by AuriTails.")
+            )
+        }
+    }
+
+    func clearBackupNotice() {
+        backupNotice = nil
     }
 
     func openRoutineEditor(_ routineID: UUID? = nil) {
@@ -436,6 +532,11 @@ final class AppViewModel: ObservableObject {
         }
     }
 
+    private func persistIfNeeded() {
+        guard !isApplyingState else { return }
+        persist()
+    }
+
     private func snapshotState() -> PersistedAppState {
         PersistedAppState(
             selectedTab: selectedTab,
@@ -455,6 +556,28 @@ final class AppViewModel: ObservableObject {
             onboardingFocus: onboardingFocus,
             hasCompletedOnboarding: hasCompletedOnboarding
         )
+    }
+
+    private func apply(state: PersistedAppState) {
+        isApplyingState = true
+        selectedTab = state.selectedTab
+        selectedDay = state.selectedDay
+        owner = state.owner
+        pet = state.pet
+        notificationPreferences = state.notificationPreferences
+        ownerPhotoData = state.ownerPhotoData
+        petPhotoData = state.petPhotoData
+        bondPhotoData = state.bondPhotoData
+        behaviorSnapshots = state.behaviorSnapshots
+        vaccinations = state.vaccinations
+        medicalHistory = state.medicalHistory
+        foodPreferences = state.foodPreferences
+        routines = state.routines
+        memories = state.memories
+        onboardingFocus = state.onboardingFocus
+        hasCompletedOnboarding = state.hasCompletedOnboarding
+        isApplyingState = false
+        persist()
     }
 }
 

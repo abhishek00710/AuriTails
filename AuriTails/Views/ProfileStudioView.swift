@@ -205,7 +205,7 @@ struct ProfileStudioView: View {
 }
 
 private struct EditablePhotoCard: View {
-    let title: String
+    let title: LocalizedStringKey
     let subtitle: String
     let imageData: Data?
     let role: ProfilePhotoRole
@@ -315,7 +315,7 @@ private struct WideBondPhotoCard: View {
 }
 
 private struct ProfileInputField: View {
-    let title: String
+    let title: LocalizedStringKey
     @Binding var text: String
     let icon: String
 
@@ -337,7 +337,7 @@ private struct ProfileInputField: View {
 }
 
 private struct ProfileInputEditor: View {
-    let title: String
+    let title: LocalizedStringKey
     @Binding var text: String
     let icon: String
     let height: CGFloat

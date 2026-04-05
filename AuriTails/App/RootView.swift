@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct RootView: View {
     @ObservedObject var viewModel: AppViewModel
@@ -79,6 +80,29 @@ struct RootView: View {
             case let .foodPreferenceEditor(preferenceID):
                 FoodPreferenceEditorView(viewModel: viewModel, preferenceID: preferenceID)
             }
+        }
+        .fileExporter(
+            isPresented: $viewModel.isExportingBackup,
+            document: viewModel.exportBackupDocument,
+            contentType: .json,
+            defaultFilename: viewModel.backupFilename
+        ) { result in
+            viewModel.handleBackupExport(result: result)
+        }
+        .fileImporter(
+            isPresented: $viewModel.isImportingBackup,
+            allowedContentTypes: [.json]
+        ) { result in
+            viewModel.handleBackupImport(result: result)
+        }
+        .alert(item: $viewModel.backupNotice) { notice in
+            Alert(
+                title: Text(notice.title),
+                message: Text(notice.message),
+                dismissButton: .default(Text("OK")) {
+                    viewModel.clearBackupNotice()
+                }
+            )
         }
         .fullScreenCover(isPresented: onboardingBinding) {
             OnboardingFlowView(viewModel: viewModel)

@@ -232,8 +232,8 @@ struct OpeningSplashView: View {
 }
 
 private struct SplashPill: View {
-    let title: String
-    let value: String
+    let title: LocalizedStringKey
+    let value: LocalizedStringKey
 
     var body: some View {
         VStack(spacing: 4) {

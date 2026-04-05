@@ -24,8 +24,8 @@ struct RoutineEditorView: View {
 
     var body: some View {
         EditorShell(
-            title: draft.title.isEmpty ? "New Routine" : draft.title,
-            saveLabel: "Save Routine",
+            title: draft.title.isEmpty ? L10n.tr("New Routine", default: "New Routine") : draft.title,
+            saveLabel: L10n.tr("Save Routine", default: "Save Routine"),
             isSaveDisabled: draft.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         ) {
             dismiss()
@@ -125,8 +125,8 @@ struct MemoryEditorView: View {
 
     var body: some View {
         EditorShell(
-            title: draft.title.isEmpty ? "New Memory" : draft.title,
-            saveLabel: "Save Memory",
+            title: draft.title.isEmpty ? L10n.tr("New Memory", default: "New Memory") : draft.title,
+            saveLabel: L10n.tr("Save Memory", default: "Save Memory"),
             isSaveDisabled: draft.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || draft.caption.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         ) {
             dismiss()
@@ -290,8 +290,8 @@ struct VaccineEditorView: View {
 
     var body: some View {
         EditorShell(
-            title: draft.title.isEmpty ? "New Vaccine" : draft.title,
-            saveLabel: "Save Vaccine",
+            title: draft.title.isEmpty ? L10n.tr("New Vaccine", default: "New Vaccine") : draft.title,
+            saveLabel: L10n.tr("Save Vaccine", default: "Save Vaccine"),
             isSaveDisabled: draft.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         ) {
             dismiss()
@@ -361,8 +361,8 @@ struct MedicalEntryEditorView: View {
 
     var body: some View {
         EditorShell(
-            title: draft.title.isEmpty ? "Medical Entry" : draft.title,
-            saveLabel: "Save Entry",
+            title: draft.title.isEmpty ? L10n.tr("Medical Entry", default: "Medical Entry") : draft.title,
+            saveLabel: L10n.tr("Save Entry", default: "Save Entry"),
             isSaveDisabled: draft.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || draft.summary.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         ) {
             dismiss()
@@ -419,8 +419,8 @@ struct FoodPreferenceEditorView: View {
 
     var body: some View {
         EditorShell(
-            title: draft.title.isEmpty ? "Food Note" : draft.title,
-            saveLabel: "Save Food Note",
+            title: draft.title.isEmpty ? L10n.tr("Food Note", default: "Food Note") : draft.title,
+            saveLabel: L10n.tr("Save Food Note", default: "Save Food Note"),
             isSaveDisabled: draft.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || draft.detail.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         ) {
             dismiss()
@@ -525,7 +525,7 @@ private struct EditorShell<Content: View>: View {
 }
 
 private struct EditorTextField: View {
-    let title: String
+    let title: LocalizedStringKey
     @Binding var text: String
     let icon: String
 
@@ -547,7 +547,7 @@ private struct EditorTextField: View {
 }
 
 private struct EditorTextEditor: View {
-    let title: String
+    let title: LocalizedStringKey
     @Binding var text: String
     let icon: String
     let height: CGFloat
@@ -570,7 +570,7 @@ private struct EditorTextEditor: View {
 }
 
 private struct EditorEnumPicker<Option: Identifiable & CaseIterable & Hashable>: View where Option.AllCases: RandomAccessCollection, Option: CustomStringConvertible {
-    let title: String
+    let title: LocalizedStringKey
     let icon: String
     @Binding var selection: Option
     let options: Option.AllCases
@@ -607,7 +607,7 @@ private struct EditorEnumPicker<Option: Identifiable & CaseIterable & Hashable>:
 }
 
 private struct DateEditor: View {
-    let title: String
+    let title: LocalizedStringKey
     let icon: String
     @Binding var date: Date
 
@@ -629,7 +629,7 @@ private struct DateEditor: View {
 }
 
 private struct ClockTimeEditor: View {
-    let title: String
+    let title: LocalizedStringKey
     @Binding var time: ClockTime
 
     var body: some View {
@@ -698,7 +698,7 @@ private struct TonePicker: View {
 }
 
 private struct SymbolPicker: View {
-    let title: String
+    let title: LocalizedStringKey
     @Binding var selection: String
     let options: [String]
 
@@ -730,7 +730,7 @@ private struct SymbolPicker: View {
 }
 
 private struct DeleteCard: View {
-    let label: String
+    let label: LocalizedStringKey
     let icon: String
     let action: () -> Void
 

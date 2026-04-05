@@ -67,8 +67,8 @@ struct NotificationSettingsView: View {
 }
 
 private struct ToggleRow: View {
-    let title: String
-    let detail: String
+    let title: LocalizedStringKey
+    let detail: LocalizedStringKey
     @Binding var isOn: Bool
 
     var body: some View {
@@ -89,7 +89,7 @@ private struct ToggleRow: View {
 }
 
 private struct LeadTimePicker: View {
-    let title: String
+    let title: LocalizedStringKey
     let options: [Int]
     let unit: String
     @Binding var selection: Int
@@ -119,8 +119,9 @@ private struct LeadTimePicker: View {
     }
 
     private func label(for option: Int) -> String {
-        if option == 0 { return "At time" }
-        if option == 1 { return "1 \(unit)" }
-        return "\(option) \(unit)s"
+        let localizedUnit = L10n.tr(unit, default: unit)
+        if option == 0 { return L10n.tr("At time", default: "At time") }
+        if option == 1 { return L10n.format("1 %@", default: "1 %@", localizedUnit) }
+        return L10n.format("%d %@s", default: "%d %@s", option, localizedUnit)
     }
 }

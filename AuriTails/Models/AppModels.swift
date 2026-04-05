@@ -10,10 +10,10 @@ enum RootTab: String, CaseIterable, Identifiable, Codable {
 
     var title: String {
         switch self {
-        case .dashboard: "Home"
-        case .wellness: "Wellness"
-        case .routines: "Routines"
-        case .memories: "Memories"
+        case .dashboard: L10n.tr("Home", default: "Home")
+        case .wellness: L10n.tr("Wellness", default: "Wellness")
+        case .routines: L10n.tr("Routines", default: "Routines")
+        case .memories: L10n.tr("Memories", default: "Memories")
         }
     }
 
@@ -29,26 +29,31 @@ enum RootTab: String, CaseIterable, Identifiable, Codable {
     func headerTitle(for petName: String) -> String {
         switch self {
         case .dashboard:
-            return "Life with \(petName)"
+            return L10n.format("Life with %@", default: "Life with %@", petName)
         case .wellness:
-            return "Wellness Passport"
+            return L10n.tr("Wellness Passport", default: "Wellness Passport")
         case .routines:
-            return "Ritual Planner"
+            return L10n.tr("Ritual Planner", default: "Ritual Planner")
         case .memories:
-            return "Memory Studio"
+            return L10n.tr("Memory Studio", default: "Memory Studio")
         }
     }
 
     func headerSubtitle(ownerName: String, petName: String) -> String {
         switch self {
         case .dashboard:
-            return "A calmer, more beautiful rhythm for \(ownerName) and \(petName)."
+            return L10n.format(
+                "A calmer, more beautiful rhythm for %@ and %@.",
+                default: "A calmer, more beautiful rhythm for %@ and %@.",
+                ownerName,
+                petName
+            )
         case .wellness:
-            return "Vaccines, notes, food rituals, and the tiny details that matter."
+            return L10n.tr("Vaccines, notes, food rituals, and the tiny details that matter.", default: "Vaccines, notes, food rituals, and the tiny details that matter.")
         case .routines:
-            return "Shape a week of walks, care, enrichment, and flexible re-schedules."
+            return L10n.tr("Shape a week of walks, care, enrichment, and flexible re-schedules.", default: "Shape a week of walks, care, enrichment, and flexible re-schedules.")
         case .memories:
-            return "Keep birthdays, gotcha days, and golden-hour moments in one place."
+            return L10n.tr("Keep birthdays, gotcha days, and golden-hour moments in one place.", default: "Keep birthdays, gotcha days, and golden-hour moments in one place.")
         }
     }
 }
@@ -107,25 +112,25 @@ enum Weekday: Int, CaseIterable, Identifiable, Codable {
 
     var shortTitle: String {
         switch self {
-        case .monday: "Mon"
-        case .tuesday: "Tue"
-        case .wednesday: "Wed"
-        case .thursday: "Thu"
-        case .friday: "Fri"
-        case .saturday: "Sat"
-        case .sunday: "Sun"
+        case .monday: L10n.tr("Mon", default: "Mon")
+        case .tuesday: L10n.tr("Tue", default: "Tue")
+        case .wednesday: L10n.tr("Wed", default: "Wed")
+        case .thursday: L10n.tr("Thu", default: "Thu")
+        case .friday: L10n.tr("Fri", default: "Fri")
+        case .saturday: L10n.tr("Sat", default: "Sat")
+        case .sunday: L10n.tr("Sun", default: "Sun")
         }
     }
 
     var title: String {
         switch self {
-        case .monday: "Monday"
-        case .tuesday: "Tuesday"
-        case .wednesday: "Wednesday"
-        case .thursday: "Thursday"
-        case .friday: "Friday"
-        case .saturday: "Saturday"
-        case .sunday: "Sunday"
+        case .monday: L10n.tr("Monday", default: "Monday")
+        case .tuesday: L10n.tr("Tuesday", default: "Tuesday")
+        case .wednesday: L10n.tr("Wednesday", default: "Wednesday")
+        case .thursday: L10n.tr("Thursday", default: "Thursday")
+        case .friday: L10n.tr("Friday", default: "Friday")
+        case .saturday: L10n.tr("Saturday", default: "Saturday")
+        case .sunday: L10n.tr("Sunday", default: "Sunday")
         }
     }
 
@@ -195,7 +200,7 @@ enum PaletteTone: String, CaseIterable, Identifiable, Codable {
     var id: String { rawValue }
 
     var title: String {
-        rawValue.capitalized
+        L10n.tr(rawValue.capitalized, default: rawValue.capitalized)
     }
 }
 
@@ -209,7 +214,7 @@ enum RoutineCategory: String, CaseIterable, Identifiable, Codable {
     var id: String { rawValue }
 
     var title: String {
-        rawValue.capitalized
+        L10n.tr(rawValue.capitalized, default: rawValue.capitalized)
     }
 
     var symbolName: String {
@@ -238,9 +243,9 @@ enum VaccineStatus: String, CaseIterable, Identifiable, Codable {
 
     var title: String {
         switch self {
-        case .covered: "Covered"
-        case .onTrack: "On track"
-        case .watch: "Watch"
+        case .covered: L10n.tr("Covered", default: "Covered")
+        case .onTrack: L10n.tr("On track", default: "On track")
+        case .watch: L10n.tr("Watch", default: "Watch")
         }
     }
 }
@@ -255,23 +260,23 @@ enum OnboardingFocus: String, CaseIterable, Identifiable, Codable {
 
     var title: String {
         switch self {
-        case .wellness: "Wellness first"
-        case .routines: "Routines first"
-        case .memories: "Memories first"
-        case .dashboard: "Everything together"
+        case .wellness: L10n.tr("Wellness first", default: "Wellness first")
+        case .routines: L10n.tr("Routines first", default: "Routines first")
+        case .memories: L10n.tr("Memories first", default: "Memories first")
+        case .dashboard: L10n.tr("Everything together", default: "Everything together")
         }
     }
 
     var detail: String {
         switch self {
         case .wellness:
-            return "Keep vaccines, food notes, and vet context easy to update."
+            return L10n.tr("Keep vaccines, food notes, and vet context easy to update.", default: "Keep vaccines, food notes, and vet context easy to update.")
         case .routines:
-            return "Start with a flexible week planner that actually adapts."
+            return L10n.tr("Start with a flexible week planner that actually adapts.", default: "Start with a flexible week planner that actually adapts.")
         case .memories:
-            return "Turn birthdays and milestones into a living story."
+            return L10n.tr("Turn birthdays and milestones into a living story.", default: "Turn birthdays and milestones into a living story.")
         case .dashboard:
-            return "See wellness, routines, and memories in one bond-centered home."
+            return L10n.tr("See wellness, routines, and memories in one bond-centered home.", default: "See wellness, routines, and memories in one bond-centered home.")
         }
     }
 
@@ -420,7 +425,7 @@ struct RoutineItem: Identifiable, Codable {
     var notificationsEnabled: Bool = true
 
     var durationLabel: String {
-        "\(durationMinutes) min"
+        L10n.format("%d min", default: "%d min", durationMinutes)
     }
 
     init(

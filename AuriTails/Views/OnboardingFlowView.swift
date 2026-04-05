@@ -308,7 +308,7 @@ struct OnboardingFlowView: View {
         }
     }
 
-    private func onboardingBullet(title: String, detail: String) -> some View {
+    private func onboardingBullet(title: LocalizedStringKey, detail: LocalizedStringKey) -> some View {
         HStack(alignment: .top, spacing: 14) {
             Image(systemName: "sparkles")
                 .font(.system(size: 16, weight: .bold))
@@ -331,7 +331,7 @@ struct OnboardingFlowView: View {
 }
 
 private struct OnboardingField: View {
-    let title: String
+    let title: LocalizedStringKey
     @Binding var text: String
     let icon: String
 
