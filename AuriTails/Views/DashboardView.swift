@@ -118,13 +118,42 @@ struct DashboardView: View {
 
     private var rhythmCard: some View {
         GlassCard {
-            SectionHeader(
-                eyebrow: "Pattern read",
-                title: "This week's emotional rhythm",
-                detail: "Bars show energy. The white marker shows calmness, so you can spot when busy days need softer landings."
-            )
+            HStack(alignment: .top, spacing: 12) {
+                SectionHeader(
+                    eyebrow: "Pattern read",
+                    title: "This week's emotional rhythm",
+                    detail: "Bars show energy. The white marker shows calmness, so you can spot when busy days need softer landings."
+                )
+
+                Spacer(minLength: 0)
+
+                Button {
+                    viewModel.openBehaviorCheckIn()
+                } label: {
+                    Image(systemName: viewModel.todayBehaviorSnapshot == nil ? "plus" : "pencil")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(Color(red: 0.10, green: 0.13, blue: 0.22))
+                        .frame(width: 42, height: 42)
+                        .background(Color.white, in: Circle())
+                }
+                .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.92))
+                .accessibilityLabel(viewModel.todayBehaviorSnapshot == nil ? "Add daily check-in" : "Edit daily check-in")
+            }
             if viewModel.hasBehaviorData {
                 BehaviorSparkline(snapshots: viewModel.behaviorSnapshots)
+
+                if let todaySnapshot = viewModel.todayBehaviorSnapshot {
+                    HStack(alignment: .top, spacing: 0) {
+                        StatChip(title: "Energy", value: todaySnapshot.energy.formattedBehaviorScore, fillsWidth: false)
+                        Spacer(minLength: 12)
+                        StatChip(title: "Calmness", value: todaySnapshot.calmness.formattedBehaviorScore, fillsWidth: false)
+                        Spacer(minLength: 12)
+                        StatChip(title: "Appetite", value: todaySnapshot.appetite.formattedBehaviorScore, fillsWidth: false)
+                        Spacer(minLength: 12)
+                        StatChip(title: "Sleep", value: todaySnapshot.sleepHours.formattedSleepLabel, fillsWidth: false)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
 
                 Text(viewModel.pet.bondStatement.trimmedOrNil ?? "A few daily check-ins will turn this area into a live read of energy, calmness, appetite, and recovery.")
                     .font(.system(size: 15, weight: .medium, design: .rounded))
@@ -137,6 +166,18 @@ struct DashboardView: View {
                 Text("After a few check-ins or care records, this view will start mapping emotional rhythm instead of showing filler data.")
                     .font(.system(size: 14, weight: .medium, design: .rounded))
                     .foregroundStyle(.white.opacity(0.76))
+
+                Button {
+                    viewModel.openBehaviorCheckIn()
+                } label: {
+                    Label("Add today's check-in", systemImage: "sparkles")
+                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                        .foregroundStyle(Color(red: 0.12, green: 0.15, blue: 0.22))
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 10)
+                        .background(Color.white, in: Capsule())
+                }
+                .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.92, pressedBrightness: 0.06))
             }
         }
     }
@@ -175,5 +216,15 @@ struct DashboardView: View {
                 Spacer()
             }
         }
+    }
+}
+
+private extension Double {
+    var formattedBehaviorScore: String {
+        "\(Int((self * 100).rounded()))%"
+    }
+
+    var formattedSleepLabel: String {
+        "\(self.formatted(.number.precision(.fractionLength(1))))h"
     }
 }

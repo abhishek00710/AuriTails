@@ -71,6 +71,7 @@ enum AppSheet: Identifiable {
     case ai
     case profile
     case notificationSettings
+    case behaviorCheckInEditor(Weekday?)
     case routineEditor(UUID?)
     case memoryEditor(UUID?)
     case vaccineEditor(UUID?)
@@ -85,6 +86,8 @@ enum AppSheet: Identifiable {
             return "profile"
         case .notificationSettings:
             return "notification-settings"
+        case let .behaviorCheckInEditor(day):
+            return "behavior-\(day?.rawValue ?? 0)"
         case let .routineEditor(id):
             return "routine-\(id?.uuidString ?? "new")"
         case let .memoryEditor(id):
@@ -334,11 +337,11 @@ struct PetProfile: Identifiable, Codable {
 
 struct BehaviorSnapshot: Identifiable, Codable {
     var id: Weekday { day }
-    let day: Weekday
-    let energy: Double
-    let calmness: Double
-    let appetite: Double
-    let sleepHours: Double
+    var day: Weekday
+    var energy: Double
+    var calmness: Double
+    var appetite: Double
+    var sleepHours: Double
 }
 
 struct VaccineRecord: Identifiable, Codable {

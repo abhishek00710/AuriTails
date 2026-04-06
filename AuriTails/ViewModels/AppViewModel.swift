@@ -141,6 +141,10 @@ final class AppViewModel: ObservableObject {
         : pet.name
     }
 
+    var todayBehaviorSnapshot: BehaviorSnapshot? {
+        behaviorSnapshots.first(where: { $0.day == .current })
+    }
+
     var hasBehaviorData: Bool { !behaviorSnapshots.isEmpty }
     var hasRoutineData: Bool { !routines.isEmpty }
     var hasMemoryData: Bool { !memories.isEmpty }
@@ -229,6 +233,9 @@ final class AppViewModel: ObservableObject {
 
     func selectTab(_ tab: RootTab) {
         withAnimation(.spring(response: 0.36, dampingFraction: 0.9)) {
+            if tab == .routines {
+                selectedDay = .current
+            }
             selectedTab = tab
             isMenuPresented = false
         }
@@ -251,6 +258,10 @@ final class AppViewModel: ObservableObject {
     func openNotificationSettings() {
         closeMenu()
         activeSheet = .notificationSettings
+    }
+
+    func openBehaviorCheckIn(_ day: Weekday? = nil) {
+        activeSheet = .behaviorCheckInEditor(day)
     }
 
     func refreshNearbyPetCare() {
@@ -595,6 +606,28 @@ final class AppViewModel: ObservableObject {
     func deleteRoutine(_ routineID: UUID) {
         withAnimation(.spring(response: 0.32, dampingFraction: 0.9)) {
             routines.removeAll { $0.id == routineID }
+        }
+    }
+
+    func behaviorSnapshot(for day: Weekday?) -> BehaviorSnapshot? {
+        let resolvedDay = day ?? .current
+        return behaviorSnapshots.first(where: { $0.day == resolvedDay })
+    }
+
+    func saveBehaviorSnapshot(_ snapshot: BehaviorSnapshot) {
+        withAnimation(.spring(response: 0.34, dampingFraction: 0.88)) {
+            if let index = behaviorSnapshots.firstIndex(where: { $0.day == snapshot.day }) {
+                behaviorSnapshots[index] = snapshot
+            } else {
+                behaviorSnapshots.append(snapshot)
+            }
+            behaviorSnapshots.sort { $0.day.rawValue < $1.day.rawValue }
+        }
+    }
+
+    func deleteBehaviorSnapshot(for day: Weekday) {
+        withAnimation(.spring(response: 0.32, dampingFraction: 0.9)) {
+            behaviorSnapshots.removeAll { $0.day == day }
         }
     }
 

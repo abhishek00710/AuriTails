@@ -373,6 +373,119 @@ struct VaccineEditorView: View {
     }
 }
 
+struct BehaviorCheckInEditorView: View {
+    @ObservedObject var viewModel: AppViewModel
+    @Environment(\.dismiss) private var dismiss
+    @State private var draft: BehaviorSnapshot
+    @State private var originalDay: Weekday
+    @State private var showsDeleteAlert = false
+
+    init(viewModel: AppViewModel, day: Weekday?) {
+        self.viewModel = viewModel
+        let resolvedDay = day ?? .current
+        let existing = viewModel.behaviorSnapshot(for: resolvedDay)
+        let initialDraft = existing ?? BehaviorSnapshot(
+            day: resolvedDay,
+            energy: 0.75,
+            calmness: 0.75,
+            appetite: 0.80,
+            sleepHours: 11.5
+        )
+        _draft = State(initialValue: initialDraft)
+        _originalDay = State(initialValue: existing?.day ?? resolvedDay)
+    }
+
+    var body: some View {
+        EditorShell(
+            title: L10n.tr("Daily Check-In", default: "Daily Check-In"),
+            saveLabel: L10n.tr("Save Check-In", default: "Save Check-In")
+        ) {
+            dismiss()
+        } onSave: {
+            if originalDay != draft.day {
+                viewModel.deleteBehaviorSnapshot(for: originalDay)
+            }
+            viewModel.saveBehaviorSnapshot(draft)
+            dismiss()
+        } content: {
+            GlassCard(tone: .lagoon) {
+                SectionHeader(
+                    eyebrow: "Behavior",
+                    title: "Log the day your pet actually had",
+                    detail: "A quick check-in turns Bond Pulse into something trustworthy instead of inferred."
+                )
+
+                EditorEnumPicker(
+                    title: "Day",
+                    icon: "calendar",
+                    selection: $draft.day,
+                    options: Weekday.allCases
+                )
+
+                BehaviorMetricEditor(
+                    title: "Energy",
+                    icon: "bolt.heart.fill",
+                    value: $draft.energy,
+                    rangeLabel: behaviorDescriptor(for: draft.energy)
+                )
+
+                BehaviorMetricEditor(
+                    title: "Calmness",
+                    icon: "moon.zzz.fill",
+                    value: $draft.calmness,
+                    rangeLabel: behaviorDescriptor(for: draft.calmness)
+                )
+
+                BehaviorMetricEditor(
+                    title: "Appetite",
+                    icon: "fork.knife.circle.fill",
+                    value: $draft.appetite,
+                    rangeLabel: appetiteDescriptor(for: draft.appetite)
+                )
+
+                SleepHoursEditor(hours: $draft.sleepHours)
+            }
+
+            if viewModel.behaviorSnapshot(for: originalDay) != nil {
+                DeleteCard(label: "Delete Check-In", icon: "trash.fill") {
+                    showsDeleteAlert = true
+                }
+            }
+        }
+        .alert("Delete this daily check-in?", isPresented: $showsDeleteAlert) {
+            Button("Delete", role: .destructive) {
+                viewModel.deleteBehaviorSnapshot(for: originalDay)
+                dismiss()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This day will no longer contribute to Bond Pulse until you log it again.")
+        }
+    }
+
+    private func behaviorDescriptor(for value: Double) -> String {
+        switch value {
+        case ..<0.35:
+            return L10n.tr("Low", default: "Low")
+        case ..<0.7:
+            return L10n.tr("Balanced", default: "Balanced")
+        default:
+            return L10n.tr("High", default: "High")
+        }
+    }
+
+    private func appetiteDescriptor(for value: Double) -> String {
+        switch value {
+        case ..<0.4:
+            return L10n.tr("Light appetite", default: "Light appetite")
+        case ..<0.75:
+            return L10n.tr("Steady appetite", default: "Steady appetite")
+        default:
+            return L10n.tr("Strong appetite", default: "Strong appetite")
+        }
+    }
+}
+
 struct MedicalEntryEditorView: View {
     @ObservedObject var viewModel: AppViewModel
     @Environment(\.dismiss) private var dismiss
@@ -429,6 +542,61 @@ struct MedicalEntryEditorView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("This removes the item from the medical timeline.")
+        }
+    }
+}
+
+private struct BehaviorMetricEditor: View {
+    let title: LocalizedStringKey
+    let icon: String
+    @Binding var value: Double
+    let rangeLabel: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Label(title, systemImage: icon)
+                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.72))
+
+                Spacer()
+
+                Text("\(Int((value * 100).rounded()))% • \(rangeLabel)")
+                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.74))
+            }
+
+            Slider(value: $value, in: 0...1)
+                .tint(.white)
+                .padding(.horizontal, 4)
+                .padding(.vertical, 10)
+                .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        }
+    }
+}
+
+private struct SleepHoursEditor: View {
+    @Binding var hours: Double
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Label("Sleep", systemImage: "bed.double.fill")
+                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.72))
+
+                Spacer()
+
+                Text("\(hours.formatted(.number.precision(.fractionLength(1)))) h")
+                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.74))
+            }
+
+            Slider(value: $hours, in: 4...18, step: 0.5)
+                .tint(.white)
+                .padding(.horizontal, 4)
+                .padding(.vertical, 10)
+                .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
         }
     }
 }

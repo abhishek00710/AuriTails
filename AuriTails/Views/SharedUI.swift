@@ -312,7 +312,7 @@ struct GlassCard<Content: View>: View {
             content
         }
         .padding(20)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background {
             RoundedRectangle(cornerRadius: 28, style: .continuous)
                 .fill(
@@ -499,18 +499,21 @@ struct FloatingTabBar: View {
 struct StatChip: View {
     let title: LocalizedStringKey
     let value: String
+    var fillsWidth: Bool = true
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
                 .font(.system(size: 11, weight: .bold, design: .rounded))
                 .foregroundStyle(.white.opacity(0.62))
+                .lineLimit(1)
 
             Text(value)
                 .font(.system(size: 18, weight: .semibold, design: .rounded))
                 .foregroundStyle(.white)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        .fixedSize(horizontal: !fillsWidth, vertical: true)
+        .frame(maxWidth: fillsWidth ? .infinity : nil, maxHeight: .infinity, alignment: .topLeading)
         .padding(14)
         .background(.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
@@ -1279,15 +1282,16 @@ struct BehaviorSparkline: View {
     let snapshots: [BehaviorSnapshot]
 
     var body: some View {
-        HStack(alignment: .bottom, spacing: 12) {
+        HStack(alignment: .bottom, spacing: 8) {
             ForEach(snapshots) { snapshot in
                 VStack(spacing: 8) {
                     ZStack(alignment: .bottom) {
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
                             .fill(.white.opacity(0.08))
-                            .frame(width: 28, height: 124)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 124)
 
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
                             .fill(
                                 LinearGradient(
                                     colors: [
@@ -1298,20 +1302,24 @@ struct BehaviorSparkline: View {
                                     endPoint: .top
                                 )
                             )
-                            .frame(width: 28, height: max(28, 124 * snapshot.energy))
+                            .frame(maxWidth: .infinity)
+                            .frame(height: max(28, 124 * snapshot.energy))
 
                         Circle()
                             .fill(.white)
                             .frame(width: 10, height: 10)
                             .offset(y: CGFloat(-110 * snapshot.calmness))
                     }
+                    .frame(maxWidth: .infinity)
 
                     Text(snapshot.day.shortTitle)
                         .font(.system(size: 12, weight: .bold, design: .rounded))
                         .foregroundStyle(.white.opacity(0.72))
                 }
+                .frame(maxWidth: .infinity)
             }
         }
+        .frame(maxWidth: .infinity)
     }
 }
 

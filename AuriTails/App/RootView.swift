@@ -79,6 +79,8 @@ struct RootView: View {
                 ProfileStudioView(viewModel: viewModel)
             case .notificationSettings:
                 NotificationSettingsView(viewModel: viewModel)
+            case let .behaviorCheckInEditor(day):
+                BehaviorCheckInEditorView(viewModel: viewModel, day: day)
             case let .routineEditor(routineID):
                 RoutineEditorView(viewModel: viewModel, routineID: routineID)
             case let .memoryEditor(memoryID):
