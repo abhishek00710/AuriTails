@@ -60,6 +60,8 @@ enum CoreDataModelFactory {
         let ownerPhotoData = attribute(name: "ownerPhotoData", type: .binaryDataAttributeType, optional: true, externalBinary: true)
         let petPhotoData = attribute(name: "petPhotoData", type: .binaryDataAttributeType, optional: true, externalBinary: true)
         let bondPhotoData = attribute(name: "bondPhotoData", type: .binaryDataAttributeType, optional: true, externalBinary: true)
+        let careCircleMembersData = attribute(name: "careCircleMembersData", type: .binaryDataAttributeType, optional: true, externalBinary: true)
+        let careActivityEventsData = attribute(name: "careActivityEventsData", type: .binaryDataAttributeType, optional: true, externalBinary: true)
         let routinesNotificationsEnabled = attribute(name: "routinesNotificationsEnabled", type: .booleanAttributeType, optional: false)
         let vaccinesNotificationsEnabled = attribute(name: "vaccinesNotificationsEnabled", type: .booleanAttributeType, optional: false)
         let medicationsNotificationsEnabled = attribute(name: "medicationsNotificationsEnabled", type: .booleanAttributeType, optional: false)
@@ -76,6 +78,7 @@ enum CoreDataModelFactory {
             ownerID, ownerName, ownerHeadline, ownerLocation, ownerNote,
             petID, petName, petSpecies, petBreed, petAgeDescription, petWeightDescription, petFavoriteTreat, petBondStatement, petEnergySummary,
             ownerPhotoData, petPhotoData, bondPhotoData,
+            careCircleMembersData, careActivityEventsData,
             routinesNotificationsEnabled, vaccinesNotificationsEnabled, medicationsNotificationsEnabled, memoriesNotificationsEnabled,
             routineLeadMinutes, vaccineLeadDays, medicationLeadMinutes, memoryLeadDays,
             onboardingFocus, hasCompletedOnboarding,

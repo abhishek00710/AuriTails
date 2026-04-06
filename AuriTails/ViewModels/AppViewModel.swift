@@ -36,6 +36,8 @@ final class AppViewModel: ObservableObject {
     @Published var foodPreferences: [FoodPreference] { didSet { persistIfNeeded() } }
     @Published var routines: [RoutineItem] { didSet { persistIfNeeded() } }
     @Published var memories: [MemoryMoment] { didSet { persistIfNeeded() } }
+    @Published var careCircleMembers: [CareCircleMember] { didSet { persistIfNeeded() } }
+    @Published var careActivityEvents: [CareActivityEvent] { didSet { persistIfNeeded() } }
     @Published var onboardingFocus: OnboardingFocus { didSet { persistIfNeeded() } }
     @Published var hasCompletedOnboarding: Bool { didSet { persistIfNeeded() } }
     @Published var exportBackupDocument: AppBackupDocument?
@@ -90,6 +92,8 @@ final class AppViewModel: ObservableObject {
         foodPreferences = initialState.foodPreferences
         routines = initialState.routines
         memories = initialState.memories
+        careCircleMembers = initialState.careCircleMembers
+        careActivityEvents = initialState.careActivityEvents
         onboardingFocus = initialState.onboardingFocus
         hasCompletedOnboarding = initialState.hasCompletedOnboarding
         self.store = store
@@ -174,6 +178,22 @@ final class AppViewModel: ObservableObject {
     var hasSymptomData: Bool { !symptoms.isEmpty }
     var hasMedicalData: Bool { !medicalHistory.isEmpty }
     var hasFoodData: Bool { !foodPreferences.isEmpty }
+    var activeCareCircleMembers: [CareCircleMember] { careCircleMembers.filter { $0.status == .active } }
+    var invitedCareCircleMembers: [CareCircleMember] { careCircleMembers.filter { $0.status == .invited } }
+    var totalCareCircleCount: Int { 1 + activeCareCircleMembers.count }
+    var careCircleSummary: String {
+        if activeCareCircleMembers.isEmpty {
+            return L10n.tr("Just you so far. Invite one trusted caregiver to share routines, meds, and moments.", default: "Just you so far. Invite one trusted caregiver to share routines, meds, and moments.")
+        }
+
+        return L10n.format(
+            "%d trusted caregiver%@ already inside %@'s circle.",
+            default: "%d trusted caregiver%@ already inside %@'s circle.",
+            activeCareCircleMembers.count,
+            activeCareCircleMembers.count == 1 ? "" : "s",
+            displayPetName
+        )
+    }
 
     var selectedDayRoutines: [RoutineItem] {
         routines
@@ -312,6 +332,11 @@ final class AppViewModel: ObservableObject {
     func openProfile() {
         closeMenu()
         activeSheet = .profile
+    }
+
+    func openCareCircle() {
+        closeMenu()
+        activeSheet = .careCircle
     }
 
     func openNotificationSettings() {
@@ -593,6 +618,63 @@ final class AppViewModel: ObservableObject {
             self.ownerPhotoData = ownerPhotoData
             self.petPhotoData = petPhotoData
             self.bondPhotoData = bondPhotoData
+        }
+    }
+
+    func inviteCaregiver(name: String, contact: String, relationshipLabel: String, note: String) {
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedName.isEmpty else { return }
+
+        let member = CareCircleMember(
+            name: trimmedName,
+            contact: contact.trimmingCharacters(in: .whitespacesAndNewlines),
+            relationshipLabel: relationshipLabel.trimmingCharacters(in: .whitespacesAndNewlines),
+            role: .caregiver,
+            status: .invited,
+            note: note.trimmingCharacters(in: .whitespacesAndNewlines),
+            invitedAt: .now
+        )
+
+        withAnimation(.spring(response: 0.34, dampingFraction: 0.88)) {
+            careCircleMembers.append(member)
+            sortCareCircleMembers()
+            prependCareActivity(
+                title: L10n.format("Invite prepared for %@", default: "Invite prepared for %@", trimmedName),
+                detail: L10n.format("%@ can join %@'s shared care space as soon as the invite is accepted.", default: "%@ can join %@'s shared care space as soon as the invite is accepted.", trimmedName, displayPetName),
+                systemImage: "person.badge.plus",
+                tone: .twilight
+            )
+        }
+    }
+
+    func markCaregiverInviteAccepted(_ memberID: UUID) {
+        guard let index = careCircleMembers.firstIndex(where: { $0.id == memberID }) else { return }
+        guard careCircleMembers[index].status == .invited else { return }
+
+        withAnimation(.spring(response: 0.34, dampingFraction: 0.88)) {
+            careCircleMembers[index].status = .active
+            let memberName = careCircleMembers[index].name
+            sortCareCircleMembers()
+            prependCareActivity(
+                title: L10n.format("%@ joined the Care Circle", default: "%@ joined the Care Circle", memberName),
+                detail: L10n.format("%@ can now help with routines, wellness updates, and shared memory keeping for %@.", default: "%@ can now help with routines, wellness updates, and shared memory keeping for %@.", memberName, displayPetName),
+                systemImage: "person.2.fill",
+                tone: .meadow
+            )
+        }
+    }
+
+    func removeCareCircleMember(_ memberID: UUID) {
+        guard let member = careCircleMembers.first(where: { $0.id == memberID }) else { return }
+
+        withAnimation(.spring(response: 0.32, dampingFraction: 0.9)) {
+            careCircleMembers.removeAll { $0.id == memberID }
+            prependCareActivity(
+                title: L10n.format("%@ was removed from the circle", default: "%@ was removed from the circle", member.name),
+                detail: L10n.format("%@'s shared space is back to %d trusted member%@.", default: "%@'s shared space is back to %d trusted member%@.", displayPetName, totalCareCircleCount, totalCareCircleCount == 1 ? "" : "s"),
+                systemImage: "person.crop.circle.badge.minus",
+                tone: .apricot
+            )
         }
     }
 
@@ -959,6 +1041,8 @@ final class AppViewModel: ObservableObject {
         foodPreferences = state.foodPreferences
         routines = state.routines
         memories = state.memories
+        careCircleMembers = state.careCircleMembers
+        careActivityEvents = state.careActivityEvents
         onboardingFocus = .dashboard
         hasCompletedOnboarding = onboardingCompleted
         vaccineEditorSeed = nil
@@ -985,6 +1069,8 @@ final class AppViewModel: ObservableObject {
             foodPreferences: foodPreferences,
             routines: routines,
             memories: memories,
+            careCircleMembers: careCircleMembers,
+            careActivityEvents: careActivityEvents,
             onboardingFocus: onboardingFocus,
             hasCompletedOnboarding: hasCompletedOnboarding
         )
@@ -1009,10 +1095,37 @@ final class AppViewModel: ObservableObject {
         foodPreferences = state.foodPreferences
         routines = state.routines
         memories = state.memories
+        careCircleMembers = state.careCircleMembers
+        careActivityEvents = state.careActivityEvents
         onboardingFocus = state.onboardingFocus
         hasCompletedOnboarding = state.hasCompletedOnboarding
         isApplyingState = false
         persist()
+    }
+
+    private func sortCareCircleMembers() {
+        careCircleMembers.sort { lhs, rhs in
+            if lhs.status != rhs.status {
+                return lhs.status == .active
+            }
+            return lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
+        }
+    }
+
+    private func prependCareActivity(title: String, detail: String, systemImage: String, tone: PaletteTone) {
+        careActivityEvents.insert(
+            CareActivityEvent(
+                title: title,
+                detail: detail,
+                createdAt: .now,
+                systemImage: systemImage,
+                tone: tone
+            ),
+            at: 0
+        )
+        if careActivityEvents.count > 12 {
+            careActivityEvents = Array(careActivityEvents.prefix(12))
+        }
     }
 }
 

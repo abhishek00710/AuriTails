@@ -2,6 +2,9 @@ import CoreData
 import Foundation
 
 extension AppStateStore {
+    private static let careCircleEncoder = JSONEncoder()
+    private static let careCircleDecoder = JSONDecoder()
+
     func loadNormalizedState(from context: NSManagedObjectContext) -> PersistedAppState? {
         let metadataRequest = NSFetchRequest<NSManagedObject>(entityName: Entity.metadata.name)
         metadataRequest.fetchLimit = 1
@@ -40,6 +43,8 @@ extension AppStateStore {
             medicationLeadMinutes: Int(metadata.int32("medicationLeadMinutes") == 0 ? 30 : metadata.int32("medicationLeadMinutes")),
             memoryLeadDays: Int(metadata.int32("memoryLeadDays") == 0 ? 1 : metadata.int32("memoryLeadDays"))
         )
+        let careCircleMembers = decode([CareCircleMember].self, from: metadata.value(forKey: "careCircleMembersData") as? Data) ?? []
+        let careActivityEvents = decode([CareActivityEvent].self, from: metadata.value(forKey: "careActivityEventsData") as? Data) ?? []
 
         let behaviorSnapshots: [BehaviorSnapshot] = fetchSorted(Entity.behaviorSnapshot.name, by: "day", ascending: true, in: context).compactMap { object in
             guard let day = Weekday(rawValue: Int(object.int16("day"))) else { return nil }
@@ -195,6 +200,8 @@ extension AppStateStore {
             foodPreferences: foodPreferences,
             routines: routines,
             memories: memories,
+            careCircleMembers: careCircleMembers,
+            careActivityEvents: careActivityEvents,
             onboardingFocus: OnboardingFocus(rawValue: metadata.string("onboardingFocus")) ?? .dashboard,
             hasCompletedOnboarding: metadata.bool("hasCompletedOnboarding")
         )
@@ -225,6 +232,8 @@ extension AppStateStore {
         object.setValue(state.ownerPhotoData, forKey: "ownerPhotoData")
         object.setValue(state.petPhotoData, forKey: "petPhotoData")
         object.setValue(state.bondPhotoData, forKey: "bondPhotoData")
+        object.setValue(encode(state.careCircleMembers), forKey: "careCircleMembersData")
+        object.setValue(encode(state.careActivityEvents), forKey: "careActivityEventsData")
         object.setValue(state.notificationPreferences.routinesEnabled, forKey: "routinesNotificationsEnabled")
         object.setValue(state.notificationPreferences.vaccinesEnabled, forKey: "vaccinesNotificationsEnabled")
         object.setValue(state.notificationPreferences.medicationsEnabled, forKey: "medicationsNotificationsEnabled")
@@ -250,6 +259,15 @@ extension AppStateStore {
         let request = NSFetchRequest<NSManagedObject>(entityName: entityName)
         request.sortDescriptors = [NSSortDescriptor(key: key, ascending: ascending)]
         return (try? context.fetch(request)) ?? []
+    }
+
+    private func encode<T: Encodable>(_ value: T) -> Data? {
+        try? Self.careCircleEncoder.encode(value)
+    }
+
+    private func decode<T: Decodable>(_ type: T.Type, from data: Data?) -> T? {
+        guard let data else { return nil }
+        return try? Self.careCircleDecoder.decode(type, from: data)
     }
 }
 

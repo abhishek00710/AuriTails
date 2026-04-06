@@ -70,6 +70,7 @@ enum RootTab: String, CaseIterable, Identifiable, Codable {
 enum AppSheet: Identifiable {
     case ai
     case profile
+    case careCircle
     case notificationSettings
     case behaviorCheckInEditor(Weekday?)
     case weightEntryEditor(UUID?)
@@ -87,6 +88,8 @@ enum AppSheet: Identifiable {
             return "ai"
         case .profile:
             return "profile"
+        case .careCircle:
+            return "care-circle"
         case .notificationSettings:
             return "notification-settings"
         case let .behaviorCheckInEditor(day):
@@ -410,6 +413,79 @@ struct PetProfile: Identifiable, Codable {
     var favoriteTreat: String
     var bondStatement: String
     var energySummary: String
+}
+
+enum CareCircleRole: String, CaseIterable, Codable {
+    case owner
+    case caregiver
+
+    var title: String {
+        switch self {
+        case .owner:
+            return L10n.tr("Owner", default: "Owner")
+        case .caregiver:
+            return L10n.tr("Caregiver", default: "Caregiver")
+        }
+    }
+}
+
+enum CareCircleMemberStatus: String, CaseIterable, Codable {
+    case invited
+    case active
+
+    var title: String {
+        switch self {
+        case .invited:
+            return L10n.tr("Invite sent", default: "Invite sent")
+        case .active:
+            return L10n.tr("Active", default: "Active")
+        }
+    }
+}
+
+struct CareCircleMember: Identifiable, Codable {
+    var id: UUID = UUID()
+    var name: String
+    var contact: String
+    var relationshipLabel: String
+    var role: CareCircleRole
+    var status: CareCircleMemberStatus
+    var note: String
+    var invitedAt: Date
+
+    var subtitle: String {
+        let pieces = [relationshipLabel, contact].filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        return pieces.joined(separator: " • ")
+    }
+
+    var invitedLabel: String {
+        Self.dateFormatter.string(from: invitedAt)
+    }
+
+    private static let dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM d, yyyy"
+        return formatter
+    }()
+}
+
+struct CareActivityEvent: Identifiable, Codable {
+    var id: UUID = UUID()
+    var title: String
+    var detail: String
+    var createdAt: Date
+    var systemImage: String
+    var tone: PaletteTone
+
+    var createdLabel: String {
+        Self.dateFormatter.localizedString(for: createdAt, relativeTo: .now)
+    }
+
+    private static let dateFormatter: RelativeDateTimeFormatter = {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .short
+        return formatter
+    }()
 }
 
 struct BehaviorSnapshot: Identifiable, Codable {
@@ -822,6 +898,8 @@ struct PersistedAppState: Codable {
     var foodPreferences: [FoodPreference]
     var routines: [RoutineItem]
     var memories: [MemoryMoment]
+    var careCircleMembers: [CareCircleMember]
+    var careActivityEvents: [CareActivityEvent]
     var onboardingFocus: OnboardingFocus
     var hasCompletedOnboarding: Bool
 
@@ -843,6 +921,8 @@ struct PersistedAppState: Codable {
         foodPreferences: [FoodPreference],
         routines: [RoutineItem],
         memories: [MemoryMoment],
+        careCircleMembers: [CareCircleMember],
+        careActivityEvents: [CareActivityEvent],
         onboardingFocus: OnboardingFocus,
         hasCompletedOnboarding: Bool
     ) {
@@ -863,6 +943,8 @@ struct PersistedAppState: Codable {
         self.foodPreferences = foodPreferences
         self.routines = routines
         self.memories = memories
+        self.careCircleMembers = careCircleMembers
+        self.careActivityEvents = careActivityEvents
         self.onboardingFocus = onboardingFocus
         self.hasCompletedOnboarding = hasCompletedOnboarding
     }
@@ -885,6 +967,8 @@ struct PersistedAppState: Codable {
         foodPreferences = seed.foodPreferences
         routines = seed.routines
         memories = seed.memories
+        careCircleMembers = seed.careCircleMembers
+        careActivityEvents = seed.careActivityEvents
         onboardingFocus = .dashboard
         hasCompletedOnboarding = false
     }
@@ -908,6 +992,8 @@ struct PersistedAppState: Codable {
         foodPreferences = try container.decode([FoodPreference].self, forKey: .foodPreferences)
         routines = try container.decode([RoutineItem].self, forKey: .routines)
         memories = try container.decode([MemoryMoment].self, forKey: .memories)
+        careCircleMembers = try container.decodeIfPresent([CareCircleMember].self, forKey: .careCircleMembers) ?? []
+        careActivityEvents = try container.decodeIfPresent([CareActivityEvent].self, forKey: .careActivityEvents) ?? []
         onboardingFocus = try container.decodeIfPresent(OnboardingFocus.self, forKey: .onboardingFocus) ?? .dashboard
         hasCompletedOnboarding = try container.decodeIfPresent(Bool.self, forKey: .hasCompletedOnboarding) ?? false
     }
@@ -925,6 +1011,8 @@ struct AppSeed {
     let foodPreferences: [FoodPreference]
     let routines: [RoutineItem]
     let memories: [MemoryMoment]
+    let careCircleMembers: [CareCircleMember]
+    let careActivityEvents: [CareActivityEvent]
 
     static let empty = AppSeed(
         owner: OwnerProfile(
@@ -951,7 +1039,9 @@ struct AppSeed {
         medicalHistory: [],
         foodPreferences: [],
         routines: [],
-        memories: []
+        memories: [],
+        careCircleMembers: [],
+        careActivityEvents: []
     )
 
     static let preview = AppSeed(
@@ -1114,6 +1204,42 @@ struct AppSeed {
                 systemImage: "cloud.drizzle.fill",
                 tone: .lagoon,
                 isAnnualCelebration: false
+            ),
+        ],
+        careCircleMembers: [
+            CareCircleMember(
+                name: "Arjun",
+                contact: "arjun@auritails.demo",
+                relationshipLabel: "Weekend walker",
+                role: .caregiver,
+                status: .active,
+                note: "Usually handles Saturday trail loops and pickup after daycare.",
+                invitedAt: date(2026, 3, 20)
+            ),
+            CareCircleMember(
+                name: "Ria",
+                contact: "ria@auritails.demo",
+                relationshipLabel: "Vet-day backup",
+                role: .caregiver,
+                status: .invited,
+                note: "Ready to help with appointments and evening medication check-ins.",
+                invitedAt: date(2026, 4, 2)
+            ),
+        ],
+        careActivityEvents: [
+            CareActivityEvent(
+                title: "Arjun completed the harbor trail loop",
+                detail: "Saturday walk was marked done, and Sol came back calm enough for an easy evening.",
+                createdAt: dateTime(2026, 4, 4, 11, 20),
+                systemImage: "figure.walk.motion",
+                tone: .lagoon
+            ),
+            CareActivityEvent(
+                title: "Ria was invited to Sol's circle",
+                detail: "Invite prepared for vet-day backup and medication support.",
+                createdAt: dateTime(2026, 4, 2, 9, 15),
+                systemImage: "person.badge.plus",
+                tone: .twilight
             ),
         ]
     )

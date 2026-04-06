@@ -77,6 +77,8 @@ struct RootView: View {
                 AICompanionView(viewModel: viewModel)
             case .profile:
                 ProfileStudioView(viewModel: viewModel)
+            case .careCircle:
+                CareCircleView(viewModel: viewModel)
             case .notificationSettings:
                 NotificationSettingsView(viewModel: viewModel)
             case let .behaviorCheckInEditor(day):

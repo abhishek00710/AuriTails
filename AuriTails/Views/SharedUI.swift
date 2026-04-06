@@ -596,7 +596,8 @@ struct SlideMenuPanel: View {
                         owner: viewModel.owner,
                         pet: viewModel.pet,
                         ownerPhotoData: viewModel.ownerPhotoData,
-                        petPhotoData: viewModel.petPhotoData
+                        petPhotoData: viewModel.petPhotoData,
+                        careCircleCount: viewModel.totalCareCircleCount
                     )
                 }
                 .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.98, pressedBrightness: 0.02))
@@ -607,6 +608,15 @@ struct SlideMenuPanel: View {
                     .font(.system(size: 11, weight: .bold, design: .rounded))
                     .tracking(1.5)
                     .foregroundStyle(.white.opacity(0.46))
+
+                SocialMenuActionRow(
+                    icon: "person.2.wave.2.fill",
+                    iconTint: .meadow,
+                    title: "Care Circle",
+                    subtitle: "\(viewModel.totalCareCircleCount) trusted member\(viewModel.totalCareCircleCount == 1 ? "" : "s") helping with \(viewModel.pet.name)."
+                ) {
+                    viewModel.openCareCircle()
+                }
 
                 SocialMenuActionRow(
                     icon: "bell.badge.fill",
@@ -697,6 +707,7 @@ private struct MenuProfileCard: View {
     let pet: PetProfile
     let ownerPhotoData: Data?
     let petPhotoData: Data?
+    let careCircleCount: Int
 
     var body: some View {
         HStack(spacing: 14) {
@@ -719,6 +730,11 @@ private struct MenuProfileCard: View {
                 Text("\(pet.breed) • \(owner.location)")
                     .font(.system(size: 12, weight: .medium, design: .rounded))
                     .foregroundStyle(.white.opacity(0.48))
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text("\(careCircleCount) in the Care Circle")
+                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.64))
                     .fixedSize(horizontal: false, vertical: true)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
