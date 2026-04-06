@@ -11,6 +11,8 @@ struct VetVisitPackBuilder {
         owner: OwnerProfile,
         pet: PetProfile,
         vaccinations: [VaccineRecord],
+        medications: [MedicationRecord],
+        symptoms: [SymptomEntry],
         medicalHistory: [MedicalEntry],
         foodPreferences: [FoodPreference],
         routines: [RoutineItem],
@@ -24,6 +26,8 @@ struct VetVisitPackBuilder {
             .appendingPathExtension("pdf")
 
         let sortedVaccinations = vaccinations.sorted { $0.nextDue < $1.nextDue }
+        let sortedMedications = medications.sorted { $0.nextDose < $1.nextDose }
+        let sortedSymptoms = symptoms.sorted { $0.observedAt > $1.observedAt }
         let sortedMedical = medicalHistory.sorted { $0.date > $1.date }
         let sortedRoutines = routines.sorted { lhs, rhs in
             if lhs.day.rawValue != rhs.day.rawValue {
@@ -75,6 +79,14 @@ struct VetVisitPackBuilder {
             yOffset += 18
             beginPageIfNeeded(for: max(180, CGFloat(sortedVaccinations.count) * 74 + 80))
             drawVaccines(sortedVaccinations, bounds: pageBounds, yOffset: &yOffset)
+
+            yOffset += 18
+            beginPageIfNeeded(for: max(180, CGFloat(sortedMedications.count) * 82 + 80))
+            drawMedications(sortedMedications, bounds: pageBounds, yOffset: &yOffset)
+
+            yOffset += 18
+            beginPageIfNeeded(for: max(180, CGFloat(sortedSymptoms.count) * 88 + 80))
+            drawSymptoms(sortedSymptoms, bounds: pageBounds, yOffset: &yOffset)
 
             yOffset += 18
             beginPageIfNeeded(for: max(180, CGFloat(sortedMedical.count) * 88 + 80))
@@ -184,6 +196,58 @@ struct VetVisitPackBuilder {
                 withAttributes: attributed(fontSize: 12, weight: .medium, color: UIColor(red: 0.33, green: 0.39, blue: 0.47, alpha: 1))
             )
             NSString(string: entry.summary).draw(
+                in: CGRect(x: 52, y: yOffset + 48, width: frame.width - 32, height: 22),
+                withAttributes: attributed(fontSize: 12, weight: .medium, color: UIColor(red: 0.22, green: 0.27, blue: 0.34, alpha: 1))
+            )
+            yOffset += 88
+        }
+    }
+
+    private func drawMedications(_ medications: [MedicationRecord], bounds: CGRect, yOffset: inout CGFloat) {
+        guard !medications.isEmpty else { return }
+        drawSectionTitle("Medication Tracker", y: yOffset, width: bounds.width - 72)
+        yOffset += 36
+
+        for medication in medications {
+            let frame = CGRect(x: 36, y: yOffset, width: bounds.width - 72, height: 72)
+            fillRow(frame: frame)
+            NSString(string: medication.title).draw(
+                in: CGRect(x: 52, y: yOffset + 12, width: frame.width - 180, height: 18),
+                withAttributes: attributed(fontSize: 15, weight: .bold, color: UIColor(red: 0.10, green: 0.13, blue: 0.22, alpha: 1))
+            )
+            NSString(string: "\(medication.dosage) • \(medication.scheduleNote)").draw(
+                in: CGRect(x: 52, y: yOffset + 32, width: frame.width - 180, height: 14),
+                withAttributes: attributed(fontSize: 12, weight: .medium, color: UIColor(red: 0.33, green: 0.39, blue: 0.47, alpha: 1))
+            )
+            NSString(string: medication.purpose).draw(
+                in: CGRect(x: 52, y: yOffset + 48, width: frame.width - 180, height: 14),
+                withAttributes: attributed(fontSize: 12, weight: .medium, color: UIColor(red: 0.22, green: 0.27, blue: 0.34, alpha: 1))
+            )
+            NSString(string: "Next dose • \(medication.nextDoseLabel)").draw(
+                in: CGRect(x: bounds.width - 210, y: yOffset + 28, width: 150, height: 18),
+                withAttributes: attributed(fontSize: 11, weight: .bold, color: UIColor(red: 0.10, green: 0.13, blue: 0.22, alpha: 1))
+            )
+            yOffset += 82
+        }
+    }
+
+    private func drawSymptoms(_ symptoms: [SymptomEntry], bounds: CGRect, yOffset: inout CGFloat) {
+        guard !symptoms.isEmpty else { return }
+        drawSectionTitle("Symptom Notes", y: yOffset, width: bounds.width - 72)
+        yOffset += 36
+
+        for symptom in symptoms {
+            let frame = CGRect(x: 36, y: yOffset, width: bounds.width - 72, height: 78)
+            fillRow(frame: frame)
+            NSString(string: symptom.title).draw(
+                in: CGRect(x: 52, y: yOffset + 12, width: frame.width - 180, height: 18),
+                withAttributes: attributed(fontSize: 15, weight: .bold, color: UIColor(red: 0.10, green: 0.13, blue: 0.22, alpha: 1))
+            )
+            NSString(string: "\(symptom.observedLabel) • \(symptom.severity.title)").draw(
+                in: CGRect(x: 52, y: yOffset + 32, width: frame.width - 32, height: 14),
+                withAttributes: attributed(fontSize: 12, weight: .medium, color: UIColor(red: 0.33, green: 0.39, blue: 0.47, alpha: 1))
+            )
+            NSString(string: symptom.detail).draw(
                 in: CGRect(x: 52, y: yOffset + 48, width: frame.width - 32, height: 22),
                 withAttributes: attributed(fontSize: 12, weight: .medium, color: UIColor(red: 0.22, green: 0.27, blue: 0.34, alpha: 1))
             )

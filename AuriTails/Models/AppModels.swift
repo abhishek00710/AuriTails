@@ -72,6 +72,8 @@ enum AppSheet: Identifiable {
     case profile
     case notificationSettings
     case behaviorCheckInEditor(Weekday?)
+    case medicationEditor(UUID?)
+    case symptomEditor(UUID?)
     case routineEditor(UUID?)
     case memoryEditor(UUID?)
     case vaccineEditor(UUID?)
@@ -88,6 +90,10 @@ enum AppSheet: Identifiable {
             return "notification-settings"
         case let .behaviorCheckInEditor(day):
             return "behavior-\(day?.rawValue ?? 0)"
+        case let .medicationEditor(id):
+            return "medication-\(id?.uuidString ?? "new")"
+        case let .symptomEditor(id):
+            return "symptom-\(id?.uuidString ?? "new")"
         case let .routineEditor(id):
             return "routine-\(id?.uuidString ?? "new")"
         case let .memoryEditor(id):
@@ -262,6 +268,38 @@ enum VaccineStatus: String, CaseIterable, Identifiable, Codable {
     }
 }
 
+enum MedicationStatus: String, CaseIterable, Identifiable, Codable {
+    case active
+    case watch
+    case paused
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .active: L10n.tr("Active", default: "Active")
+        case .watch: L10n.tr("Watch", default: "Watch")
+        case .paused: L10n.tr("Paused", default: "Paused")
+        }
+    }
+}
+
+enum SymptomSeverity: String, CaseIterable, Identifiable, Codable {
+    case mild
+    case moderate
+    case urgent
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .mild: L10n.tr("Mild", default: "Mild")
+        case .moderate: L10n.tr("Moderate", default: "Moderate")
+        case .urgent: L10n.tr("Urgent", default: "Urgent")
+        }
+    }
+}
+
 enum OnboardingFocus: String, CaseIterable, Identifiable, Codable {
     case wellness
     case routines
@@ -342,6 +380,83 @@ struct BehaviorSnapshot: Identifiable, Codable {
     var calmness: Double
     var appetite: Double
     var sleepHours: Double
+}
+
+struct MedicationRecord: Identifiable, Codable {
+    var id: UUID = UUID()
+    var title: String
+    var dosage: String
+    var scheduleNote: String
+    var purpose: String
+    var nextDose: Date
+    var status: MedicationStatus
+    var tone: PaletteTone
+    var notificationsEnabled: Bool = true
+
+    var nextDoseLabel: String {
+        Self.dateFormatter.string(from: nextDose)
+    }
+
+    private static let dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM d • h:mm a"
+        return formatter
+    }()
+
+    init(
+        id: UUID = UUID(),
+        title: String,
+        dosage: String,
+        scheduleNote: String,
+        purpose: String,
+        nextDose: Date,
+        status: MedicationStatus,
+        tone: PaletteTone,
+        notificationsEnabled: Bool = true
+    ) {
+        self.id = id
+        self.title = title
+        self.dosage = dosage
+        self.scheduleNote = scheduleNote
+        self.purpose = purpose
+        self.nextDose = nextDose
+        self.status = status
+        self.tone = tone
+        self.notificationsEnabled = notificationsEnabled
+    }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        title = try container.decode(String.self, forKey: .title)
+        dosage = try container.decode(String.self, forKey: .dosage)
+        scheduleNote = try container.decode(String.self, forKey: .scheduleNote)
+        purpose = try container.decode(String.self, forKey: .purpose)
+        nextDose = try container.decode(Date.self, forKey: .nextDose)
+        status = try container.decode(MedicationStatus.self, forKey: .status)
+        tone = try container.decode(PaletteTone.self, forKey: .tone)
+        notificationsEnabled = try container.decodeIfPresent(Bool.self, forKey: .notificationsEnabled) ?? true
+    }
+}
+
+struct SymptomEntry: Identifiable, Codable {
+    var id: UUID = UUID()
+    var title: String
+    var detail: String
+    var observedAt: Date
+    var severity: SymptomSeverity
+    var systemImage: String
+    var tone: PaletteTone
+
+    var observedLabel: String {
+        Self.dateFormatter.string(from: observedAt)
+    }
+
+    private static let dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM d, yyyy • h:mm a"
+        return formatter
+    }()
 }
 
 struct VaccineRecord: Identifiable, Codable {
@@ -596,6 +711,8 @@ struct PersistedAppState: Codable {
     var bondPhotoData: Data?
     var behaviorSnapshots: [BehaviorSnapshot]
     var vaccinations: [VaccineRecord]
+    var medications: [MedicationRecord]
+    var symptoms: [SymptomEntry]
     var medicalHistory: [MedicalEntry]
     var foodPreferences: [FoodPreference]
     var routines: [RoutineItem]
@@ -614,6 +731,8 @@ struct PersistedAppState: Codable {
         bondPhotoData: Data?,
         behaviorSnapshots: [BehaviorSnapshot],
         vaccinations: [VaccineRecord],
+        medications: [MedicationRecord],
+        symptoms: [SymptomEntry],
         medicalHistory: [MedicalEntry],
         foodPreferences: [FoodPreference],
         routines: [RoutineItem],
@@ -631,6 +750,8 @@ struct PersistedAppState: Codable {
         self.bondPhotoData = bondPhotoData
         self.behaviorSnapshots = behaviorSnapshots
         self.vaccinations = vaccinations
+        self.medications = medications
+        self.symptoms = symptoms
         self.medicalHistory = medicalHistory
         self.foodPreferences = foodPreferences
         self.routines = routines
@@ -650,6 +771,8 @@ struct PersistedAppState: Codable {
         bondPhotoData = nil
         behaviorSnapshots = seed.behaviorSnapshots
         vaccinations = seed.vaccinations
+        medications = seed.medications
+        symptoms = seed.symptoms
         medicalHistory = seed.medicalHistory
         foodPreferences = seed.foodPreferences
         routines = seed.routines
@@ -670,6 +793,8 @@ struct PersistedAppState: Codable {
         bondPhotoData = try container.decodeIfPresent(Data.self, forKey: .bondPhotoData)
         behaviorSnapshots = try container.decode([BehaviorSnapshot].self, forKey: .behaviorSnapshots)
         vaccinations = try container.decode([VaccineRecord].self, forKey: .vaccinations)
+        medications = try container.decodeIfPresent([MedicationRecord].self, forKey: .medications) ?? []
+        symptoms = try container.decodeIfPresent([SymptomEntry].self, forKey: .symptoms) ?? []
         medicalHistory = try container.decode([MedicalEntry].self, forKey: .medicalHistory)
         foodPreferences = try container.decode([FoodPreference].self, forKey: .foodPreferences)
         routines = try container.decode([RoutineItem].self, forKey: .routines)
@@ -684,6 +809,8 @@ struct AppSeed {
     let pet: PetProfile
     let behaviorSnapshots: [BehaviorSnapshot]
     let vaccinations: [VaccineRecord]
+    let medications: [MedicationRecord]
+    let symptoms: [SymptomEntry]
     let medicalHistory: [MedicalEntry]
     let foodPreferences: [FoodPreference]
     let routines: [RoutineItem]
@@ -708,6 +835,8 @@ struct AppSeed {
         ),
         behaviorSnapshots: [],
         vaccinations: [],
+        medications: [],
+        symptoms: [],
         medicalHistory: [],
         foodPreferences: [],
         routines: [],
@@ -745,6 +874,44 @@ struct AppSeed {
             VaccineRecord(title: "DHPP", lastGiven: date(2026, 2, 8), nextDue: date(2027, 2, 8), status: .onTrack, note: "Annual booster logged with no reactions."),
             VaccineRecord(title: "Bordetella", lastGiven: date(2026, 3, 2), nextDue: date(2026, 9, 2), status: .watch, note: "Needed before boarding and social daycare."),
             VaccineRecord(title: "Leptospirosis", lastGiven: date(2026, 2, 8), nextDue: date(2027, 2, 8), status: .onTrack, note: "Tracked because of weekend trail exposure."),
+        ],
+        medications: [
+            MedicationRecord(
+                title: "Seasonal allergy chew",
+                dosage: "1 soft chew",
+                scheduleNote: "Evenings with dinner during flare weeks",
+                purpose: "Keeps paw licking and redness more settled after park days.",
+                nextDose: dateTime(2026, 4, 6, 18, 30),
+                status: .active,
+                tone: .meadow
+            ),
+            MedicationRecord(
+                title: "Joint support oil",
+                dosage: "2 pumps",
+                scheduleNote: "Morning bowl after long trail weekends",
+                purpose: "Helps recovery when activity volume spikes.",
+                nextDose: dateTime(2026, 4, 7, 8, 0),
+                status: .watch,
+                tone: .lagoon
+            ),
+        ],
+        symptoms: [
+            SymptomEntry(
+                title: "Paw licking",
+                detail: "Mild licking after grass-heavy park loop, settled after rinse and rest.",
+                observedAt: dateTime(2026, 4, 3, 20, 10),
+                severity: .mild,
+                systemImage: "pawprint.fill",
+                tone: .apricot
+            ),
+            SymptomEntry(
+                title: "Soft appetite dip",
+                detail: "Ate slower than usual after a high-stimulation day, but finished dinner with broth.",
+                observedAt: dateTime(2026, 4, 2, 19, 0),
+                severity: .moderate,
+                systemImage: "fork.knife.circle.fill",
+                tone: .twilight
+            ),
         ],
         medicalHistory: [
             MedicalEntry(
@@ -840,6 +1007,17 @@ struct AppSeed {
         components.year = year
         components.month = month
         components.day = day
+        return components.date ?? .now
+    }
+
+    private static func dateTime(_ year: Int, _ month: Int, _ day: Int, _ hour: Int, _ minute: Int) -> Date {
+        var components = DateComponents()
+        components.calendar = Calendar(identifier: .gregorian)
+        components.year = year
+        components.month = month
+        components.day = day
+        components.hour = hour
+        components.minute = minute
         return components.date ?? .now
     }
 }

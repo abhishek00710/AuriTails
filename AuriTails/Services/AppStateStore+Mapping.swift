@@ -67,6 +67,40 @@ extension AppStateStore {
             )
         }
 
+        let medications: [MedicationRecord] = fetchSorted(Entity.medication.name, by: "sortIndex", ascending: true, in: context).compactMap { object in
+            guard let status = MedicationStatus(rawValue: object.string("status")),
+                  let tone = PaletteTone(rawValue: object.string("tone")),
+                  let nextDose = object.value(forKey: "nextDose") as? Date
+            else { return nil }
+            return MedicationRecord(
+                id: object.uuid("id"),
+                title: object.string("title"),
+                dosage: object.string("dosage"),
+                scheduleNote: object.string("scheduleNote"),
+                purpose: object.string("purpose"),
+                nextDose: nextDose,
+                status: status,
+                tone: tone,
+                notificationsEnabled: object.value(forKey: "notificationsEnabled") as? Bool ?? true
+            )
+        }
+
+        let symptoms: [SymptomEntry] = fetchSorted(Entity.symptom.name, by: "sortIndex", ascending: true, in: context).compactMap { object in
+            guard let severity = SymptomSeverity(rawValue: object.string("severity")),
+                  let tone = PaletteTone(rawValue: object.string("tone")),
+                  let observedAt = object.value(forKey: "observedAt") as? Date
+            else { return nil }
+            return SymptomEntry(
+                id: object.uuid("id"),
+                title: object.string("title"),
+                detail: object.string("detail"),
+                observedAt: observedAt,
+                severity: severity,
+                systemImage: object.string("systemImage"),
+                tone: tone
+            )
+        }
+
         let medicalHistory: [MedicalEntry] = fetchSorted(Entity.medicalEntry.name, by: "sortIndex", ascending: true, in: context).compactMap { object in
             guard let tone = PaletteTone(rawValue: object.string("tone")),
                   let date = object.value(forKey: "date") as? Date
@@ -139,6 +173,8 @@ extension AppStateStore {
             bondPhotoData: metadata.value(forKey: "bondPhotoData") as? Data,
             behaviorSnapshots: behaviorSnapshots,
             vaccinations: vaccinations,
+            medications: medications,
+            symptoms: symptoms,
             medicalHistory: medicalHistory,
             foodPreferences: foodPreferences,
             routines: routines,

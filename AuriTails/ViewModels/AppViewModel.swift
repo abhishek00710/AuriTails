@@ -29,6 +29,8 @@ final class AppViewModel: ObservableObject {
     @Published var bondPhotoData: Data? { didSet { persistIfNeeded() } }
     @Published var behaviorSnapshots: [BehaviorSnapshot] { didSet { persistIfNeeded() } }
     @Published var vaccinations: [VaccineRecord] { didSet { persistIfNeeded() } }
+    @Published var medications: [MedicationRecord] { didSet { persistIfNeeded() } }
+    @Published var symptoms: [SymptomEntry] { didSet { persistIfNeeded() } }
     @Published var medicalHistory: [MedicalEntry] { didSet { persistIfNeeded() } }
     @Published var foodPreferences: [FoodPreference] { didSet { persistIfNeeded() } }
     @Published var routines: [RoutineItem] { didSet { persistIfNeeded() } }
@@ -80,6 +82,8 @@ final class AppViewModel: ObservableObject {
         bondPhotoData = initialState.bondPhotoData
         behaviorSnapshots = initialState.behaviorSnapshots
         vaccinations = initialState.vaccinations
+        medications = initialState.medications
+        symptoms = initialState.symptoms
         medicalHistory = initialState.medicalHistory
         foodPreferences = initialState.foodPreferences
         routines = initialState.routines
@@ -149,6 +153,8 @@ final class AppViewModel: ObservableObject {
     var hasRoutineData: Bool { !routines.isEmpty }
     var hasMemoryData: Bool { !memories.isEmpty }
     var hasVaccinationData: Bool { !vaccinations.isEmpty }
+    var hasMedicationData: Bool { !medications.isEmpty }
+    var hasSymptomData: Bool { !symptoms.isEmpty }
     var hasMedicalData: Bool { !medicalHistory.isEmpty }
     var hasFoodData: Bool { !foodPreferences.isEmpty }
 
@@ -217,6 +223,14 @@ final class AppViewModel: ObservableObject {
 
     var upcomingWellnessTitle: String {
         upcomingWellnessRecord?.title ?? L10n.tr("All clear", default: "All clear")
+    }
+
+    var nextMedication: MedicationRecord? {
+        medications.sorted { $0.nextDose < $1.nextDose }.first
+    }
+
+    var recentSymptoms: [SymptomEntry] {
+        symptoms.sorted { $0.observedAt > $1.observedAt }
     }
 
     func toggleMenu() {
@@ -299,6 +313,8 @@ final class AppViewModel: ObservableObject {
                 owner: owner,
                 pet: pet,
                 vaccinations: vaccinations,
+                medications: medications,
+                symptoms: symptoms,
                 medicalHistory: medicalHistory,
                 foodPreferences: foodPreferences,
                 routines: routines,
@@ -500,6 +516,14 @@ final class AppViewModel: ObservableObject {
         activeSheet = .vaccineEditor(vaccineID)
     }
 
+    func openMedicationEditor(_ medicationID: UUID? = nil) {
+        activeSheet = .medicationEditor(medicationID)
+    }
+
+    func openSymptomEditor(_ symptomID: UUID? = nil) {
+        activeSheet = .symptomEditor(symptomID)
+    }
+
     func openImportedVaccineEditor(_ draft: VaccineRecord) {
         vaccineEditorSeed = draft
         activeSheet = .vaccineEditor(nil)
@@ -690,6 +714,57 @@ final class AppViewModel: ObservableObject {
         }
     }
 
+    func medication(for id: UUID?) -> MedicationRecord? {
+        guard let id else { return nil }
+        return medications.first(where: { $0.id == id })
+    }
+
+    func saveMedication(_ medication: MedicationRecord) {
+        withAnimation(.spring(response: 0.34, dampingFraction: 0.88)) {
+            if let index = medications.firstIndex(where: { $0.id == medication.id }) {
+                medications[index] = medication
+            } else {
+                medications.append(medication)
+            }
+            medications.sort { $0.nextDose < $1.nextDose }
+        }
+    }
+
+    func toggleMedicationNotifications(_ medicationID: UUID) {
+        guard let index = medications.firstIndex(where: { $0.id == medicationID }) else { return }
+        withAnimation(.spring(response: 0.28, dampingFraction: 0.9)) {
+            medications[index].notificationsEnabled.toggle()
+        }
+    }
+
+    func deleteMedication(_ medicationID: UUID) {
+        withAnimation(.spring(response: 0.32, dampingFraction: 0.9)) {
+            medications.removeAll { $0.id == medicationID }
+        }
+    }
+
+    func symptom(for id: UUID?) -> SymptomEntry? {
+        guard let id else { return nil }
+        return symptoms.first(where: { $0.id == id })
+    }
+
+    func saveSymptom(_ symptom: SymptomEntry) {
+        withAnimation(.spring(response: 0.34, dampingFraction: 0.88)) {
+            if let index = symptoms.firstIndex(where: { $0.id == symptom.id }) {
+                symptoms[index] = symptom
+            } else {
+                symptoms.append(symptom)
+            }
+            symptoms.sort { $0.observedAt > $1.observedAt }
+        }
+    }
+
+    func deleteSymptom(_ symptomID: UUID) {
+        withAnimation(.spring(response: 0.32, dampingFraction: 0.9)) {
+            symptoms.removeAll { $0.id == symptomID }
+        }
+    }
+
     func medicalEntry(for id: UUID?) -> MedicalEntry? {
         guard let id else { return nil }
         return medicalHistory.first(where: { $0.id == id })
@@ -806,6 +881,8 @@ final class AppViewModel: ObservableObject {
         bondPhotoData = nil
         behaviorSnapshots = state.behaviorSnapshots
         vaccinations = state.vaccinations
+        medications = state.medications
+        symptoms = state.symptoms
         medicalHistory = state.medicalHistory
         foodPreferences = state.foodPreferences
         routines = state.routines
@@ -829,6 +906,8 @@ final class AppViewModel: ObservableObject {
             bondPhotoData: bondPhotoData,
             behaviorSnapshots: behaviorSnapshots,
             vaccinations: vaccinations,
+            medications: medications,
+            symptoms: symptoms,
             medicalHistory: medicalHistory,
             foodPreferences: foodPreferences,
             routines: routines,
@@ -850,6 +929,8 @@ final class AppViewModel: ObservableObject {
         bondPhotoData = state.bondPhotoData
         behaviorSnapshots = state.behaviorSnapshots
         vaccinations = state.vaccinations
+        medications = state.medications
+        symptoms = state.symptoms
         medicalHistory = state.medicalHistory
         foodPreferences = state.foodPreferences
         routines = state.routines

@@ -8,6 +8,8 @@ enum CoreDataModelFactory {
             metadataEntity(),
             behaviorSnapshotEntity(),
             vaccineEntity(),
+            medicationEntity(),
+            symptomEntity(),
             medicalEntryEntity(),
             foodPreferenceEntity(),
             routineEntity(),
@@ -132,6 +134,48 @@ enum CoreDataModelFactory {
         ]
         entity.uniquenessConstraints = [["id"]]
         entity.indexes = [index(named: "medicalEntryIDIndex", property: id)]
+        return entity
+    }
+
+    private static func medicationEntity() -> NSEntityDescription {
+        let entity = NSEntityDescription()
+        entity.name = AppStateStore.Entity.medication.name
+        entity.managedObjectClassName = NSStringFromClass(NSManagedObject.self)
+        let id = attribute(name: "id", type: .UUIDAttributeType, optional: false)
+        entity.properties = [
+            id,
+            attribute(name: "title", type: .stringAttributeType, optional: false),
+            attribute(name: "dosage", type: .stringAttributeType, optional: false),
+            attribute(name: "scheduleNote", type: .stringAttributeType, optional: false),
+            attribute(name: "purpose", type: .stringAttributeType, optional: false),
+            attribute(name: "nextDose", type: .dateAttributeType, optional: false),
+            attribute(name: "status", type: .stringAttributeType, optional: false),
+            attribute(name: "tone", type: .stringAttributeType, optional: false),
+            attribute(name: "notificationsEnabled", type: .booleanAttributeType, optional: false),
+            attribute(name: "sortIndex", type: .integer32AttributeType, optional: false),
+        ]
+        entity.uniquenessConstraints = [["id"]]
+        entity.indexes = [index(named: "medicationIDIndex", property: id)]
+        return entity
+    }
+
+    private static func symptomEntity() -> NSEntityDescription {
+        let entity = NSEntityDescription()
+        entity.name = AppStateStore.Entity.symptom.name
+        entity.managedObjectClassName = NSStringFromClass(NSManagedObject.self)
+        let id = attribute(name: "id", type: .UUIDAttributeType, optional: false)
+        entity.properties = [
+            id,
+            attribute(name: "title", type: .stringAttributeType, optional: false),
+            attribute(name: "detail", type: .stringAttributeType, optional: false),
+            attribute(name: "observedAt", type: .dateAttributeType, optional: false),
+            attribute(name: "severity", type: .stringAttributeType, optional: false),
+            attribute(name: "systemImage", type: .stringAttributeType, optional: false),
+            attribute(name: "tone", type: .stringAttributeType, optional: false),
+            attribute(name: "sortIndex", type: .integer32AttributeType, optional: false),
+        ]
+        entity.uniquenessConstraints = [["id"]]
+        entity.indexes = [index(named: "symptomIDIndex", property: id)]
         return entity
     }
 

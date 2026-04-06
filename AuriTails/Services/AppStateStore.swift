@@ -54,6 +54,34 @@ final class AppStateStore {
                     object.setValue(Int32(index), forKey: "sortIndex")
                 }
             }
+            replaceAll(entityName: Entity.medication.name, in: context) { insert in
+                for (index, medication) in state.medications.enumerated() {
+                    let object = insert()
+                    object.setValue(medication.id, forKey: "id")
+                    object.setValue(medication.title, forKey: "title")
+                    object.setValue(medication.dosage, forKey: "dosage")
+                    object.setValue(medication.scheduleNote, forKey: "scheduleNote")
+                    object.setValue(medication.purpose, forKey: "purpose")
+                    object.setValue(medication.nextDose, forKey: "nextDose")
+                    object.setValue(medication.status.rawValue, forKey: "status")
+                    object.setValue(medication.tone.rawValue, forKey: "tone")
+                    object.setValue(medication.notificationsEnabled, forKey: "notificationsEnabled")
+                    object.setValue(Int32(index), forKey: "sortIndex")
+                }
+            }
+            replaceAll(entityName: Entity.symptom.name, in: context) { insert in
+                for (index, symptom) in state.symptoms.enumerated() {
+                    let object = insert()
+                    object.setValue(symptom.id, forKey: "id")
+                    object.setValue(symptom.title, forKey: "title")
+                    object.setValue(symptom.detail, forKey: "detail")
+                    object.setValue(symptom.observedAt, forKey: "observedAt")
+                    object.setValue(symptom.severity.rawValue, forKey: "severity")
+                    object.setValue(symptom.systemImage, forKey: "systemImage")
+                    object.setValue(symptom.tone.rawValue, forKey: "tone")
+                    object.setValue(Int32(index), forKey: "sortIndex")
+                }
+            }
             replaceAll(entityName: Entity.medicalEntry.name, in: context) { insert in
                 for (index, entry) in state.medicalHistory.enumerated() {
                     let object = insert()
@@ -123,6 +151,8 @@ extension AppStateStore {
         case metadata
         case behaviorSnapshot
         case vaccine
+        case medication
+        case symptom
         case medicalEntry
         case foodPreference
         case routine
@@ -133,6 +163,8 @@ extension AppStateStore {
             case .metadata: "AppMetadataEntity"
             case .behaviorSnapshot: "BehaviorSnapshotEntity"
             case .vaccine: "VaccineRecordEntity"
+            case .medication: "MedicationRecordEntity"
+            case .symptom: "SymptomEntryEntity"
             case .medicalEntry: "MedicalEntryEntity"
             case .foodPreference: "FoodPreferenceEntity"
             case .routine: "RoutineItemEntity"

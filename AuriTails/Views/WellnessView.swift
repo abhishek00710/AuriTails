@@ -11,6 +11,8 @@ struct WellnessView: View {
                 vetVisitPackSection
                 petCareSection
                 vaccinationSection
+                medicationSection
+                symptomSection
                 medicalTimeline
                 foodSection
             }
@@ -36,12 +38,189 @@ struct WellnessView: View {
 
             HStack(spacing: 12) {
                 StatChip(title: "Favorite treat", value: viewModel.pet.favoriteTreat.trimmedOrNil ?? "Not added")
-                StatChip(title: "Next watch", value: viewModel.upcomingWellnessTitle)
+                StatChip(title: "Next watch", value: viewModel.nextMedication?.title ?? viewModel.upcomingWellnessTitle)
             }
 
             Text(viewModel.pet.energySummary.trimmedOrNil ?? "Vaccines, food notes, and care context will start shaping this summary once you add real details.")
                 .font(.system(size: 15, weight: .medium, design: .rounded))
                 .foregroundStyle(.white.opacity(0.82))
+        }
+    }
+
+    private var medicationSection: some View {
+        GlassCard(tone: .meadow) {
+            HStack(alignment: .top, spacing: 12) {
+                SectionHeader(
+                    eyebrow: "Medication",
+                    title: "Support that stays on schedule",
+                    detail: "Track dosage, timing, and why each medication is in the routine without losing the calmer visual language."
+                )
+
+                Spacer(minLength: 0)
+
+                Button {
+                    viewModel.openMedicationEditor()
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(Color(red: 0.10, green: 0.13, blue: 0.22))
+                        .frame(width: 42, height: 42)
+                        .background(Color.white, in: Circle())
+                }
+                .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.92))
+            }
+
+            if viewModel.medications.isEmpty {
+                Text("No medication records yet. Add ongoing meds, recovery support, or seasonal treatments so Bond Pulse can read the care picture more honestly.")
+                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.76))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(16)
+                    .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+            } else {
+                LazyVStack(spacing: 12) {
+                    ForEach(viewModel.medications) { medication in
+                        GlassHealthRow(tone: medication.tone) {
+                            HStack(alignment: .top, spacing: 12) {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    HStack(spacing: 10) {
+                                        Text(medication.title)
+                                            .font(.system(size: 18, weight: .semibold, design: .rounded))
+                                            .foregroundStyle(.white)
+
+                                        Text(medication.status.title)
+                                            .font(.system(size: 11, weight: .bold, design: .rounded))
+                                            .foregroundStyle(Color(red: 0.10, green: 0.13, blue: 0.22))
+                                            .padding(.horizontal, 10)
+                                            .padding(.vertical, 7)
+                                            .background(.white, in: Capsule())
+                                    }
+
+                                    Text("\(medication.dosage) • \(medication.scheduleNote)")
+                                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                                        .foregroundStyle(.white.opacity(0.68))
+
+                                    Text(medication.purpose)
+                                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                                        .foregroundStyle(.white.opacity(0.76))
+
+                                    Text("Next dose • \(medication.nextDoseLabel)")
+                                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                                        .foregroundStyle(.white.opacity(0.62))
+                                }
+
+                                Spacer(minLength: 0)
+
+                                VStack(spacing: 10) {
+                                    Button {
+                                        viewModel.openMedicationEditor(medication.id)
+                                    } label: {
+                                        Image(systemName: "pencil.circle.fill")
+                                            .font(.system(size: 20, weight: .semibold))
+                                            .foregroundStyle(.white.opacity(0.78))
+                                    }
+                                    .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.92))
+
+                                    Button {
+                                        viewModel.toggleMedicationNotifications(medication.id)
+                                    } label: {
+                                        Image(systemName: medication.notificationsEnabled ? "bell.fill" : "bell.slash.fill")
+                                            .font(.system(size: 18, weight: .semibold))
+                                            .foregroundStyle(.white.opacity(0.78))
+                                    }
+                                    .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.92))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private var symptomSection: some View {
+        GlassCard(tone: .apricot) {
+            HStack(alignment: .top, spacing: 12) {
+                SectionHeader(
+                    eyebrow: "Symptoms",
+                    title: "Notice small shifts before they disappear",
+                    detail: "Capture appetite dips, itchiness, coughing, or recovery notes with just enough structure to be useful later."
+                )
+
+                Spacer(minLength: 0)
+
+                Button {
+                    viewModel.openSymptomEditor()
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(Color(red: 0.10, green: 0.13, blue: 0.22))
+                        .frame(width: 42, height: 42)
+                        .background(Color.white, in: Circle())
+                }
+                .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.92))
+            }
+
+            if viewModel.symptoms.isEmpty {
+                Text("No symptom notes yet. Add things like paw licking, appetite changes, sneezing, or low-energy days when they happen.")
+                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.76))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(16)
+                    .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+            } else {
+                LazyVStack(spacing: 12) {
+                    ForEach(viewModel.recentSymptoms.prefix(5)) { symptom in
+                        GlassHealthRow(tone: symptom.tone) {
+                            HStack(alignment: .top, spacing: 12) {
+                                ZStack {
+                                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                        .fill(.white.opacity(0.10))
+
+                                    Image(systemName: symptom.systemImage)
+                                        .font(.system(size: 18, weight: .semibold))
+                                        .foregroundStyle(.white)
+                                }
+                                .frame(width: 46, height: 46)
+
+                                VStack(alignment: .leading, spacing: 8) {
+                                    HStack(spacing: 10) {
+                                        Text(symptom.title)
+                                            .font(.system(size: 18, weight: .semibold, design: .rounded))
+                                            .foregroundStyle(.white)
+
+                                        Text(symptom.severity.title)
+                                            .font(.system(size: 11, weight: .bold, design: .rounded))
+                                            .foregroundStyle(Color(red: 0.10, green: 0.13, blue: 0.22))
+                                            .padding(.horizontal, 10)
+                                            .padding(.vertical, 7)
+                                            .background(.white, in: Capsule())
+                                    }
+
+                                    Text(symptom.observedLabel)
+                                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                                        .foregroundStyle(.white.opacity(0.62))
+
+                                    Text(symptom.detail)
+                                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                                        .foregroundStyle(.white.opacity(0.76))
+                                }
+
+                                Spacer(minLength: 0)
+
+                                Button {
+                                    viewModel.openSymptomEditor(symptom.id)
+                                } label: {
+                                    Image(systemName: "pencil.circle.fill")
+                                        .font(.system(size: 20, weight: .semibold))
+                                        .foregroundStyle(.white.opacity(0.78))
+                                }
+                                .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.92))
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -417,6 +596,34 @@ struct WellnessView: View {
             return .meadow
         case .onTrack:
             return .lagoon
+        }
+    }
+}
+
+private struct GlassHealthRow<Content: View>: View {
+    let tone: PaletteTone
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            content
+        }
+        .padding(16)
+        .background(
+            LinearGradient(
+                colors: [
+                    tone.primaryColor.opacity(0.22),
+                    tone.secondaryColor.opacity(0.12),
+                    Color.white.opacity(0.04),
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            ),
+            in: RoundedRectangle(cornerRadius: 24, style: .continuous)
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .strokeBorder(.white.opacity(0.12), lineWidth: 1)
         }
     }
 }

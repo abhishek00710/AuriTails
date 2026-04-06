@@ -662,6 +662,139 @@ struct FoodPreferenceEditorView: View {
     }
 }
 
+struct MedicationEditorView: View {
+    @ObservedObject var viewModel: AppViewModel
+    @Environment(\.dismiss) private var dismiss
+    @State private var draft: MedicationRecord
+    @State private var showsDeleteAlert = false
+
+    init(viewModel: AppViewModel, medicationID: UUID?) {
+        self.viewModel = viewModel
+        _draft = State(initialValue: viewModel.medication(for: medicationID) ?? MedicationRecord(
+            title: "",
+            dosage: "",
+            scheduleNote: "",
+            purpose: "",
+            nextDose: .now,
+            status: .active,
+            tone: .lagoon
+        ))
+    }
+
+    var body: some View {
+        EditorShell(
+            title: draft.title.isEmpty ? L10n.tr("Medication", default: "Medication") : draft.title,
+            saveLabel: L10n.tr("Save Medication", default: "Save Medication"),
+            isSaveDisabled: draft.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || draft.dosage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        ) {
+            dismiss()
+        } onSave: {
+            viewModel.saveMedication(draft)
+            dismiss()
+        } content: {
+            GlassCard(tone: draft.tone) {
+                SectionHeader(
+                    eyebrow: "Medication",
+                    title: "Track support that keeps care steady",
+                    detail: "Dosage, timing, and why it matters should stay easy to review before the next vet visit."
+                )
+
+                EditorTextField(title: "Medication name", text: $draft.title, icon: "pills.fill")
+                EditorTextField(title: "Dosage", text: $draft.dosage, icon: "scalemass.fill")
+                EditorTextField(title: "Schedule", text: $draft.scheduleNote, icon: "clock.badge.checkmark.fill")
+                EditorTextEditor(title: "Purpose or note", text: $draft.purpose, icon: "heart.text.square.fill", height: 110)
+                DateTimeEditor(title: "Next dose", icon: "calendar.badge.clock", date: $draft.nextDose)
+                EditorEnumPicker(title: "Status", icon: "waveform.path.ecg", selection: $draft.status, options: MedicationStatus.allCases)
+                TonePicker(selection: $draft.tone)
+
+                Toggle(isOn: $draft.notificationsEnabled) {
+                    Label("Medication reminders", systemImage: "bell.badge.fill")
+                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                        .foregroundStyle(.white)
+                }
+                .tint(.white)
+            }
+
+            if viewModel.medication(for: draft.id) != nil {
+                DeleteCard(label: "Delete Medication", icon: "trash.fill") {
+                    showsDeleteAlert = true
+                }
+            }
+        }
+        .alert("Delete this medication?", isPresented: $showsDeleteAlert) {
+            Button("Delete", role: .destructive) {
+                viewModel.deleteMedication(draft.id)
+                dismiss()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This removes the medication from the wellness tracker.")
+        }
+    }
+}
+
+struct SymptomEditorView: View {
+    @ObservedObject var viewModel: AppViewModel
+    @Environment(\.dismiss) private var dismiss
+    @State private var draft: SymptomEntry
+    @State private var showsDeleteAlert = false
+
+    init(viewModel: AppViewModel, symptomID: UUID?) {
+        self.viewModel = viewModel
+        _draft = State(initialValue: viewModel.symptom(for: symptomID) ?? SymptomEntry(
+            title: "",
+            detail: "",
+            observedAt: .now,
+            severity: .mild,
+            systemImage: "exclamationmark.triangle.fill",
+            tone: .apricot
+        ))
+    }
+
+    var body: some View {
+        EditorShell(
+            title: draft.title.isEmpty ? L10n.tr("Symptom", default: "Symptom") : draft.title,
+            saveLabel: L10n.tr("Save Symptom", default: "Save Symptom"),
+            isSaveDisabled: draft.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || draft.detail.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        ) {
+            dismiss()
+        } onSave: {
+            viewModel.saveSymptom(draft)
+            dismiss()
+        } content: {
+            GlassCard(tone: draft.tone) {
+                SectionHeader(
+                    eyebrow: "Symptoms",
+                    title: "Log what felt off, while it is fresh",
+                    detail: "Small changes are often the most useful when you can capture them with date, severity, and context."
+                )
+
+                EditorTextField(title: "Symptom", text: $draft.title, icon: "stethoscope.circle.fill")
+                DateTimeEditor(title: "Observed at", icon: "calendar", date: $draft.observedAt)
+                EditorEnumPicker(title: "Severity", icon: "exclamationmark.circle.fill", selection: $draft.severity, options: SymptomSeverity.allCases)
+                EditorTextEditor(title: "Detail", text: $draft.detail, icon: "text.alignleft", height: 130)
+                SymbolPicker(title: "Symptom icon", selection: $draft.systemImage, options: EditorAssetOptions.symptomSymbols)
+                TonePicker(selection: $draft.tone)
+            }
+
+            if viewModel.symptom(for: draft.id) != nil {
+                DeleteCard(label: "Delete Symptom", icon: "trash.fill") {
+                    showsDeleteAlert = true
+                }
+            }
+        }
+        .alert("Delete this symptom entry?", isPresented: $showsDeleteAlert) {
+            Button("Delete", role: .destructive) {
+                viewModel.deleteSymptom(draft.id)
+                dismiss()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This removes the symptom from the wellness timeline.")
+        }
+    }
+}
+
 private struct EditorShell<Content: View>: View {
     @Environment(\.colorScheme) private var colorScheme
     let title: String
@@ -817,6 +950,28 @@ private struct DateEditor: View {
                 .foregroundStyle(.white.opacity(0.72))
 
             DatePicker("", selection: $date, displayedComponents: .date)
+                .labelsHidden()
+                .datePickerStyle(.compact)
+                .tint(.white)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+                .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        }
+    }
+}
+
+private struct DateTimeEditor: View {
+    let title: LocalizedStringKey
+    let icon: String
+    @Binding var date: Date
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label(title, systemImage: icon)
+                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .foregroundStyle(.white.opacity(0.72))
+
+            DatePicker("", selection: $date)
                 .labelsHidden()
                 .datePickerStyle(.compact)
                 .tint(.white)
@@ -997,6 +1152,17 @@ private enum EditorAssetOptions {
         "heart.text.square.fill",
         "exclamationmark.triangle.fill",
     ]
+
+    static let symptomSymbols = [
+        "exclamationmark.triangle.fill",
+        "pawprint.fill",
+        "drop.fill",
+        "wind",
+        "waveform.path.ecg",
+        "bed.double.fill",
+        "fork.knife.circle.fill",
+        "eye.fill",
+    ]
 }
 
 private extension ClockTime {
@@ -1022,5 +1188,13 @@ extension Weekday: CustomStringConvertible {
 }
 
 extension VaccineStatus: CustomStringConvertible {
+    var description: String { title }
+}
+
+extension MedicationStatus: CustomStringConvertible {
+    var description: String { title }
+}
+
+extension SymptomSeverity: CustomStringConvertible {
     var description: String { title }
 }
