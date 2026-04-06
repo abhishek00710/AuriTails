@@ -16,6 +16,7 @@ struct NotificationSettingsView: View {
                         heroCard
                         routinesCard
                         vaccinesCard
+                        medicationsCard
                         memoriesCard
                     }
                     .padding(.horizontal, 20)
@@ -39,7 +40,7 @@ struct NotificationSettingsView: View {
             SectionHeader(
                 eyebrow: "Reminder settings",
                 title: "Gentle nudges, not noisy alerts",
-                detail: "Tune how AuriTails reminds you about routines, vaccine due dates, and important memory moments."
+                detail: "Tune how AuriTails reminds you about routines, vaccine dates, medication timing, and important memory moments."
             )
         }
     }
@@ -62,6 +63,13 @@ struct NotificationSettingsView: View {
         GlassCard(tone: .twilight) {
             ToggleRow(title: "Memory reminders", detail: "Celebrate birthdays and gotcha days before they arrive.", isOn: $viewModel.notificationPreferences.memoriesEnabled)
             LeadTimePicker(title: "Remind me before", options: [0, 1, 3, 7], unit: "day", selection: $viewModel.notificationPreferences.memoryLeadDays)
+        }
+    }
+
+    private var medicationsCard: some View {
+        GlassCard(tone: .lagoon) {
+            ToggleRow(title: "Medication reminders", detail: "Protect dose timing for active meds and recovery support.", isOn: $viewModel.notificationPreferences.medicationsEnabled)
+            LeadTimePicker(title: "Remind me before", options: [0, 15, 30, 60, 120], unit: "min", selection: $viewModel.notificationPreferences.medicationLeadMinutes)
         }
     }
 }

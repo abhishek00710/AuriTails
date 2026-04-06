@@ -61,9 +61,11 @@ enum CoreDataModelFactory {
         let bondPhotoData = attribute(name: "bondPhotoData", type: .binaryDataAttributeType, optional: true, externalBinary: true)
         let routinesNotificationsEnabled = attribute(name: "routinesNotificationsEnabled", type: .booleanAttributeType, optional: false)
         let vaccinesNotificationsEnabled = attribute(name: "vaccinesNotificationsEnabled", type: .booleanAttributeType, optional: false)
+        let medicationsNotificationsEnabled = attribute(name: "medicationsNotificationsEnabled", type: .booleanAttributeType, optional: false)
         let memoriesNotificationsEnabled = attribute(name: "memoriesNotificationsEnabled", type: .booleanAttributeType, optional: false)
         let routineLeadMinutes = attribute(name: "routineLeadMinutes", type: .integer32AttributeType, optional: false)
         let vaccineLeadDays = attribute(name: "vaccineLeadDays", type: .integer32AttributeType, optional: false)
+        let medicationLeadMinutes = attribute(name: "medicationLeadMinutes", type: .integer32AttributeType, optional: false)
         let memoryLeadDays = attribute(name: "memoryLeadDays", type: .integer32AttributeType, optional: false)
         let onboardingFocus = attribute(name: "onboardingFocus", type: .stringAttributeType, optional: false)
         let hasCompletedOnboarding = attribute(name: "hasCompletedOnboarding", type: .booleanAttributeType, optional: false)
@@ -73,8 +75,8 @@ enum CoreDataModelFactory {
             ownerID, ownerName, ownerHeadline, ownerLocation, ownerNote,
             petID, petName, petSpecies, petBreed, petAgeDescription, petWeightDescription, petFavoriteTreat, petBondStatement, petEnergySummary,
             ownerPhotoData, petPhotoData, bondPhotoData,
-            routinesNotificationsEnabled, vaccinesNotificationsEnabled, memoriesNotificationsEnabled,
-            routineLeadMinutes, vaccineLeadDays, memoryLeadDays,
+            routinesNotificationsEnabled, vaccinesNotificationsEnabled, medicationsNotificationsEnabled, memoriesNotificationsEnabled,
+            routineLeadMinutes, vaccineLeadDays, medicationLeadMinutes, memoryLeadDays,
             onboardingFocus, hasCompletedOnboarding,
         ]
         entity.uniquenessConstraints = [["id"]]

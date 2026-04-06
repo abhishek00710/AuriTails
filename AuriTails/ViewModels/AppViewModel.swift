@@ -129,6 +129,8 @@ final class AppViewModel: ObservableObject {
             snapshots: behaviorSnapshots,
             routines: routines,
             foodPreferences: foodPreferences,
+            medications: medications,
+            symptoms: symptoms,
             pet: pet
         )
     }

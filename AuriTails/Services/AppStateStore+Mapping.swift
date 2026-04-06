@@ -33,9 +33,11 @@ extension AppStateStore {
         let notificationPreferences = NotificationPreferences(
             routinesEnabled: metadata.value(forKey: "routinesNotificationsEnabled") as? Bool ?? true,
             vaccinesEnabled: metadata.value(forKey: "vaccinesNotificationsEnabled") as? Bool ?? true,
+            medicationsEnabled: metadata.value(forKey: "medicationsNotificationsEnabled") as? Bool ?? true,
             memoriesEnabled: metadata.value(forKey: "memoriesNotificationsEnabled") as? Bool ?? true,
             routineLeadMinutes: Int(metadata.int32("routineLeadMinutes") == 0 ? 30 : metadata.int32("routineLeadMinutes")),
             vaccineLeadDays: Int(metadata.int32("vaccineLeadDays") == 0 ? 1 : metadata.int32("vaccineLeadDays")),
+            medicationLeadMinutes: Int(metadata.int32("medicationLeadMinutes") == 0 ? 30 : metadata.int32("medicationLeadMinutes")),
             memoryLeadDays: Int(metadata.int32("memoryLeadDays") == 0 ? 1 : metadata.int32("memoryLeadDays"))
         )
 
@@ -211,9 +213,11 @@ extension AppStateStore {
         object.setValue(state.bondPhotoData, forKey: "bondPhotoData")
         object.setValue(state.notificationPreferences.routinesEnabled, forKey: "routinesNotificationsEnabled")
         object.setValue(state.notificationPreferences.vaccinesEnabled, forKey: "vaccinesNotificationsEnabled")
+        object.setValue(state.notificationPreferences.medicationsEnabled, forKey: "medicationsNotificationsEnabled")
         object.setValue(state.notificationPreferences.memoriesEnabled, forKey: "memoriesNotificationsEnabled")
         object.setValue(Int32(state.notificationPreferences.routineLeadMinutes), forKey: "routineLeadMinutes")
         object.setValue(Int32(state.notificationPreferences.vaccineLeadDays), forKey: "vaccineLeadDays")
+        object.setValue(Int32(state.notificationPreferences.medicationLeadMinutes), forKey: "medicationLeadMinutes")
         object.setValue(Int32(state.notificationPreferences.memoryLeadDays), forKey: "memoryLeadDays")
         object.setValue(state.onboardingFocus.rawValue, forKey: "onboardingFocus")
         object.setValue(state.hasCompletedOnboarding, forKey: "hasCompletedOnboarding")

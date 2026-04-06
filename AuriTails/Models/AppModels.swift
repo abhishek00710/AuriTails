@@ -111,10 +111,46 @@ enum AppSheet: Identifiable {
 struct NotificationPreferences: Codable {
     var routinesEnabled: Bool = true
     var vaccinesEnabled: Bool = true
+    var medicationsEnabled: Bool = true
     var memoriesEnabled: Bool = true
     var routineLeadMinutes: Int = 30
     var vaccineLeadDays: Int = 1
+    var medicationLeadMinutes: Int = 30
     var memoryLeadDays: Int = 1
+
+    init() {}
+
+    init(
+        routinesEnabled: Bool = true,
+        vaccinesEnabled: Bool = true,
+        medicationsEnabled: Bool = true,
+        memoriesEnabled: Bool = true,
+        routineLeadMinutes: Int = 30,
+        vaccineLeadDays: Int = 1,
+        medicationLeadMinutes: Int = 30,
+        memoryLeadDays: Int = 1
+    ) {
+        self.routinesEnabled = routinesEnabled
+        self.vaccinesEnabled = vaccinesEnabled
+        self.medicationsEnabled = medicationsEnabled
+        self.memoriesEnabled = memoriesEnabled
+        self.routineLeadMinutes = routineLeadMinutes
+        self.vaccineLeadDays = vaccineLeadDays
+        self.medicationLeadMinutes = medicationLeadMinutes
+        self.memoryLeadDays = memoryLeadDays
+    }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        routinesEnabled = try container.decodeIfPresent(Bool.self, forKey: .routinesEnabled) ?? true
+        vaccinesEnabled = try container.decodeIfPresent(Bool.self, forKey: .vaccinesEnabled) ?? true
+        medicationsEnabled = try container.decodeIfPresent(Bool.self, forKey: .medicationsEnabled) ?? true
+        memoriesEnabled = try container.decodeIfPresent(Bool.self, forKey: .memoriesEnabled) ?? true
+        routineLeadMinutes = try container.decodeIfPresent(Int.self, forKey: .routineLeadMinutes) ?? 30
+        vaccineLeadDays = try container.decodeIfPresent(Int.self, forKey: .vaccineLeadDays) ?? 1
+        medicationLeadMinutes = try container.decodeIfPresent(Int.self, forKey: .medicationLeadMinutes) ?? 30
+        memoryLeadDays = try container.decodeIfPresent(Int.self, forKey: .memoryLeadDays) ?? 1
+    }
 }
 
 enum Weekday: Int, CaseIterable, Identifiable, Codable {

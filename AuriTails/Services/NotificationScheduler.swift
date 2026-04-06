@@ -42,7 +42,7 @@ struct NotificationScheduler {
     }
 
     private func buildRequests(for state: PersistedAppState) -> [UNNotificationRequest] {
-        routineRequests(for: state) + vaccineRequests(for: state) + memoryRequests(for: state)
+        routineRequests(for: state) + vaccineRequests(for: state) + medicationRequests(for: state) + memoryRequests(for: state)
     }
 
     private func routineRequests(for state: PersistedAppState) -> [UNNotificationRequest] {
@@ -87,6 +87,35 @@ struct NotificationScheduler {
             let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
             return UNNotificationRequest(
                 identifier: "auritails.vaccine.\(vaccine.id.uuidString)",
+                content: content,
+                trigger: trigger
+            )
+        }
+    }
+
+    private func medicationRequests(for state: PersistedAppState) -> [UNNotificationRequest] {
+        guard state.notificationPreferences.medicationsEnabled else { return [] }
+        return state.medications.compactMap { medication in
+            guard medication.notificationsEnabled else { return nil }
+            let fireDate = calendar.date(
+                byAdding: .minute,
+                value: -state.notificationPreferences.medicationLeadMinutes,
+                to: medication.nextDose
+            ) ?? medication.nextDose
+            guard fireDate > .now else { return nil }
+
+            let content = UNMutableNotificationContent()
+            content.title = "\(medication.title) for \(state.pet.name)"
+            content.body = [medication.dosage, medication.scheduleNote, medication.purpose]
+                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                .filter { !$0.isEmpty }
+                .joined(separator: " • ")
+            content.sound = .default
+
+            let components = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: fireDate)
+            let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
+            return UNNotificationRequest(
+                identifier: "auritails.medication.\(medication.id.uuidString)",
                 content: content,
                 trigger: trigger
             )

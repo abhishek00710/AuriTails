@@ -5,6 +5,8 @@ struct PetInsightEngine {
         snapshots: [BehaviorSnapshot],
         routines: [RoutineItem],
         foodPreferences: [FoodPreference],
+        medications: [MedicationRecord],
+        symptoms: [SymptomEntry],
         pet: PetProfile
     ) -> [CompanionInsight] {
         let petName = pet.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -28,8 +30,51 @@ struct PetInsightEngine {
         let completionRate = Double(routines.filter(\.isCompleted).count) / Double(max(routines.count, 1))
         let lateHighEnergyRoutine = routines.first { $0.time.hour >= 19 && ($0.category == .training || $0.category == .play) }
         let lowestCalmDay = snapshots.min { $0.calmness < $1.calmness }
+        let recentSymptoms = symptoms.filter {
+            abs($0.observedAt.timeIntervalSinceNow) <= 60 * 60 * 24 * 5
+        }
+        let urgentSymptom = recentSymptoms.first { $0.severity == .urgent }
+        let moderateSymptoms = recentSymptoms.filter { $0.severity == .moderate }
+        let activeMedications = medications.filter { $0.status != .paused }
+        let nextMedication = activeMedications.min { $0.nextDose < $1.nextDose }
 
         var insights: [CompanionInsight] = []
+
+        if let urgentSymptom {
+            insights.append(
+                CompanionInsight(
+                    title: L10n.tr("A fresh symptom needs a closer eye", default: "A fresh symptom needs a closer eye"),
+                    detail: L10n.format("%@ logged %@ recently, which makes this a better week for steadier observation than extra experimentation.", default: "%@ logged %@ recently, which makes this a better week for steadier observation than extra experimentation.", petName, urgentSymptom.title.lowercased()),
+                    suggestedAction: L10n.tr("Keep routines gentle, note any change in appetite or energy, and follow your vet plan if the symptom lingers or intensifies.", default: "Keep routines gentle, note any change in appetite or energy, and follow your vet plan if the symptom lingers or intensifies."),
+                    priority: .watch,
+                    systemImage: "cross.case.circle.fill"
+                )
+            )
+        } else if moderateSymptoms.count >= 2 {
+            insights.append(
+                CompanionInsight(
+                    title: L10n.tr("Patterns are stacking in the symptom log", default: "Patterns are stacking in the symptom log"),
+                    detail: L10n.format("%@ has had a couple of moderate symptom notes close together, which usually means the week deserves more structure and cleaner context.", default: "%@ has had a couple of moderate symptom notes close together, which usually means the week deserves more structure and cleaner context.", petName),
+                    suggestedAction: L10n.tr("Keep meals, meds, and activity timing consistent for a few days so any shift is easier to explain later.", default: "Keep meals, meds, and activity timing consistent for a few days so any shift is easier to explain later."),
+                    priority: .watch,
+                    systemImage: "waveform.path.ecg.rectangle.fill"
+                )
+            )
+        }
+
+        if let nextMedication,
+           nextMedication.nextDose.timeIntervalSinceNow <= 60 * 60 * 18
+        {
+            insights.append(
+                CompanionInsight(
+                    title: L10n.tr("Keep the medication rhythm protected", default: "Keep the medication rhythm protected"),
+                    detail: L10n.format("%@ has %@ coming up soon, so the clearest read this week will come from keeping food, rest, and observation steady around it.", default: "%@ has %@ coming up soon, so the clearest read this week will come from keeping food, rest, and observation steady around it.", petName, nextMedication.title),
+                    suggestedAction: L10n.format("Anchor %@ around %@ and leave a quick note afterward if appetite, calmness, or energy feels different.", default: "Anchor %@ around %@ and leave a quick note afterward if appetite, calmness, or energy feels different.", nextMedication.title, nextMedication.scheduleNote),
+                    priority: .steady,
+                    systemImage: "pills.fill"
+                )
+            )
+        }
 
         if let lowestCalmDay, averageCalmness < 0.8 {
             insights.append(
