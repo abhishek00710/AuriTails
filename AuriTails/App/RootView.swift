@@ -81,6 +81,8 @@ struct RootView: View {
                 NotificationSettingsView(viewModel: viewModel)
             case let .behaviorCheckInEditor(day):
                 BehaviorCheckInEditorView(viewModel: viewModel, day: day)
+            case let .weightEntryEditor(entryID):
+                WeightEntryEditorView(viewModel: viewModel, entryID: entryID)
             case let .medicationEditor(medicationID):
                 MedicationEditorView(viewModel: viewModel, medicationID: medicationID)
             case let .symptomEditor(symptomID):

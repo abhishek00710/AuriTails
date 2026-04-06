@@ -7,6 +7,7 @@ enum CoreDataModelFactory {
         model.entities = [
             metadataEntity(),
             behaviorSnapshotEntity(),
+            weightEntryEntity(),
             vaccineEntity(),
             medicationEntity(),
             symptomEntity(),
@@ -117,6 +118,24 @@ enum CoreDataModelFactory {
         ]
         entity.uniquenessConstraints = [["id"]]
         entity.indexes = [index(named: "vaccineIDIndex", property: id)]
+        return entity
+    }
+
+    private static func weightEntryEntity() -> NSEntityDescription {
+        let entity = NSEntityDescription()
+        entity.name = AppStateStore.Entity.weightEntry.name
+        entity.managedObjectClassName = NSStringFromClass(NSManagedObject.self)
+        let id = attribute(name: "id", type: .UUIDAttributeType, optional: false)
+        entity.properties = [
+            id,
+            attribute(name: "loggedAt", type: .dateAttributeType, optional: false),
+            attribute(name: "kilogramsValue", type: .doubleAttributeType, optional: false),
+            attribute(name: "unit", type: .stringAttributeType, optional: false),
+            attribute(name: "note", type: .stringAttributeType, optional: false),
+            attribute(name: "sortIndex", type: .integer32AttributeType, optional: false),
+        ]
+        entity.uniquenessConstraints = [["id"]]
+        entity.indexes = [index(named: "weightEntryIDIndex", property: id)]
         return entity
     }
 

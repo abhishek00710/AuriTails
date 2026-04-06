@@ -72,6 +72,7 @@ enum AppSheet: Identifiable {
     case profile
     case notificationSettings
     case behaviorCheckInEditor(Weekday?)
+    case weightEntryEditor(UUID?)
     case medicationEditor(UUID?)
     case symptomEditor(UUID?)
     case routineEditor(UUID?)
@@ -90,6 +91,8 @@ enum AppSheet: Identifiable {
             return "notification-settings"
         case let .behaviorCheckInEditor(day):
             return "behavior-\(day?.rawValue ?? 0)"
+        case let .weightEntryEditor(id):
+            return "weight-\(id?.uuidString ?? "new")"
         case let .medicationEditor(id):
             return "medication-\(id?.uuidString ?? "new")"
         case let .symptomEditor(id):
@@ -416,6 +419,71 @@ struct BehaviorSnapshot: Identifiable, Codable {
     var calmness: Double
     var appetite: Double
     var sleepHours: Double
+}
+
+enum WeightUnit: String, CaseIterable, Identifiable, Codable {
+    case kilograms
+    case pounds
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .kilograms: return L10n.tr("Kilograms", default: "Kilograms")
+        case .pounds: return L10n.tr("Pounds", default: "Pounds")
+        }
+    }
+
+    var shortLabel: String {
+        switch self {
+        case .kilograms: return L10n.tr("kg", default: "kg")
+        case .pounds: return L10n.tr("lb", default: "lb")
+        }
+    }
+
+    func toKilograms(_ value: Double) -> Double {
+        switch self {
+        case .kilograms: return value
+        case .pounds: return value / 2.20462
+        }
+    }
+
+    func fromKilograms(_ kilograms: Double) -> Double {
+        switch self {
+        case .kilograms: return kilograms
+        case .pounds: return kilograms * 2.20462
+        }
+    }
+}
+
+struct WeightEntry: Identifiable, Codable {
+    var id: UUID = UUID()
+    var loggedAt: Date
+    var value: Double
+    var unit: WeightUnit
+    var note: String
+
+    var kilogramsValue: Double {
+        unit.toKilograms(value)
+    }
+
+    func displayValue(in unit: WeightUnit) -> Double {
+        unit.fromKilograms(kilogramsValue)
+    }
+
+    var valueLabel: String {
+        "\(value.formatted(.number.precision(.fractionLength(1)))) \(unit.shortLabel)"
+    }
+
+    var loggedLabel: String {
+        Self.dateFormatter.string(from: loggedAt)
+    }
+
+    private static let dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM d, yyyy"
+        return formatter
+    }()
 }
 
 struct MedicationRecord: Identifiable, Codable {
@@ -746,6 +814,7 @@ struct PersistedAppState: Codable {
     var petPhotoData: Data?
     var bondPhotoData: Data?
     var behaviorSnapshots: [BehaviorSnapshot]
+    var weightEntries: [WeightEntry]
     var vaccinations: [VaccineRecord]
     var medications: [MedicationRecord]
     var symptoms: [SymptomEntry]
@@ -766,6 +835,7 @@ struct PersistedAppState: Codable {
         petPhotoData: Data?,
         bondPhotoData: Data?,
         behaviorSnapshots: [BehaviorSnapshot],
+        weightEntries: [WeightEntry],
         vaccinations: [VaccineRecord],
         medications: [MedicationRecord],
         symptoms: [SymptomEntry],
@@ -785,6 +855,7 @@ struct PersistedAppState: Codable {
         self.petPhotoData = petPhotoData
         self.bondPhotoData = bondPhotoData
         self.behaviorSnapshots = behaviorSnapshots
+        self.weightEntries = weightEntries
         self.vaccinations = vaccinations
         self.medications = medications
         self.symptoms = symptoms
@@ -806,6 +877,7 @@ struct PersistedAppState: Codable {
         petPhotoData = nil
         bondPhotoData = nil
         behaviorSnapshots = seed.behaviorSnapshots
+        weightEntries = seed.weightEntries
         vaccinations = seed.vaccinations
         medications = seed.medications
         symptoms = seed.symptoms
@@ -828,6 +900,7 @@ struct PersistedAppState: Codable {
         petPhotoData = try container.decodeIfPresent(Data.self, forKey: .petPhotoData)
         bondPhotoData = try container.decodeIfPresent(Data.self, forKey: .bondPhotoData)
         behaviorSnapshots = try container.decode([BehaviorSnapshot].self, forKey: .behaviorSnapshots)
+        weightEntries = try container.decodeIfPresent([WeightEntry].self, forKey: .weightEntries) ?? []
         vaccinations = try container.decode([VaccineRecord].self, forKey: .vaccinations)
         medications = try container.decodeIfPresent([MedicationRecord].self, forKey: .medications) ?? []
         symptoms = try container.decodeIfPresent([SymptomEntry].self, forKey: .symptoms) ?? []
@@ -844,6 +917,7 @@ struct AppSeed {
     let owner: OwnerProfile
     let pet: PetProfile
     let behaviorSnapshots: [BehaviorSnapshot]
+    let weightEntries: [WeightEntry]
     let vaccinations: [VaccineRecord]
     let medications: [MedicationRecord]
     let symptoms: [SymptomEntry]
@@ -870,6 +944,7 @@ struct AppSeed {
             energySummary: ""
         ),
         behaviorSnapshots: [],
+        weightEntries: [],
         vaccinations: [],
         medications: [],
         symptoms: [],
@@ -904,6 +979,12 @@ struct AppSeed {
             BehaviorSnapshot(day: .friday, energy: 0.75, calmness: 0.88, appetite: 0.97, sleepHours: 12.7),
             BehaviorSnapshot(day: .saturday, energy: 0.93, calmness: 0.73, appetite: 0.92, sleepHours: 11.2),
             BehaviorSnapshot(day: .sunday, energy: 0.74, calmness: 0.90, appetite: 0.98, sleepHours: 13.0),
+        ],
+        weightEntries: [
+            WeightEntry(loggedAt: date(2026, 2, 12), value: 19.8, unit: .kilograms, note: "Post-winter checkup baseline."),
+            WeightEntry(loggedAt: date(2026, 2, 26), value: 19.6, unit: .kilograms, note: "A touch leaner after trail-heavy weeks."),
+            WeightEntry(loggedAt: date(2026, 3, 12), value: 19.5, unit: .kilograms, note: "Holding steady with calmer evenings."),
+            WeightEntry(loggedAt: date(2026, 3, 28), value: 19.4, unit: .kilograms, note: "Current passport weight."),
         ],
         vaccinations: [
             VaccineRecord(title: "Rabies", lastGiven: date(2025, 1, 12), nextDue: date(2028, 1, 12), status: .covered, note: "Three-year booster complete."),

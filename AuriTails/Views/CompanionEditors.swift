@@ -486,6 +486,72 @@ struct BehaviorCheckInEditorView: View {
     }
 }
 
+struct WeightEntryEditorView: View {
+    @ObservedObject var viewModel: AppViewModel
+    @Environment(\.dismiss) private var dismiss
+    @State private var draft: WeightEntry
+    @State private var valueText: String
+    @State private var showsDeleteAlert = false
+
+    init(viewModel: AppViewModel, entryID: UUID?) {
+        self.viewModel = viewModel
+        let draft = viewModel.weightEntry(for: entryID) ?? WeightEntry(
+            loggedAt: .now,
+            value: 0,
+            unit: viewModel.preferredWeightUnit,
+            note: ""
+        )
+        _draft = State(initialValue: draft)
+        _valueText = State(initialValue: draft.value > 0 ? draft.value.formatted(.number.precision(.fractionLength(1))) : "")
+    }
+
+    private var parsedValue: Double? {
+        Double(valueText.replacingOccurrences(of: ",", with: "."))
+    }
+
+    var body: some View {
+        EditorShell(
+            title: L10n.tr("Weight Log", default: "Weight Log"),
+            saveLabel: L10n.tr("Save Weight", default: "Save Weight"),
+            isSaveDisabled: (parsedValue ?? 0) <= 0
+        ) {
+            dismiss()
+        } onSave: {
+            guard let parsedValue, parsedValue > 0 else { return }
+            draft.value = parsedValue
+            viewModel.saveWeightEntry(draft)
+            dismiss()
+        } content: {
+            GlassCard(tone: .lagoon) {
+                SectionHeader(
+                    eyebrow: "Weight",
+                    title: "Track the body story over time",
+                    detail: "A few consistent weigh-ins make Bond Pulse and wellness reviews far more trustworthy."
+                )
+
+                DateEditor(title: "Date", icon: "calendar", date: $draft.loggedAt)
+                WeightValueEditor(valueText: $valueText, unit: $draft.unit)
+                EditorTextEditor(title: "Context note", text: $draft.note, icon: "text.alignleft", height: 110)
+            }
+
+            if viewModel.weightEntry(for: draft.id) != nil {
+                DeleteCard(label: "Delete Weight Log", icon: "trash.fill") {
+                    showsDeleteAlert = true
+                }
+            }
+        }
+        .alert("Delete this weight log?", isPresented: $showsDeleteAlert) {
+            Button("Delete", role: .destructive) {
+                viewModel.deleteWeightEntry(draft.id)
+                dismiss()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This removes the weigh-in from the health trend chart.")
+        }
+    }
+}
+
 struct MedicalEntryEditorView: View {
     @ObservedObject var viewModel: AppViewModel
     @Environment(\.dismiss) private var dismiss
@@ -542,6 +608,58 @@ struct MedicalEntryEditorView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("This removes the item from the medical timeline.")
+        }
+    }
+}
+
+private struct WeightValueEditor: View {
+    @Binding var valueText: String
+    @Binding var unit: WeightUnit
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            VStack(alignment: .leading, spacing: 8) {
+                Label("Weight", systemImage: "scalemass.fill")
+                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.72))
+
+                TextField("", text: $valueText)
+                    .keyboardType(.decimalPad)
+                    .font(.system(size: 15, weight: .medium, design: .rounded))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 14)
+                    .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                Label("Unit", systemImage: "ruler.fill")
+                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.72))
+
+                Menu {
+                    ForEach(WeightUnit.allCases) { option in
+                        Button(option.description) {
+                            unit = option
+                        }
+                    }
+                } label: {
+                    HStack {
+                        Text(unit.description)
+                            .font(.system(size: 15, weight: .semibold, design: .rounded))
+                            .foregroundStyle(.white)
+                        Spacer()
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(.white.opacity(0.7))
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 14)
+                    .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+                }
+                .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.98))
+            }
+            .frame(width: 128)
         }
     }
 }
@@ -1188,6 +1306,10 @@ extension Weekday: CustomStringConvertible {
 }
 
 extension VaccineStatus: CustomStringConvertible {
+    var description: String { title }
+}
+
+extension WeightUnit: CustomStringConvertible {
     var description: String { title }
 }
 

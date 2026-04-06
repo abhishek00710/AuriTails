@@ -28,6 +28,7 @@ final class AppViewModel: ObservableObject {
     @Published var petPhotoData: Data? { didSet { persistIfNeeded() } }
     @Published var bondPhotoData: Data? { didSet { persistIfNeeded() } }
     @Published var behaviorSnapshots: [BehaviorSnapshot] { didSet { persistIfNeeded() } }
+    @Published var weightEntries: [WeightEntry] { didSet { persistIfNeeded() } }
     @Published var vaccinations: [VaccineRecord] { didSet { persistIfNeeded() } }
     @Published var medications: [MedicationRecord] { didSet { persistIfNeeded() } }
     @Published var symptoms: [SymptomEntry] { didSet { persistIfNeeded() } }
@@ -81,6 +82,7 @@ final class AppViewModel: ObservableObject {
         petPhotoData = initialState.petPhotoData
         bondPhotoData = initialState.bondPhotoData
         behaviorSnapshots = initialState.behaviorSnapshots
+        weightEntries = initialState.weightEntries
         vaccinations = initialState.vaccinations
         medications = initialState.medications
         symptoms = initialState.symptoms
@@ -151,7 +153,20 @@ final class AppViewModel: ObservableObject {
         behaviorSnapshots.first(where: { $0.day == .current })
     }
 
+    var latestWeightEntry: WeightEntry? {
+        weightEntries.sorted { $0.loggedAt > $1.loggedAt }.first
+    }
+
+    var preferredWeightUnit: WeightUnit {
+        latestWeightEntry?.unit ?? .kilograms
+    }
+
+    var recentWeightEntries: [WeightEntry] {
+        weightEntries.sorted { $0.loggedAt < $1.loggedAt }
+    }
+
     var hasBehaviorData: Bool { !behaviorSnapshots.isEmpty }
+    var hasWeightData: Bool { !weightEntries.isEmpty }
     var hasRoutineData: Bool { !routines.isEmpty }
     var hasMemoryData: Bool { !memories.isEmpty }
     var hasVaccinationData: Bool { !vaccinations.isEmpty }
@@ -235,6 +250,34 @@ final class AppViewModel: ObservableObject {
         symptoms.sorted { $0.observedAt > $1.observedAt }
     }
 
+    var recentSymptomCounts: [(severity: SymptomSeverity, count: Int)] {
+        SymptomSeverity.allCases.map { severity in
+            (severity, symptoms.filter { $0.severity == severity }.count)
+        }
+    }
+
+    var weightTrendSummary: String {
+        guard let latestWeightEntry else {
+            return L10n.tr("Add a few weigh-ins to start seeing gentle health movement over time.", default: "Add a few weigh-ins to start seeing gentle health movement over time.")
+        }
+
+        let ordered = recentWeightEntries
+        guard let first = ordered.first, ordered.count > 1 else {
+            return L10n.format("%@ is currently %@. One or two more weigh-ins will reveal whether that is holding steady.", default: "%@ is currently %@. One or two more weigh-ins will reveal whether that is holding steady.", displayPetName, latestWeightEntry.valueLabel)
+        }
+
+        let delta = latestWeightEntry.displayValue(in: preferredWeightUnit) - first.displayValue(in: preferredWeightUnit)
+        let absoluteDelta = abs(delta).formatted(.number.precision(.fractionLength(1)))
+        if abs(delta) < 0.15 {
+            return L10n.format("%@ is holding fairly steady around %@, which makes the rest of the wellness picture easier to interpret.", default: "%@ is holding fairly steady around %@, which makes the rest of the wellness picture easier to interpret.", displayPetName, latestWeightEntry.valueLabel)
+        }
+
+        let direction = delta > 0
+            ? L10n.tr("up", default: "up")
+            : L10n.tr("down", default: "down")
+        return L10n.format("%@ is trending %@ by %@ %@ across the logged weigh-ins.", default: "%@ is trending %@ by %@ %@ across the logged weigh-ins.", displayPetName, direction, absoluteDelta, preferredWeightUnit.shortLabel)
+    }
+
     func toggleMenu() {
         withAnimation(.spring(response: 0.38, dampingFraction: 0.86)) {
             isMenuPresented.toggle()
@@ -278,6 +321,10 @@ final class AppViewModel: ObservableObject {
 
     func openBehaviorCheckIn(_ day: Weekday? = nil) {
         activeSheet = .behaviorCheckInEditor(day)
+    }
+
+    func openWeightEntryEditor(_ entryID: UUID? = nil) {
+        activeSheet = .weightEntryEditor(entryID)
     }
 
     func refreshNearbyPetCare() {
@@ -657,6 +704,28 @@ final class AppViewModel: ObservableObject {
         }
     }
 
+    func weightEntry(for id: UUID?) -> WeightEntry? {
+        guard let id else { return nil }
+        return weightEntries.first(where: { $0.id == id })
+    }
+
+    func saveWeightEntry(_ entry: WeightEntry) {
+        withAnimation(.spring(response: 0.34, dampingFraction: 0.88)) {
+            if let index = weightEntries.firstIndex(where: { $0.id == entry.id }) {
+                weightEntries[index] = entry
+            } else {
+                weightEntries.append(entry)
+            }
+            weightEntries.sort { $0.loggedAt < $1.loggedAt }
+        }
+    }
+
+    func deleteWeightEntry(_ entryID: UUID) {
+        withAnimation(.spring(response: 0.32, dampingFraction: 0.9)) {
+            weightEntries.removeAll { $0.id == entryID }
+        }
+    }
+
     func memory(for id: UUID?) -> MemoryMoment? {
         guard let id else { return nil }
         return memories.first(where: { $0.id == id })
@@ -882,6 +951,7 @@ final class AppViewModel: ObservableObject {
         petPhotoData = nil
         bondPhotoData = nil
         behaviorSnapshots = state.behaviorSnapshots
+        weightEntries = state.weightEntries
         vaccinations = state.vaccinations
         medications = state.medications
         symptoms = state.symptoms
@@ -907,6 +977,7 @@ final class AppViewModel: ObservableObject {
             petPhotoData: petPhotoData,
             bondPhotoData: bondPhotoData,
             behaviorSnapshots: behaviorSnapshots,
+            weightEntries: weightEntries,
             vaccinations: vaccinations,
             medications: medications,
             symptoms: symptoms,
@@ -930,6 +1001,7 @@ final class AppViewModel: ObservableObject {
         petPhotoData = state.petPhotoData
         bondPhotoData = state.bondPhotoData
         behaviorSnapshots = state.behaviorSnapshots
+        weightEntries = state.weightEntries
         vaccinations = state.vaccinations
         medications = state.medications
         symptoms = state.symptoms

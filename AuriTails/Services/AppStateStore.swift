@@ -40,6 +40,17 @@ final class AppStateStore {
                     object.setValue(snapshot.sleepHours, forKey: "sleepHours")
                 }
             }
+            replaceAll(entityName: Entity.weightEntry.name, in: context) { insert in
+                for (index, entry) in state.weightEntries.enumerated() {
+                    let object = insert()
+                    object.setValue(entry.id, forKey: "id")
+                    object.setValue(entry.loggedAt, forKey: "loggedAt")
+                    object.setValue(entry.kilogramsValue, forKey: "kilogramsValue")
+                    object.setValue(entry.unit.rawValue, forKey: "unit")
+                    object.setValue(entry.note, forKey: "note")
+                    object.setValue(Int32(index), forKey: "sortIndex")
+                }
+            }
             replaceAll(entityName: Entity.vaccine.name, in: context) { insert in
                 for (index, vaccine) in state.vaccinations.enumerated() {
                     let object = insert()
@@ -150,6 +161,7 @@ extension AppStateStore {
     enum Entity: CaseIterable {
         case metadata
         case behaviorSnapshot
+        case weightEntry
         case vaccine
         case medication
         case symptom
@@ -162,6 +174,7 @@ extension AppStateStore {
             switch self {
             case .metadata: "AppMetadataEntity"
             case .behaviorSnapshot: "BehaviorSnapshotEntity"
+            case .weightEntry: "WeightEntryEntity"
             case .vaccine: "VaccineRecordEntity"
             case .medication: "MedicationRecordEntity"
             case .symptom: "SymptomEntryEntity"

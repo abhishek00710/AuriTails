@@ -52,6 +52,19 @@ extension AppStateStore {
             )
         }
 
+        let weightEntries: [WeightEntry] = fetchSorted(Entity.weightEntry.name, by: "loggedAt", ascending: true, in: context).compactMap { object in
+            guard let loggedAt = object.value(forKey: "loggedAt") as? Date,
+                  let unit = WeightUnit(rawValue: object.string("unit"))
+            else { return nil }
+            return WeightEntry(
+                id: object.uuid("id"),
+                loggedAt: loggedAt,
+                value: unit.fromKilograms(object.double("kilogramsValue")),
+                unit: unit,
+                note: object.string("note")
+            )
+        }
+
         let vaccinations: [VaccineRecord] = fetchSorted(Entity.vaccine.name, by: "sortIndex", ascending: true, in: context).compactMap { object in
             guard let status = VaccineStatus(rawValue: object.string("status")),
                   let lastGiven = object.value(forKey: "lastGiven") as? Date,
@@ -174,6 +187,7 @@ extension AppStateStore {
             petPhotoData: metadata.value(forKey: "petPhotoData") as? Data,
             bondPhotoData: metadata.value(forKey: "bondPhotoData") as? Data,
             behaviorSnapshots: behaviorSnapshots,
+            weightEntries: weightEntries,
             vaccinations: vaccinations,
             medications: medications,
             symptoms: symptoms,
