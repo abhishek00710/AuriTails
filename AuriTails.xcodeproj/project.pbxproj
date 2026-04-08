@@ -6,6 +6,15 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		6A5F0D572FCAC00100A1B201 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 6A5F0D562FCAC00100A1B201 /* FirebaseAnalytics */; };
+		6A5F0D582FCAC00100A1B201 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 6A5F0D592FCAC00100A1B201 /* FirebaseAuth */; };
+		6A5F0D5A2FCAC00100A1B201 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 6A5F0D5B2FCAC00100A1B201 /* FirebaseCore */; };
+		6A5F0D5C2FCAC00100A1B201 /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = 6A5F0D5D2FCAC00100A1B201 /* FirebaseCrashlytics */; };
+		6A5F0D5E2FCAC00100A1B201 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 6A5F0D5F2FCAC00100A1B201 /* FirebaseFirestore */; };
+		6A5F0D602FCAC00100A1B201 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 6A5F0D612FCAC00100A1B201 /* FirebaseStorage */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		0F80313B2F787F47007671DC /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -36,7 +45,7 @@
 				App/AuriTailsApp.swift,
 				App/RootView.swift,
 				Models/AppModels.swift,
-				README.md,
+				Resources/README.md,
 				Services/AppStateStore.swift,
 				"Services/AppStateStore+LegacyMigration.swift",
 				"Services/AppStateStore+Mapping.swift",
@@ -63,7 +72,7 @@
 				App/AuriTailsApp.swift,
 				App/RootView.swift,
 				Models/AppModels.swift,
-				README.md,
+				Resources/README.md,
 				Services/AppStateStore.swift,
 				"Services/AppStateStore+LegacyMigration.swift",
 				"Services/AppStateStore+Mapping.swift",
@@ -131,6 +140,12 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6A5F0D572FCAC00100A1B201 /* FirebaseAnalytics in Frameworks */,
+				6A5F0D582FCAC00100A1B201 /* FirebaseAuth in Frameworks */,
+				6A5F0D5A2FCAC00100A1B201 /* FirebaseCore in Frameworks */,
+				6A5F0D5C2FCAC00100A1B201 /* FirebaseCrashlytics in Frameworks */,
+				6A5F0D5E2FCAC00100A1B201 /* FirebaseFirestore in Frameworks */,
+				6A5F0D602FCAC00100A1B201 /* FirebaseStorage in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -191,6 +206,12 @@
 			);
 			name = AuriTails;
 			packageProductDependencies = (
+				6A5F0D562FCAC00100A1B201 /* FirebaseAnalytics */,
+				6A5F0D592FCAC00100A1B201 /* FirebaseAuth */,
+				6A5F0D5B2FCAC00100A1B201 /* FirebaseCore */,
+				6A5F0D5D2FCAC00100A1B201 /* FirebaseCrashlytics */,
+				6A5F0D5F2FCAC00100A1B201 /* FirebaseFirestore */,
+				6A5F0D612FCAC00100A1B201 /* FirebaseStorage */,
 			);
 			productName = AuriTails;
 			productReference = 0F80312D2F787F45007671DC /* AuriTails.app */;
@@ -275,6 +296,9 @@
 			);
 			mainGroup = 0F8031242F787F45007671DC;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				6A5F0D552FCAC00100A1B201 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 0F80312E2F787F45007671DC /* Products */;
 			projectDirPath = "";
@@ -666,6 +690,50 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		6A5F0D552FCAC00100A1B201 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 11.14.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		6A5F0D562FCAC00100A1B201 /* FirebaseAnalytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6A5F0D552FCAC00100A1B201 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAnalytics;
+		};
+		6A5F0D592FCAC00100A1B201 /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6A5F0D552FCAC00100A1B201 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+		6A5F0D5B2FCAC00100A1B201 /* FirebaseCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6A5F0D552FCAC00100A1B201 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCore;
+		};
+		6A5F0D5D2FCAC00100A1B201 /* FirebaseCrashlytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6A5F0D552FCAC00100A1B201 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCrashlytics;
+		};
+		6A5F0D5F2FCAC00100A1B201 /* FirebaseFirestore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6A5F0D552FCAC00100A1B201 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestore;
+		};
+		6A5F0D612FCAC00100A1B201 /* FirebaseStorage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6A5F0D552FCAC00100A1B201 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseStorage;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 0F8031252F787F45007671DC /* Project object */;
 }

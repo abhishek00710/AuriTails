@@ -268,6 +268,7 @@ struct ProfileStudioView: View {
 
 struct CareCircleView: View {
     @ObservedObject var viewModel: AppViewModel
+    @EnvironmentObject private var authController: AuthSessionController
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
 
@@ -275,6 +276,7 @@ struct CareCircleView: View {
     @State private var draftContact = ""
     @State private var draftRelationship = ""
     @State private var draftNote = ""
+    @State private var isShowingCloudAccess = false
 
     var body: some View {
         NavigationStack {
@@ -285,6 +287,7 @@ struct CareCircleView: View {
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 22) {
                         overviewCard
+                        cloudCard
                         inviteCard
                         membersCard
                         activityCard
@@ -304,6 +307,10 @@ struct CareCircleView: View {
                     .foregroundStyle(colorScheme.topBarButtonColor)
                 }
             }
+        }
+        .sheet(isPresented: $isShowingCloudAccess) {
+            CareCircleAuthView()
+                .environmentObject(authController)
         }
     }
 
@@ -354,6 +361,53 @@ struct CareCircleView: View {
             }
             .disabled(draftName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             .opacity(draftName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 0.55 : 1)
+            .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.96, pressedBrightness: 0.04))
+        }
+    }
+
+    private var cloudCard: some View {
+        GlassCard(tone: .twilight) {
+            Text("CLOUD ACCESS")
+                .font(.system(size: 11, weight: .bold, design: .rounded))
+                .tracking(1.5)
+                .foregroundStyle(.white.opacity(0.56))
+
+            Text(authController.isConfigured ? "Firebase cloud services are ready" : "Keep cloud sharing dormant until you're ready")
+                .font(.system(size: 28, weight: .semibold, design: .serif))
+                .foregroundStyle(.white)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Text(authController.statusDetail)
+                .font(.system(size: 15, weight: .medium, design: .rounded))
+                .foregroundStyle(.white.opacity(0.78))
+                .fixedSize(horizontal: false, vertical: true)
+
+            HStack(spacing: 12) {
+                CareCircleMetricPill(
+                    title: "Cloud quota",
+                    value: "10 MB",
+                    icon: "icloud.and.arrow.up.fill"
+                )
+                CareCircleMetricPill(
+                    title: "Mode",
+                    value: authController.isConfigured ? "Firebase" : "Local-first",
+                    icon: authController.isConfigured ? "checkmark.circle.fill" : "internaldrive.fill"
+                )
+            }
+
+            Button {
+                isShowingCloudAccess = true
+            } label: {
+                HStack {
+                    Label(authController.isConfigured ? "Open Firebase sign-in" : "Open Firebase setup", systemImage: "person.crop.circle.badge.checkmark")
+                        .font(.system(size: 15, weight: .bold, design: .rounded))
+                    Spacer()
+                }
+                .foregroundStyle(Color(red: 0.10, green: 0.13, blue: 0.22))
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+                .background(Color.white, in: Capsule())
+            }
             .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.96, pressedBrightness: 0.04))
         }
     }
