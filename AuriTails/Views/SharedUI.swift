@@ -369,6 +369,87 @@ struct SectionHeader: View {
     }
 }
 
+struct EmptyDelightCard<Actions: View>: View {
+    let tone: PaletteTone
+    let eyebrow: String
+    let title: String
+    let detail: String
+    let systemImage: String
+    @ViewBuilder let actions: Actions
+
+    init(
+        tone: PaletteTone = .twilight,
+        eyebrow: String,
+        title: String,
+        detail: String,
+        systemImage: String,
+        @ViewBuilder actions: () -> Actions
+    ) {
+        self.tone = tone
+        self.eyebrow = eyebrow
+        self.title = title
+        self.detail = detail
+        self.systemImage = systemImage
+        self.actions = actions()
+    }
+
+    var body: some View {
+        GlassCard(tone: tone) {
+            HStack(alignment: .top, spacing: 14) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .fill(.white.opacity(0.10))
+
+                    Image(systemName: systemImage)
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(.white)
+                }
+                .frame(width: 50, height: 50)
+
+                VStack(alignment: .leading, spacing: 10) {
+                    Text(L10n.tr(eyebrow, default: eyebrow).uppercased())
+                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                        .tracking(1.4)
+                        .foregroundStyle(.white.opacity(0.55))
+
+                    Text(title)
+                        .font(.system(size: 24, weight: .semibold, design: .serif))
+                        .foregroundStyle(.white)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Text(detail)
+                        .font(.system(size: 14, weight: .medium, design: .rounded))
+                        .foregroundStyle(.white.opacity(0.76))
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    HStack(spacing: 10) {
+                        actions
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+        }
+    }
+}
+
+struct EmptyDelightActionButton: View {
+    let title: String
+    let systemImage: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Label(title, systemImage: systemImage)
+                .font(.system(size: 13, weight: .bold, design: .rounded))
+                .foregroundStyle(Color(red: 0.10, green: 0.13, blue: 0.22))
+                .padding(.horizontal, 16)
+                .padding(.vertical, 11)
+                .background(Color.white, in: Capsule())
+        }
+        .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.95, pressedBrightness: 0.05))
+    }
+}
+
 struct FloatingTabBar: View {
     let selectedTab: RootTab
     let onSelect: (RootTab) -> Void
@@ -598,7 +679,7 @@ struct SlideMenuPanel: View {
                         ownerPhotoData: viewModel.ownerPhotoData,
                         petPhotoData: viewModel.petPhotoData,
                         careCircleCount: viewModel.totalCareCircleCount,
-                        petCount: viewModel.pets.count
+                        petCount: viewModel.activePets.count
                     )
                 }
                 .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.98, pressedBrightness: 0.02))
@@ -612,7 +693,7 @@ struct SlideMenuPanel: View {
 
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 10) {
-                        ForEach(viewModel.pets) { pet in
+                        ForEach(viewModel.activePets) { pet in
                             Button {
                                 viewModel.selectPet(pet.id)
                             } label: {
@@ -689,6 +770,15 @@ struct SlideMenuPanel: View {
                     subtitle: "Control reminder timing and which moments should ping you."
                 ) {
                     viewModel.openNotificationSettings()
+                }
+
+                SocialMenuActionRow(
+                    icon: "hand.raised.fill",
+                    iconTint: .twilight,
+                    title: "Privacy & Terms",
+                    subtitle: "Review how AuriTails handles data, reminders, and shared access."
+                ) {
+                    viewModel.openLegalCenter()
                 }
 
                 BackupActionsRow(

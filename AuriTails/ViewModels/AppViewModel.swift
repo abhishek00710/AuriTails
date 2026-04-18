@@ -58,6 +58,7 @@ final class AppViewModel: ObservableObject {
     private let insightEngine: PetInsightEngine
     private let notificationScheduler: NotificationScheduler
     private let nearbyPetCareService: NearbyPetCareService
+    private let careCircleRepository: FirebaseCareCircleRepository
     private let vetVisitPackBuilder = VetVisitPackBuilder()
     private let vaccineDocumentImportService = VaccineDocumentImportService()
     private var isApplyingState = false
@@ -65,14 +66,18 @@ final class AppViewModel: ObservableObject {
 
     init(
         seed: AppSeed,
-        store: AppStateStore = AppStateStore(),
+        store: AppStateStore? = nil,
         insightEngine: PetInsightEngine? = nil,
-        notificationScheduler: NotificationScheduler = NotificationScheduler(),
+        notificationScheduler: NotificationScheduler? = nil,
         nearbyPetCareService: NearbyPetCareService? = nil,
+        careCircleRepository: FirebaseCareCircleRepository? = nil,
         prefersPersistedState: Bool = true
     ) {
-        let initialState = (prefersPersistedState ? (store.load() ?? PersistedAppState(seed: seed)) : PersistedAppState(seed: seed)).normalizedForMultiPet()
+        let store = store ?? AppStateStore()
+        let notificationScheduler = notificationScheduler ?? NotificationScheduler()
         let nearbyPetCareService = nearbyPetCareService ?? NearbyPetCareService()
+        let careCircleRepository = careCircleRepository ?? FirebaseCareCircleRepository()
+        let initialState = (prefersPersistedState ? (store.load() ?? PersistedAppState(seed: seed)) : PersistedAppState(seed: seed)).normalizedForMultiPet()
 
         selectedTab = initialState.selectedTab
         selectedDay = initialState.selectedDay
@@ -98,6 +103,7 @@ final class AppViewModel: ObservableObject {
         self.insightEngine = insightEngine ?? PetInsightEngine()
         self.notificationScheduler = notificationScheduler
         self.nearbyPetCareService = nearbyPetCareService
+        self.careCircleRepository = careCircleRepository
 
         nearbyPetCareService.$places
             .sink { [weak self] in self?.nearbyPetCare = $0 }
@@ -114,6 +120,10 @@ final class AppViewModel: ObservableObject {
         Task {
             await notificationScheduler.requestAuthorizationIfNeeded()
             await notificationScheduler.refreshNotifications(for: snapshotState())
+        }
+
+        Task {
+            await refreshCareCircleFromCloudIfNeeded()
         }
 
         nearbyPetCareService.refresh()
@@ -165,6 +175,8 @@ final class AppViewModel: ObservableObject {
 
     var petPhotoData: Data? { pet.photoData }
     var bondPhotoData: Data? { pet.bondPhotoData }
+    var activePets: [PetProfile] { pets.filter { $0.status == .active } }
+    var archivedPets: [PetProfile] { pets.filter { $0.status == .archived } }
 
     var selectedPetBehaviorSnapshots: [BehaviorSnapshot] {
         behaviorSnapshots
@@ -417,12 +429,20 @@ final class AppViewModel: ObservableObject {
 
     func openCareCircle() {
         closeMenu()
+        Task {
+            await refreshCareCircleFromCloudIfNeeded()
+        }
         activeSheet = .careCircle
     }
 
     func openNotificationSettings() {
         closeMenu()
         activeSheet = .notificationSettings
+    }
+
+    func openLegalCenter() {
+        closeMenu()
+        activeSheet = .legalCenter
     }
 
     func openBehaviorCheckIn(_ day: Weekday? = nil) {
@@ -704,7 +724,7 @@ final class AppViewModel: ObservableObject {
     }
 
     func selectPet(_ petID: UUID) {
-        guard pets.contains(where: { $0.id == petID }) else { return }
+        guard activePets.contains(where: { $0.id == petID }) else { return }
         withAnimation(.spring(response: 0.32, dampingFraction: 0.9)) {
             selectedPetID = petID
             isMenuPresented = false
@@ -730,15 +750,64 @@ final class AppViewModel: ObservableObject {
     }
 
     var canDeleteSelectedPet: Bool {
-        pets.count > 1
+        activePets.count > 1
+    }
+
+    func archivePet(_ petID: UUID) {
+        guard let index = pets.firstIndex(where: { $0.id == petID }) else { return }
+        guard pets[index].status == .active else { return }
+        guard activePets.count > 1 else {
+            backupNotice = BackupNotice(
+                title: L10n.tr("Keep One Active Pet", default: "Keep One Active Pet"),
+                message: L10n.tr("Archive works best when at least one pet stays active in AuriTails. Add another pet first if this is your only active profile.", default: "Archive works best when at least one pet stays active in AuriTails. Add another pet first if this is your only active profile.")
+            )
+            return
+        }
+
+        let archivedPet = pets[index]
+        withAnimation(.spring(response: 0.34, dampingFraction: 0.88)) {
+            pets[index].status = .archived
+
+            if selectedPetID == petID, let fallbackPetID = activePets.first(where: { $0.id != petID })?.id {
+                selectedPetID = fallbackPetID
+            }
+
+            prependCareActivity(
+                title: L10n.format("%@ was archived", default: "%@ was archived", archivedPet.name.trimmedOrNil ?? L10n.tr("Pet profile", default: "Pet profile")),
+                detail: L10n.tr("This pet's records and memories remain on this device, but the profile is now hidden from the active household view.", default: "This pet's records and memories remain on this device, but the profile is now hidden from the active household view."),
+                systemImage: "archivebox.fill",
+                tone: .twilight
+            )
+        }
+    }
+
+    func restorePet(_ petID: UUID) {
+        guard let index = pets.firstIndex(where: { $0.id == petID }) else { return }
+        guard pets[index].status == .archived else { return }
+
+        let restoredPet = pets[index]
+        withAnimation(.spring(response: 0.34, dampingFraction: 0.88)) {
+            pets[index].status = .active
+            selectedPetID = petID
+
+            prependCareActivity(
+                title: L10n.format("%@ was restored", default: "%@ was restored", restoredPet.name.trimmedOrNil ?? L10n.tr("Pet profile", default: "Pet profile")),
+                detail: L10n.tr("This pet is back in the active household view with their records, memories, and Bond Pulse history intact.", default: "This pet is back in the active household view with their records, memories, and Bond Pulse history intact."),
+                systemImage: "arrow.uturn.backward.circle.fill",
+                tone: .meadow
+            )
+        }
     }
 
     func deletePet(_ petID: UUID) {
         guard let petToDelete = pets.first(where: { $0.id == petID }) else { return }
-        guard pets.count > 1 else {
+        let isActivePet = petToDelete.status == .active
+        let remainingActivePetCount = isActivePet ? activePets.count - 1 : activePets.count
+
+        guard pets.count > 1, remainingActivePetCount > 0 else {
             backupNotice = BackupNotice(
-                title: L10n.tr("Keep One Pet", default: "Keep One Pet"),
-                message: L10n.tr("AuriTails needs at least one pet profile. Add another pet first if you want to remove this one.", default: "AuriTails needs at least one pet profile. Add another pet first if you want to remove this one.")
+                title: L10n.tr("Keep One Active Pet", default: "Keep One Active Pet"),
+                message: L10n.tr("AuriTails needs at least one active pet profile. Add or keep another active pet before removing this one.", default: "AuriTails needs at least one active pet profile. Add or keep another active pet before removing this one.")
             )
             return
         }
@@ -755,7 +824,7 @@ final class AppViewModel: ObservableObject {
             routines.removeAll { $0.petID == petID }
             memories.removeAll { $0.petID == petID }
 
-            if selectedPetID == petID, let fallbackPetID = pets.first?.id {
+            if selectedPetID == petID, let fallbackPetID = activePets.first?.id ?? pets.first?.id {
                 selectedPetID = fallbackPetID
             }
 
@@ -792,6 +861,10 @@ final class AppViewModel: ObservableObject {
                 tone: .twilight
             )
         }
+
+        Task {
+            await syncCareCircleInvite(member)
+        }
     }
 
     func markCaregiverInviteAccepted(_ memberID: UUID) {
@@ -809,6 +882,11 @@ final class AppViewModel: ObservableObject {
                 tone: .meadow
             )
         }
+
+        let member = careCircleMembers[index]
+        Task {
+            await syncCareCircleMemberStatus(member)
+        }
     }
 
     func removeCareCircleMember(_ memberID: UUID) {
@@ -822,6 +900,10 @@ final class AppViewModel: ObservableObject {
                 systemImage: "person.crop.circle.badge.minus",
                 tone: .apricot
             )
+        }
+
+        Task {
+            await syncCareCircleMemberRemoval(memberID)
         }
     }
 
@@ -1271,6 +1353,78 @@ final class AppViewModel: ObservableObject {
         isApplyingState = false
         persist()
     }
+
+
+    func refreshCareCircleFromCloudIfNeeded() async {
+    guard careCircleRepository.isReadyForLiveSync else { return }
+
+    do {
+        if let snapshot = try await careCircleRepository.fetchSnapshot(for: selectedPetID) {
+            if snapshot.members != careCircleMembers || snapshot.events != careActivityEvents {
+                isApplyingState = true
+                careCircleMembers = snapshot.members
+                careActivityEvents = snapshot.events
+                isApplyingState = false
+                persist()
+            }
+        } else {
+            try await careCircleRepository.replaceSnapshot(
+                members: careCircleMembers,
+                events: careActivityEvents,
+                pet: pet
+            )
+        }
+    } catch {
+        #if DEBUG
+        print("Firebase Care Circle refresh skipped: \(error.localizedDescription)")
+        #endif
+    }
+}
+
+
+    private func syncCareCircleInvite(_ member: CareCircleMember) async {
+    guard careCircleRepository.isReadyForLiveSync else { return }
+    do {
+        try await careCircleRepository.createInvite(member: member, pet: pet)
+        if let latestEvent = careActivityEvents.first {
+            try await careCircleRepository.appendActivity(latestEvent, pet: pet)
+        }
+    } catch {
+        #if DEBUG
+        print("Firebase Care Circle invite sync failed: \(error.localizedDescription)")
+        #endif
+    }
+}
+
+
+    private func syncCareCircleMemberStatus(_ member: CareCircleMember) async {
+    guard careCircleRepository.isReadyForLiveSync else { return }
+    do {
+        try await careCircleRepository.updateMemberStatus(member, pet: pet)
+        if let latestEvent = careActivityEvents.first {
+            try await careCircleRepository.appendActivity(latestEvent, pet: pet)
+        }
+    } catch {
+        #if DEBUG
+        print("Firebase Care Circle member sync failed: \(error.localizedDescription)")
+        #endif
+    }
+}
+
+
+    private func syncCareCircleMemberRemoval(_ memberID: UUID) async {
+    guard careCircleRepository.isReadyForLiveSync else { return }
+    do {
+        try await careCircleRepository.removeMember(memberID: memberID, pet: pet)
+        if let latestEvent = careActivityEvents.first {
+            try await careCircleRepository.appendActivity(latestEvent, pet: pet)
+        }
+    } catch {
+        #if DEBUG
+        print("Firebase Care Circle removal sync failed: \(error.localizedDescription)")
+        #endif
+    }
+}
 
     private func sortCareCircleMembers() {
         careCircleMembers.sort { lhs, rhs in

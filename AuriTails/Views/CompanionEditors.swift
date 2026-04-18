@@ -951,6 +951,7 @@ private struct EditorShell<Content: View>: View {
                     .padding(.horizontal, 20)
                     .padding(.bottom, 40)
                 }
+                .scrollDismissesKeyboard(.immediately)
             }
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)

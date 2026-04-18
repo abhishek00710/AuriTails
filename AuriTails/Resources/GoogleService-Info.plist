@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>241151777401-7jcdt3gkvcifcbc0cpugaib8q6k4s31s.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.241151777401-7jcdt3gkvcifcbc0cpugaib8q6k4s31s</string>
+	<key>API_KEY</key>
+	<string>AIzaSyARd3NDddm2r1yfEQQF8rei67HFOaWgPrU</string>
+	<key>GCM_SENDER_ID</key>
+	<string>241151777401</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.SAAAin.AuriTails</string>
+	<key>PROJECT_ID</key>
+	<string>auritails</string>
+	<key>STORAGE_BUCKET</key>
+	<string>auritails.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:241151777401:ios:991eb60143d5d1189312a8</string>
+</dict>
+</plist>

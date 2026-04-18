@@ -25,6 +25,7 @@ struct CareCircleAuthView: View {
                     .padding(.horizontal, 20)
                     .padding(.bottom, 36)
                 }
+                .scrollDismissesKeyboard(.immediately)
             }
             .navigationTitle("Cloud Access")
             .navigationBarTitleDisplayMode(.inline)

@@ -31,13 +31,16 @@ struct MemoriesView: View {
                         }
                     }
                 } else {
-                    GlassCard(tone: .meadow) {
-                        Text("No memories yet")
-                            .font(.system(size: 24, weight: .semibold, design: .serif))
-                            .foregroundStyle(.white)
-                        Text("Add a birthday, gotcha day, or small everyday moment and this space will turn it into a keepsake instead of a plain list.")
-                            .font(.system(size: 14, weight: .medium, design: .rounded))
-                            .foregroundStyle(.white.opacity(0.76))
+                    EmptyDelightCard(
+                        tone: .meadow,
+                        eyebrow: "First keepsake",
+                        title: "No memories yet",
+                        detail: "Start with a birthday, gotcha day, or one small ordinary moment. This space is meant to feel like a keepsake album, not a utility list.",
+                        systemImage: "sparkles.tv"
+                    ) {
+                        EmptyDelightActionButton(title: "Add first memory", systemImage: "plus") {
+                            viewModel.openMemoryEditor()
+                        }
                     }
                 }
 
@@ -107,9 +110,17 @@ struct MemoriesView: View {
             )
 
             if viewModel.memoryTimeline.isEmpty {
-                Text("No moments in the timeline yet. Add one memory to start building the story of your bond.")
-                    .font(.system(size: 14, weight: .medium, design: .rounded))
-                    .foregroundStyle(.white.opacity(0.76))
+                EmptyDelightCard(
+                    tone: .lagoon,
+                    eyebrow: "Story line",
+                    title: "The timeline starts with one moment",
+                    detail: "Add a single milestone and AuriTails will start building the relationship story around it instead of leaving this view feeling unfinished.",
+                    systemImage: "timeline.selection"
+                ) {
+                    EmptyDelightActionButton(title: "Add memory", systemImage: "plus") {
+                        viewModel.openMemoryEditor()
+                    }
+                }
             } else {
                 LazyVStack(spacing: 16) {
                     ForEach(viewModel.memoryTimeline) { memory in

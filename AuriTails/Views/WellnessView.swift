@@ -71,12 +71,14 @@ struct WellnessView: View {
             }
 
             if viewModel.selectedPetMedications.isEmpty {
-                Text("No medication records yet. Add ongoing meds, recovery support, or seasonal treatments so Bond Pulse can read the care picture more honestly.")
-                    .font(.system(size: 14, weight: .medium, design: .rounded))
-                    .foregroundStyle(.white.opacity(0.76))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(16)
-                    .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+                wellnessEmptyPrompt(
+                    title: "No medication records yet",
+                    detail: "Add ongoing meds, recovery support, or seasonal treatments so this section starts reflecting the real care picture.",
+                    buttonTitle: "Add medication",
+                    systemImage: "pills.fill"
+                ) {
+                    viewModel.openMedicationEditor()
+                }
             } else {
                 LazyVStack(spacing: 12) {
                     ForEach(viewModel.selectedPetMedications) { medication in
@@ -162,12 +164,14 @@ struct WellnessView: View {
             }
 
             if viewModel.selectedPetSymptoms.isEmpty {
-                Text("No symptom notes yet. Add things like paw licking, appetite changes, sneezing, or low-energy days when they happen.")
-                    .font(.system(size: 14, weight: .medium, design: .rounded))
-                    .foregroundStyle(.white.opacity(0.76))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(16)
-                    .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+                wellnessEmptyPrompt(
+                    title: "No symptom notes yet",
+                    detail: "Log things like paw licking, appetite changes, sneezing, or low-energy days when they happen so the pattern has something real to read.",
+                    buttonTitle: "Add symptom",
+                    systemImage: "stethoscope"
+                ) {
+                    viewModel.openSymptomEditor()
+                }
             } else {
                 LazyVStack(spacing: 12) {
                     ForEach(viewModel.recentSymptoms.prefix(5)) { symptom in
@@ -387,12 +391,20 @@ struct WellnessView: View {
                 }
 
                 if viewModel.selectedPetVaccinations.isEmpty {
-                    Text("No vaccine records yet. Add the first one manually, import a file, or scan a certificate to start the passport.")
-                        .font(.system(size: 14, weight: .medium, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.76))
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(16)
-                        .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+                    VStack(alignment: .leading, spacing: 12) {
+                        wellnessEmptyPrompt(
+                            title: "No vaccine records yet",
+                            detail: "Add the first vaccine manually or scan a certificate to start the passport with something real.",
+                            buttonTitle: "Add vaccine",
+                            systemImage: "cross.case.fill"
+                        ) {
+                            viewModel.openVaccineEditor()
+                        }
+
+                        EmptyDelightActionButton(title: "Scan certificate", systemImage: "camera.viewfinder") {
+                            viewModel.startVaccineScanner()
+                        }
+                    }
                 } else {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 14) {
@@ -478,10 +490,14 @@ struct WellnessView: View {
             }
 
             if viewModel.selectedPetMedicalHistory.isEmpty {
-                Text("No medical history yet. Annual exams, allergy notes, and dental visits will show up here once added.")
-                    .font(.system(size: 14, weight: .medium, design: .rounded))
-                    .foregroundStyle(.white.opacity(0.76))
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                wellnessEmptyPrompt(
+                    title: "No medical history yet",
+                    detail: "Annual exams, allergy notes, injury updates, and dental visits will start living here once you log the first one.",
+                    buttonTitle: "Add medical note",
+                    systemImage: "doc.text.fill"
+                ) {
+                    viewModel.openMedicalEntryEditor()
+                }
             } else {
                 VStack(spacing: 18) {
                     ForEach(viewModel.selectedPetMedicalHistory) { entry in
@@ -549,12 +565,14 @@ struct WellnessView: View {
             }
 
             if viewModel.selectedPetFoodPreferences.isEmpty {
-                Text("No food notes yet. Add meals, sensitivities, or hydration rituals to make this part useful.")
-                    .font(.system(size: 14, weight: .medium, design: .rounded))
-                    .foregroundStyle(.white.opacity(0.76))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(16)
-                    .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+                wellnessEmptyPrompt(
+                    title: "No food notes yet",
+                    detail: "Add meals, sensitivities, favorite toppers, or hydration rituals so food patterns start feeling useful instead of blank.",
+                    buttonTitle: "Add food note",
+                    systemImage: "fork.knife"
+                ) {
+                    viewModel.openFoodPreferenceEditor()
+                }
             } else {
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                     ForEach(viewModel.selectedPetFoodPreferences) { preference in
@@ -597,6 +615,30 @@ struct WellnessView: View {
         case .onTrack:
             return .lagoon
         }
+    }
+
+    private func wellnessEmptyPrompt(
+        title: String,
+        detail: String,
+        buttonTitle: String,
+        systemImage: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(title)
+                .font(.system(size: 18, weight: .semibold, design: .serif))
+                .foregroundStyle(.white)
+
+            Text(detail)
+                .font(.system(size: 14, weight: .medium, design: .rounded))
+                .foregroundStyle(.white.opacity(0.76))
+                .fixedSize(horizontal: false, vertical: true)
+
+            EmptyDelightActionButton(title: buttonTitle, systemImage: systemImage, action: action)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
+        .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
     }
 }
 

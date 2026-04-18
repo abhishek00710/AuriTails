@@ -72,6 +72,7 @@ enum AppSheet: Identifiable {
     case profile
     case careCircle
     case notificationSettings
+    case legalCenter
     case behaviorCheckInEditor(Weekday?)
     case weightEntryEditor(UUID?)
     case medicationEditor(UUID?)
@@ -92,6 +93,8 @@ enum AppSheet: Identifiable {
             return "care-circle"
         case .notificationSettings:
             return "notification-settings"
+        case .legalCenter:
+            return "legal-center"
         case let .behaviorCheckInEditor(day):
             return "behavior-\(day?.rawValue ?? 0)"
         case let .weightEntryEditor(id):
@@ -403,6 +406,20 @@ struct OwnerProfile: Identifiable, Codable {
     var note: String
 }
 
+enum PetProfileStatus: String, Codable {
+    case active
+    case archived
+
+    var title: String {
+        switch self {
+        case .active:
+            return L10n.tr("Active", default: "Active")
+        case .archived:
+            return L10n.tr("Archived", default: "Archived")
+        }
+    }
+}
+
 struct PetProfile: Identifiable, Codable {
     var id: UUID = UUID()
     var name: String
@@ -413,6 +430,7 @@ struct PetProfile: Identifiable, Codable {
     var favoriteTreat: String
     var bondStatement: String
     var energySummary: String
+    var status: PetProfileStatus = .active
     var photoData: Data? = nil
     var bondPhotoData: Data? = nil
 
@@ -426,6 +444,7 @@ struct PetProfile: Identifiable, Codable {
         favoriteTreat: String,
         bondStatement: String,
         energySummary: String,
+        status: PetProfileStatus = .active,
         photoData: Data? = nil,
         bondPhotoData: Data? = nil
     ) {
@@ -438,6 +457,7 @@ struct PetProfile: Identifiable, Codable {
         self.favoriteTreat = favoriteTreat
         self.bondStatement = bondStatement
         self.energySummary = energySummary
+        self.status = status
         self.photoData = photoData
         self.bondPhotoData = bondPhotoData
     }
@@ -453,6 +473,7 @@ struct PetProfile: Identifiable, Codable {
         favoriteTreat = try container.decode(String.self, forKey: .favoriteTreat)
         bondStatement = try container.decode(String.self, forKey: .bondStatement)
         energySummary = try container.decode(String.self, forKey: .energySummary)
+        status = try container.decodeIfPresent(PetProfileStatus.self, forKey: .status) ?? .active
         photoData = try container.decodeIfPresent(Data.self, forKey: .photoData)
         bondPhotoData = try container.decodeIfPresent(Data.self, forKey: .bondPhotoData)
     }
@@ -1130,14 +1151,15 @@ struct PersistedAppState: Codable {
     }
 
     var primaryPetID: UUID {
-        selectedPetID ?? pets.first?.id ?? UUID()
+        let activePetID = pets.first(where: { $0.status == .active })?.id
+        return selectedPetID ?? activePetID ?? pets.first?.id ?? UUID()
     }
 
     var selectedPet: PetProfile {
-        if let selectedPetID, let pet = pets.first(where: { $0.id == selectedPetID }) {
+        if let selectedPetID, let pet = pets.first(where: { $0.id == selectedPetID && $0.status == .active }) {
             return pet
         }
-        return pets.first ?? PetProfile(
+        return pets.first(where: { $0.status == .active }) ?? pets.first ?? PetProfile(
             name: "",
             species: "",
             breed: "",
@@ -1166,7 +1188,10 @@ struct PersistedAppState: Codable {
             ]
         }
 
-        let fallbackPetID = normalized.selectedPetID ?? normalized.pets.first?.id
+        let activePetID = normalized.pets.first(where: { $0.status == .active })?.id
+        let fallbackPetID = normalized.selectedPetID.flatMap { selectedID in
+            normalized.pets.first(where: { $0.id == selectedID && $0.status == .active })?.id
+        } ?? activePetID ?? normalized.pets.first?.id
         normalized.selectedPetID = fallbackPetID
         guard let fallbackPetID else { return normalized }
 

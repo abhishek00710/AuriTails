@@ -2,6 +2,11 @@ import PhotosUI
 import SwiftUI
 
 struct ProfileStudioView: View {
+    private enum PetManagementAction {
+        case archive
+        case delete
+    }
+
     @ObservedObject var viewModel: AppViewModel
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
@@ -12,6 +17,7 @@ struct ProfileStudioView: View {
     @State private var petPhotoData: Data?
     @State private var bondPhotoData: Data?
     @State private var petPendingDeletion: PetProfile?
+    @State private var petPendingAction: PetManagementAction?
     @State private var ownerPickerItem: PhotosPickerItem?
     @State private var petPickerItem: PhotosPickerItem?
     @State private var bondPickerItem: PhotosPickerItem?
@@ -46,7 +52,7 @@ struct ProfileStudioView: View {
                     .padding(.horizontal, 20)
                     .padding(.bottom, 36)
                 }
-                .scrollDismissesKeyboard(.interactively)
+                .scrollDismissesKeyboard(.immediately)
             }
             .navigationTitle("Profile Studio")
             .navigationBarTitleDisplayMode(.inline)
@@ -83,21 +89,28 @@ struct ProfileStudioView: View {
                 bondPhotoData = data
             }
         }
-        .alert("Delete this pet?", isPresented: deletePetAlertBinding) {
-            Button("Delete", role: .destructive) {
-                guard let petPendingDeletion else { return }
+        .alert(petManagementTitle, isPresented: petManagementAlertBinding) {
+            Button(petManagementConfirmationTitle, role: .destructive) {
+                guard let petPendingDeletion, let petPendingAction else { return }
                 let wasSelectedPet = petPendingDeletion.id == viewModel.selectedPetID
-                viewModel.deletePet(petPendingDeletion.id)
+                switch petPendingAction {
+                case .archive:
+                    viewModel.archivePet(petPendingDeletion.id)
+                case .delete:
+                    viewModel.deletePet(petPendingDeletion.id)
+                }
                 if wasSelectedPet {
                     syncDraftsFromViewModel()
                 }
                 self.petPendingDeletion = nil
+                self.petPendingAction = nil
             }
             Button("Cancel", role: .cancel) {
                 petPendingDeletion = nil
+                petPendingAction = nil
             }
         } message: {
-            Text(deletePetMessage)
+            Text(petManagementMessage)
         }
     }
 
@@ -106,12 +119,12 @@ struct ProfileStudioView: View {
             SectionHeader(
                 eyebrow: "Household",
                 title: "Switch between pets",
-                detail: "Each pet gets its own wellness records, routines, memories, and Bond Pulse while your owner profile stays shared. You can also remove a pet here if you no longer want it in the household."
+                detail: "Each pet gets its own wellness records, routines, memories, and Bond Pulse while your owner profile stays shared. Archive a pet to keep their story on this device, or delete permanently when you're sure."
             )
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 10) {
-                    ForEach(viewModel.pets) { pet in
+                    ForEach(viewModel.activePets) { pet in
                         HStack(spacing: 8) {
                             Button {
                                 saveDraftIntoCurrentPet()
@@ -145,21 +158,8 @@ struct ProfileStudioView: View {
                             .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.96, pressedBrightness: 0.03))
 
                             if viewModel.pets.count > 1 {
-                                Button {
-                                    saveDraftIntoCurrentPet()
-                                    petPendingDeletion = pet
-                                } label: {
-                                    Image(systemName: "trash")
-                                        .font(.system(size: 13, weight: .bold))
-                                        .foregroundStyle(.white.opacity(0.82))
-                                        .frame(width: 36, height: 36)
-                                        .background(Color.white.opacity(0.08), in: Circle())
-                                        .overlay {
-                                            Circle()
-                                                .strokeBorder(Color.white.opacity(0.10), lineWidth: 1)
-                                        }
-                                }
-                                .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.92, pressedBrightness: 0.04))
+                                petManagementButton(systemImage: "archivebox.fill", action: .archive, for: pet)
+                                petManagementButton(systemImage: "trash", action: .delete, for: pet)
                             }
                         }
                     }
@@ -186,6 +186,59 @@ struct ProfileStudioView: View {
                     .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.96, pressedBrightness: 0.03))
                 }
                 .padding(.vertical, 2)
+            }
+
+            if !viewModel.archivedPets.isEmpty {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Archived")
+                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .foregroundStyle(.white.opacity(0.58))
+
+                    ForEach(viewModel.archivedPets) { pet in
+                        HStack(spacing: 12) {
+                            CircularProfilePhoto(imageData: pet.photoData, role: .pet, size: 42)
+
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(pet.name.trimmedOrNil ?? "Archived pet")
+                                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                                    .foregroundStyle(.white)
+
+                                Text("Records and memories are still kept on this device.")
+                                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                                    .foregroundStyle(.white.opacity(0.62))
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+
+                            Spacer(minLength: 0)
+
+                            Button {
+                                saveDraftIntoCurrentPet()
+                                viewModel.restorePet(pet.id)
+                                syncDraftsFromViewModel()
+                            } label: {
+                                Label("Restore", systemImage: "arrow.uturn.backward")
+                                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                                    .foregroundStyle(Color(red: 0.10, green: 0.13, blue: 0.22))
+                                    .padding(.horizontal, 14)
+                                    .padding(.vertical, 10)
+                                    .background(Color.white, in: Capsule())
+                            }
+                            .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.96, pressedBrightness: 0.04))
+
+                            petManagementButton(systemImage: "trash", action: .delete, for: pet)
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 12)
+                        .background(
+                            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                                .fill(Color.white.opacity(0.06))
+                                .overlay {
+                                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                                        .strokeBorder(Color.white.opacity(0.08), lineWidth: 1)
+                                }
+                        )
+                    }
+                }
             }
         }
     }
@@ -381,17 +434,71 @@ struct ProfileStudioView: View {
         bondPickerItem = nil
     }
 
-    private var deletePetAlertBinding: Binding<Bool> {
+    @ViewBuilder
+    private func petManagementButton(systemImage: String, action: PetManagementAction, for pet: PetProfile) -> some View {
+        Button {
+            saveDraftIntoCurrentPet()
+            petPendingDeletion = pet
+            petPendingAction = action
+        } label: {
+            Image(systemName: systemImage)
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(.white.opacity(0.82))
+                .frame(width: 36, height: 36)
+                .background(Color.white.opacity(0.08), in: Circle())
+                .overlay {
+                    Circle()
+                        .strokeBorder(Color.white.opacity(0.10), lineWidth: 1)
+                }
+        }
+        .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.92, pressedBrightness: 0.04))
+    }
+
+    private var petManagementAlertBinding: Binding<Bool> {
         Binding(
-            get: { petPendingDeletion != nil },
-            set: { if !$0 { petPendingDeletion = nil } }
+            get: { petPendingDeletion != nil && petPendingAction != nil },
+            set: {
+                if !$0 {
+                    petPendingDeletion = nil
+                    petPendingAction = nil
+                }
+            }
         )
     }
 
-    private var deletePetMessage: String {
+    private var petManagementTitle: String {
+        switch petPendingAction {
+        case .archive:
+            return "Archive this pet?"
+        case .delete:
+            return "Delete this pet?"
+        case .none:
+            return "Manage this pet?"
+        }
+    }
+
+    private var petManagementConfirmationTitle: String {
+        switch petPendingAction {
+        case .archive:
+            return "Archive"
+        case .delete:
+            return "Delete"
+        case .none:
+            return "Confirm"
+        }
+    }
+
+    private var petManagementMessage: String {
         guard let petPendingDeletion else { return "" }
         let petName = petPendingDeletion.name.trimmedOrNil ?? "This pet"
-        return "\(petName)'s routines, wellness records, memories, and Bond Pulse history on this device will be removed."
+        switch petPendingAction {
+        case .archive:
+            return "\(petName) will leave the active household view, but their routines, wellness records, memories, and Bond Pulse history will stay on this device."
+        case .delete:
+            return "\(petName)'s routines, wellness records, memories, and Bond Pulse history on this device will be permanently removed."
+        case .none:
+            return ""
+        }
     }
 }
 
@@ -424,6 +531,7 @@ struct CareCircleView: View {
                     .padding(.horizontal, 20)
                     .padding(.bottom, 36)
                 }
+                .scrollDismissesKeyboard(.immediately)
             }
             .navigationTitle("Care Circle")
             .navigationBarTitleDisplayMode(.inline)
@@ -440,6 +548,14 @@ struct CareCircleView: View {
         .sheet(isPresented: $isShowingCloudAccess) {
             CareCircleAuthView()
                 .environmentObject(authController)
+        }
+        .task {
+            await viewModel.refreshCareCircleFromCloudIfNeeded()
+        }
+        .onChange(of: authController.signedInEmail) { _, _ in
+            Task {
+                await viewModel.refreshCareCircleFromCloudIfNeeded()
+            }
         }
     }
 

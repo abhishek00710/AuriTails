@@ -1,5 +1,4 @@
 import Combine
-import FirebaseAnalytics
 import FirebaseAuth
 import FirebaseCore
 import FirebaseCrashlytics
@@ -110,6 +109,12 @@ final class AuthSessionController: ObservableObject {
             return
         }
 
+        if let validationMessage = configuration.validationMessage {
+            phase = .error(validationMessage)
+            refreshDiagnosticsContext()
+            return
+        }
+
         phase = .sendingLink
         refreshDiagnosticsContext()
 
@@ -130,13 +135,13 @@ final class AuthSessionController: ObservableObject {
             }
 
             UserDefaults.standard.set(trimmedEmail, forKey: pendingEmailKey)
-            Analytics.logEvent("care_circle_sign_in_started", parameters: [
+            FirebaseTelemetry.logEvent("care_circle_sign_in_started", parameters: [
                 "method": "email_link",
             ])
             phase = .linkSent(trimmedEmail)
         } catch {
-            Crashlytics.crashlytics().record(error: error)
-            phase = .error(error.localizedDescription)
+            FirebaseTelemetry.record(error: error, context: "care_circle_sign_in_started")
+            phase = .error(Self.describeAuthError(error, configuration: configuration))
         }
 
         refreshDiagnosticsContext()
@@ -161,11 +166,11 @@ final class AuthSessionController: ObservableObject {
         do {
             try Auth.auth().signOut()
             UserDefaults.standard.removeObject(forKey: pendingEmailKey)
-            Analytics.logEvent("care_circle_sign_out", parameters: nil)
+            FirebaseTelemetry.logEvent("care_circle_sign_out")
             phase = .signedOut
         } catch {
-            Crashlytics.crashlytics().record(error: error)
-            phase = .error(error.localizedDescription)
+            FirebaseTelemetry.record(error: error, context: "care_circle_sign_out")
+            phase = .error(Self.describeAuthError(error, configuration: configuration))
         }
 
         refreshDiagnosticsContext()
@@ -202,9 +207,9 @@ final class AuthSessionController: ObservableObject {
                 }
 
                 UserDefaults.standard.removeObject(forKey: pendingEmailKey)
-                Analytics.setUserID(result.user.uid)
-                Analytics.logEvent("care_circle_sign_in_completed", parameters: [
+                FirebaseTelemetry.logEvent("care_circle_sign_in_completed", parameters: [
                     "method": "email_link",
+                    "has_user_id": result.user.uid.isEmpty ? 0 : 1,
                 ])
                 phase = .signedIn(
                     SessionUser(
@@ -213,7 +218,7 @@ final class AuthSessionController: ObservableObject {
                     )
                 )
             } catch {
-                Crashlytics.crashlytics().record(error: error)
+                FirebaseTelemetry.record(error: error, context: "care_circle_sign_in_completed")
                 phase = .error(error.localizedDescription)
             }
 
@@ -278,14 +283,35 @@ final class AuthSessionController: ObservableObject {
             }
         }()
 
-        Crashlytics.crashlytics().setCustomValue(isConfigured, forKey: "firebase_configured")
-        Crashlytics.crashlytics().setCustomValue(mode, forKey: "care_circle_auth_phase")
-        Analytics.setUserProperty(mode, forName: "care_circle_auth_phase")
-        Analytics.setUserProperty(isConfigured ? "true" : "false", forName: "firebase_configured")
+        let crashlytics = FirebaseCrashlytics.Crashlytics.crashlytics()
+        crashlytics.setCustomValue(isConfigured, forKey: "firebase_configured")
+        crashlytics.setCustomValue(mode, forKey: "care_circle_auth_phase")
+        FirebaseTelemetry.setUserProperties(authPhase: mode, firebaseConfigured: isConfigured)
     }
 
     private static func configureFirebaseIfNeeded() {
         guard FirebaseApp.app() == nil else { return }
         FirebaseApp.configure()
+    }
+
+    private static func describeAuthError(_ error: Error, configuration: FirebaseConfiguration?) -> String {
+        let nsError = error as NSError
+        let baseMessage = nsError.localizedDescription
+
+        var hints: [String] = []
+
+        if let validationMessage = configuration?.validationMessage {
+            hints.append(validationMessage)
+        }
+
+        if let host = configuration?.emailLinkURL.host?.lowercased() {
+            hints.append("Make sure \(host) is listed in Firebase Authentication > Settings > Authorized domains.")
+        }
+
+        hints.append("Confirm Email link sign-in is enabled in Firebase Authentication > Sign-in method.")
+
+        let diagnostic = "Firebase error \(nsError.domain) (\(nsError.code))."
+        let joinedHints = hints.joined(separator: " ")
+        return joinedHints.isEmpty ? "\(baseMessage) \(diagnostic)" : "\(baseMessage) \(diagnostic) \(joinedHints)"
     }
 }

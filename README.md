@@ -61,6 +61,14 @@ Before pushing, review:
 - [CONTRIBUTING.md](/Users/abhishekgangdeb/Documents/GIT/AuriTails/CONTRIBUTING.md)
 - [docs/GITHUB_SETUP.md](/Users/abhishekgangdeb/Documents/GIT/AuriTails/docs/GITHUB_SETUP.md)
 
+## Launch Policy Docs
+
+Before public release, review and finalize:
+
+- [docs/PRIVACY_POLICY.md](/Users/abhishekgangdeb/Documents/GIT/AuriTails/docs/PRIVACY_POLICY.md)
+- [docs/TERMS_OF_USE.md](/Users/abhishekgangdeb/Documents/GIT/AuriTails/docs/TERMS_OF_USE.md)
+- [docs/APP_STORE_PRIVACY_CHECKLIST.md](/Users/abhishekgangdeb/Documents/GIT/AuriTails/docs/APP_STORE_PRIVACY_CHECKLIST.md)
+
 ## License
 
 This repository is licensed under the MIT License. See [LICENSE](/Users/abhishekgangdeb/Documents/GIT/AuriTails/LICENSE).

@@ -111,6 +111,8 @@ struct RootView: View {
                 CareCircleView(viewModel: viewModel)
             case .notificationSettings:
                 NotificationSettingsView(viewModel: viewModel)
+            case .legalCenter:
+                LegalCenterView()
             case let .behaviorCheckInEditor(day):
                 BehaviorCheckInEditorView(viewModel: viewModel, day: day)
             case let .weightEntryEditor(entryID):
@@ -294,7 +296,7 @@ struct RootView: View {
                 .font(.system(size: 13, weight: .bold, design: .rounded))
                 .foregroundStyle(.white.opacity(0.62))
 
-            ForEach(viewModel.pets) { pet in
+            ForEach(viewModel.activePets) { pet in
                 Button {
                     viewModel.selectPet(pet.id)
                     withAnimation(.spring(response: 0.34, dampingFraction: 0.9)) {

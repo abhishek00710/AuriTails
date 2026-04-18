@@ -159,25 +159,17 @@ struct DashboardView: View {
                     .font(.system(size: 15, weight: .medium, design: .rounded))
                     .foregroundStyle(.white.opacity(0.8))
             } else {
-                Text("No behavior data yet")
-                    .font(.system(size: 22, weight: .semibold, design: .serif))
-                    .foregroundStyle(.white)
-
-                Text("After a few check-ins or care records, this view will start mapping emotional rhythm instead of showing filler data.")
-                    .font(.system(size: 14, weight: .medium, design: .rounded))
-                    .foregroundStyle(.white.opacity(0.76))
-
-                Button {
-                    viewModel.openBehaviorCheckIn()
-                } label: {
-                    Label("Add today's check-in", systemImage: "sparkles")
-                        .font(.system(size: 13, weight: .bold, design: .rounded))
-                        .foregroundStyle(Color(red: 0.12, green: 0.15, blue: 0.22))
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 10)
-                        .background(Color.white, in: Capsule())
+                EmptyDelightCard(
+                    tone: .twilight,
+                    eyebrow: "First rhythm",
+                    title: "Start with one honest daily check-in",
+                    detail: "The moment you log energy, calmness, appetite, or sleep, this card stops feeling generic and starts reading like your real week.",
+                    systemImage: "waveform.path.ecg"
+                ) {
+                    EmptyDelightActionButton(title: "Add today's check-in", systemImage: "sparkles") {
+                        viewModel.openBehaviorCheckIn()
+                    }
                 }
-                .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.92, pressedBrightness: 0.06))
             }
         }
     }

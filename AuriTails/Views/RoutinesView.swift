@@ -165,14 +165,16 @@ struct RoutinesView: View {
     }
 
     private var emptyState: some View {
-        GlassCard(tone: .twilight) {
-            Text("No rituals scheduled for \(viewModel.selectedDay.title) yet.")
-                .font(.system(size: 22, weight: .semibold, design: .serif))
-                .foregroundStyle(.white)
-
-            Text("That empty space can be intentional too. Use it as a recovery day, memory day, or just a softer rhythm.")
-                .font(.system(size: 14, weight: .medium, design: .rounded))
-                .foregroundStyle(.white.opacity(0.74))
+        EmptyDelightCard(
+            tone: .twilight,
+            eyebrow: "Open space",
+            title: "No rituals on \(viewModel.selectedDay.title) yet",
+            detail: "That quiet can stay intentional, or you can start with one meal, one walk, or one calmer care ritual and let the week build from there.",
+            systemImage: "calendar.badge.plus"
+        ) {
+            EmptyDelightActionButton(title: "Add ritual", systemImage: "plus") {
+                viewModel.openRoutineEditor()
+            }
         }
     }
 }

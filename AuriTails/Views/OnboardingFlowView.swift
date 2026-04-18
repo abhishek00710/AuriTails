@@ -216,6 +216,7 @@ struct OnboardingFlowView: View {
             .frame(maxWidth: .infinity)
             .padding(.top, 8)
         }
+        .scrollDismissesKeyboard(.immediately)
     }
 
     private var detailStep: some View {
@@ -242,6 +243,7 @@ struct OnboardingFlowView: View {
             .frame(maxWidth: .infinity)
             .padding(.top, 8)
         }
+        .scrollDismissesKeyboard(.immediately)
     }
 
     private var focusStep: some View {
@@ -305,6 +307,7 @@ struct OnboardingFlowView: View {
             .frame(maxWidth: .infinity)
             .padding(.top, 8)
         }
+        .scrollDismissesKeyboard(.immediately)
     }
 
     @ViewBuilder
