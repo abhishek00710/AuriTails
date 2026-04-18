@@ -14,15 +14,16 @@ final class AppStateStore {
         let context = container.viewContext
 
         if let state = loadNormalizedState(from: context) {
-            return state
+            return state.normalizedForMultiPet()
         }
 
         guard !inMemory, let legacyState = loadLegacyPayloadState() else {
             return nil
         }
 
-        save(legacyState)
-        return legacyState
+        let normalizedLegacyState = legacyState.normalizedForMultiPet()
+        save(normalizedLegacyState)
+        return normalizedLegacyState
     }
 
     func save(_ state: PersistedAppState) {
@@ -33,6 +34,8 @@ final class AppStateStore {
             replaceAll(entityName: Entity.behaviorSnapshot.name, in: context) { insert in
                 for snapshot in state.behaviorSnapshots {
                     let object = insert()
+                    object.setValue(snapshot.id, forKey: "id")
+                    object.setValue(snapshot.petID, forKey: "petID")
                     object.setValue(Int16(snapshot.day.rawValue), forKey: "day")
                     object.setValue(snapshot.energy, forKey: "energy")
                     object.setValue(snapshot.calmness, forKey: "calmness")
@@ -44,6 +47,7 @@ final class AppStateStore {
                 for (index, entry) in state.weightEntries.enumerated() {
                     let object = insert()
                     object.setValue(entry.id, forKey: "id")
+                    object.setValue(entry.petID, forKey: "petID")
                     object.setValue(entry.loggedAt, forKey: "loggedAt")
                     object.setValue(entry.kilogramsValue, forKey: "kilogramsValue")
                     object.setValue(entry.unit.rawValue, forKey: "unit")
@@ -55,6 +59,7 @@ final class AppStateStore {
                 for (index, vaccine) in state.vaccinations.enumerated() {
                     let object = insert()
                     object.setValue(vaccine.id, forKey: "id")
+                    object.setValue(vaccine.petID, forKey: "petID")
                     object.setValue(vaccine.title, forKey: "title")
                     object.setValue(vaccine.lastGiven, forKey: "lastGiven")
                     object.setValue(vaccine.nextDue, forKey: "nextDue")
@@ -69,6 +74,7 @@ final class AppStateStore {
                 for (index, medication) in state.medications.enumerated() {
                     let object = insert()
                     object.setValue(medication.id, forKey: "id")
+                    object.setValue(medication.petID, forKey: "petID")
                     object.setValue(medication.title, forKey: "title")
                     object.setValue(medication.dosage, forKey: "dosage")
                     object.setValue(medication.scheduleNote, forKey: "scheduleNote")
@@ -84,6 +90,7 @@ final class AppStateStore {
                 for (index, symptom) in state.symptoms.enumerated() {
                     let object = insert()
                     object.setValue(symptom.id, forKey: "id")
+                    object.setValue(symptom.petID, forKey: "petID")
                     object.setValue(symptom.title, forKey: "title")
                     object.setValue(symptom.detail, forKey: "detail")
                     object.setValue(symptom.observedAt, forKey: "observedAt")
@@ -97,6 +104,7 @@ final class AppStateStore {
                 for (index, entry) in state.medicalHistory.enumerated() {
                     let object = insert()
                     object.setValue(entry.id, forKey: "id")
+                    object.setValue(entry.petID, forKey: "petID")
                     object.setValue(entry.title, forKey: "title")
                     object.setValue(entry.date, forKey: "date")
                     object.setValue(entry.summary, forKey: "summary")
@@ -109,6 +117,7 @@ final class AppStateStore {
                 for (index, preference) in state.foodPreferences.enumerated() {
                     let object = insert()
                     object.setValue(preference.id, forKey: "id")
+                    object.setValue(preference.petID, forKey: "petID")
                     object.setValue(preference.title, forKey: "title")
                     object.setValue(preference.detail, forKey: "detail")
                     object.setValue(preference.systemImage, forKey: "systemImage")
@@ -119,6 +128,7 @@ final class AppStateStore {
                 for (index, routine) in state.routines.enumerated() {
                     let object = insert()
                     object.setValue(routine.id, forKey: "id")
+                    object.setValue(routine.petID, forKey: "petID")
                     object.setValue(routine.title, forKey: "title")
                     object.setValue(routine.subtitle, forKey: "subtitle")
                     object.setValue(Int16(routine.day.rawValue), forKey: "day")
@@ -137,6 +147,7 @@ final class AppStateStore {
                 for (index, memory) in state.memories.enumerated() {
                     let object = insert()
                     object.setValue(memory.id, forKey: "id")
+                    object.setValue(memory.petID, forKey: "petID")
                     object.setValue(memory.title, forKey: "title")
                     object.setValue(memory.date, forKey: "date")
                     object.setValue(memory.caption, forKey: "caption")

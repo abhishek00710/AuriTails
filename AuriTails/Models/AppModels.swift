@@ -413,6 +413,49 @@ struct PetProfile: Identifiable, Codable {
     var favoriteTreat: String
     var bondStatement: String
     var energySummary: String
+    var photoData: Data? = nil
+    var bondPhotoData: Data? = nil
+
+    init(
+        id: UUID = UUID(),
+        name: String,
+        species: String,
+        breed: String,
+        ageDescription: String,
+        weightDescription: String,
+        favoriteTreat: String,
+        bondStatement: String,
+        energySummary: String,
+        photoData: Data? = nil,
+        bondPhotoData: Data? = nil
+    ) {
+        self.id = id
+        self.name = name
+        self.species = species
+        self.breed = breed
+        self.ageDescription = ageDescription
+        self.weightDescription = weightDescription
+        self.favoriteTreat = favoriteTreat
+        self.bondStatement = bondStatement
+        self.energySummary = energySummary
+        self.photoData = photoData
+        self.bondPhotoData = bondPhotoData
+    }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        name = try container.decode(String.self, forKey: .name)
+        species = try container.decode(String.self, forKey: .species)
+        breed = try container.decode(String.self, forKey: .breed)
+        ageDescription = try container.decode(String.self, forKey: .ageDescription)
+        weightDescription = try container.decode(String.self, forKey: .weightDescription)
+        favoriteTreat = try container.decode(String.self, forKey: .favoriteTreat)
+        bondStatement = try container.decode(String.self, forKey: .bondStatement)
+        energySummary = try container.decode(String.self, forKey: .energySummary)
+        photoData = try container.decodeIfPresent(Data.self, forKey: .photoData)
+        bondPhotoData = try container.decodeIfPresent(Data.self, forKey: .bondPhotoData)
+    }
 }
 
 enum CareCircleRole: String, CaseIterable, Codable {
@@ -489,7 +532,8 @@ struct CareActivityEvent: Identifiable, Codable {
 }
 
 struct BehaviorSnapshot: Identifiable, Codable {
-    var id: Weekday { day }
+    var id: UUID = UUID()
+    var petID: UUID?
     var day: Weekday
     var energy: Double
     var calmness: Double
@@ -534,6 +578,7 @@ enum WeightUnit: String, CaseIterable, Identifiable, Codable {
 
 struct WeightEntry: Identifiable, Codable {
     var id: UUID = UUID()
+    var petID: UUID?
     var loggedAt: Date
     var value: Double
     var unit: WeightUnit
@@ -564,6 +609,7 @@ struct WeightEntry: Identifiable, Codable {
 
 struct MedicationRecord: Identifiable, Codable {
     var id: UUID = UUID()
+    var petID: UUID?
     var title: String
     var dosage: String
     var scheduleNote: String
@@ -585,6 +631,7 @@ struct MedicationRecord: Identifiable, Codable {
 
     init(
         id: UUID = UUID(),
+        petID: UUID? = nil,
         title: String,
         dosage: String,
         scheduleNote: String,
@@ -595,6 +642,7 @@ struct MedicationRecord: Identifiable, Codable {
         notificationsEnabled: Bool = true
     ) {
         self.id = id
+        self.petID = petID
         self.title = title
         self.dosage = dosage
         self.scheduleNote = scheduleNote
@@ -608,6 +656,7 @@ struct MedicationRecord: Identifiable, Codable {
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        petID = try container.decodeIfPresent(UUID.self, forKey: .petID)
         title = try container.decode(String.self, forKey: .title)
         dosage = try container.decode(String.self, forKey: .dosage)
         scheduleNote = try container.decode(String.self, forKey: .scheduleNote)
@@ -621,6 +670,7 @@ struct MedicationRecord: Identifiable, Codable {
 
 struct SymptomEntry: Identifiable, Codable {
     var id: UUID = UUID()
+    var petID: UUID?
     var title: String
     var detail: String
     var observedAt: Date
@@ -641,6 +691,7 @@ struct SymptomEntry: Identifiable, Codable {
 
 struct VaccineRecord: Identifiable, Codable {
     var id: UUID = UUID()
+    var petID: UUID?
     var title: String
     var lastGiven: Date
     var nextDue: Date
@@ -659,6 +710,7 @@ struct VaccineRecord: Identifiable, Codable {
 
     init(
         id: UUID = UUID(),
+        petID: UUID? = nil,
         title: String,
         lastGiven: Date,
         nextDue: Date,
@@ -668,6 +720,7 @@ struct VaccineRecord: Identifiable, Codable {
         notificationsEnabled: Bool = true
     ) {
         self.id = id
+        self.petID = petID
         self.title = title
         self.lastGiven = lastGiven
         self.nextDue = nextDue
@@ -686,6 +739,7 @@ struct VaccineRecord: Identifiable, Codable {
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        petID = try container.decodeIfPresent(UUID.self, forKey: .petID)
         title = try container.decode(String.self, forKey: .title)
         lastGiven = try container.decode(Date.self, forKey: .lastGiven)
         nextDue = try container.decode(Date.self, forKey: .nextDue)
@@ -698,6 +752,7 @@ struct VaccineRecord: Identifiable, Codable {
 
 struct MedicalEntry: Identifiable, Codable {
     var id: UUID = UUID()
+    var petID: UUID?
     var title: String
     var date: Date
     var summary: String
@@ -717,6 +772,7 @@ struct MedicalEntry: Identifiable, Codable {
 
 struct FoodPreference: Identifiable, Codable {
     var id: UUID = UUID()
+    var petID: UUID?
     var title: String
     var detail: String
     var systemImage: String
@@ -724,6 +780,7 @@ struct FoodPreference: Identifiable, Codable {
 
 struct RoutineItem: Identifiable, Codable {
     var id: UUID = UUID()
+    var petID: UUID?
     var title: String
     var subtitle: String
     var day: Weekday
@@ -741,6 +798,7 @@ struct RoutineItem: Identifiable, Codable {
 
     init(
         id: UUID = UUID(),
+        petID: UUID? = nil,
         title: String,
         subtitle: String,
         day: Weekday,
@@ -753,6 +811,7 @@ struct RoutineItem: Identifiable, Codable {
         notificationsEnabled: Bool = true
     ) {
         self.id = id
+        self.petID = petID
         self.title = title
         self.subtitle = subtitle
         self.day = day
@@ -768,6 +827,7 @@ struct RoutineItem: Identifiable, Codable {
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        petID = try container.decodeIfPresent(UUID.self, forKey: .petID)
         title = try container.decode(String.self, forKey: .title)
         subtitle = try container.decode(String.self, forKey: .subtitle)
         day = try container.decode(Weekday.self, forKey: .day)
@@ -783,6 +843,7 @@ struct RoutineItem: Identifiable, Codable {
 
 struct MemoryMoment: Identifiable, Codable {
     var id: UUID = UUID()
+    var petID: UUID?
     var title: String
     var date: Date
     var caption: String
@@ -834,6 +895,7 @@ struct MemoryMoment: Identifiable, Codable {
 
     init(
         id: UUID = UUID(),
+        petID: UUID? = nil,
         title: String,
         date: Date,
         caption: String,
@@ -845,6 +907,7 @@ struct MemoryMoment: Identifiable, Codable {
         notificationsEnabled: Bool = true
     ) {
         self.id = id
+        self.petID = petID
         self.title = title
         self.date = date
         self.caption = caption
@@ -859,6 +922,7 @@ struct MemoryMoment: Identifiable, Codable {
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        petID = try container.decodeIfPresent(UUID.self, forKey: .petID)
         title = try container.decode(String.self, forKey: .title)
         date = try container.decode(Date.self, forKey: .date)
         caption = try container.decode(String.self, forKey: .caption)
@@ -884,11 +948,10 @@ struct PersistedAppState: Codable {
     var selectedTab: RootTab
     var selectedDay: Weekday
     var owner: OwnerProfile
-    var pet: PetProfile
+    var pets: [PetProfile]
+    var selectedPetID: UUID?
     var notificationPreferences: NotificationPreferences
     var ownerPhotoData: Data?
-    var petPhotoData: Data?
-    var bondPhotoData: Data?
     var behaviorSnapshots: [BehaviorSnapshot]
     var weightEntries: [WeightEntry]
     var vaccinations: [VaccineRecord]
@@ -903,15 +966,40 @@ struct PersistedAppState: Codable {
     var onboardingFocus: OnboardingFocus
     var hasCompletedOnboarding: Bool
 
+    private enum CodingKeys: String, CodingKey {
+        case selectedTab
+        case selectedDay
+        case owner
+        case pets
+        case selectedPetID
+        case notificationPreferences
+        case ownerPhotoData
+        case behaviorSnapshots
+        case weightEntries
+        case vaccinations
+        case medications
+        case symptoms
+        case medicalHistory
+        case foodPreferences
+        case routines
+        case memories
+        case careCircleMembers
+        case careActivityEvents
+        case onboardingFocus
+        case hasCompletedOnboarding
+        case pet
+        case petPhotoData
+        case bondPhotoData
+    }
+
     init(
         selectedTab: RootTab,
         selectedDay: Weekday,
         owner: OwnerProfile,
-        pet: PetProfile,
+        pets: [PetProfile],
+        selectedPetID: UUID?,
         notificationPreferences: NotificationPreferences,
         ownerPhotoData: Data?,
-        petPhotoData: Data?,
-        bondPhotoData: Data?,
         behaviorSnapshots: [BehaviorSnapshot],
         weightEntries: [WeightEntry],
         vaccinations: [VaccineRecord],
@@ -929,11 +1017,10 @@ struct PersistedAppState: Codable {
         self.selectedTab = selectedTab
         self.selectedDay = selectedDay
         self.owner = owner
-        self.pet = pet
+        self.pets = pets
+        self.selectedPetID = selectedPetID
         self.notificationPreferences = notificationPreferences
         self.ownerPhotoData = ownerPhotoData
-        self.petPhotoData = petPhotoData
-        self.bondPhotoData = bondPhotoData
         self.behaviorSnapshots = behaviorSnapshots
         self.weightEntries = weightEntries
         self.vaccinations = vaccinations
@@ -953,11 +1040,10 @@ struct PersistedAppState: Codable {
         selectedTab = .dashboard
         selectedDay = .current
         owner = seed.owner
-        pet = seed.pet
+        pets = seed.pets
+        selectedPetID = seed.selectedPetID
         notificationPreferences = NotificationPreferences()
         ownerPhotoData = nil
-        petPhotoData = nil
-        bondPhotoData = nil
         behaviorSnapshots = seed.behaviorSnapshots
         weightEntries = seed.weightEntries
         vaccinations = seed.vaccinations
@@ -978,11 +1064,31 @@ struct PersistedAppState: Codable {
         selectedTab = try container.decode(RootTab.self, forKey: .selectedTab)
         selectedDay = try container.decode(Weekday.self, forKey: .selectedDay)
         owner = try container.decode(OwnerProfile.self, forKey: .owner)
-        pet = try container.decode(PetProfile.self, forKey: .pet)
         notificationPreferences = try container.decodeIfPresent(NotificationPreferences.self, forKey: .notificationPreferences) ?? NotificationPreferences()
         ownerPhotoData = try container.decodeIfPresent(Data.self, forKey: .ownerPhotoData)
-        petPhotoData = try container.decodeIfPresent(Data.self, forKey: .petPhotoData)
-        bondPhotoData = try container.decodeIfPresent(Data.self, forKey: .bondPhotoData)
+        let legacyPetPhotoData = try container.decodeIfPresent(Data.self, forKey: .petPhotoData)
+        let legacyBondPhotoData = try container.decodeIfPresent(Data.self, forKey: .bondPhotoData)
+        if let decodedPets = try container.decodeIfPresent([PetProfile].self, forKey: .pets), !decodedPets.isEmpty {
+            pets = decodedPets
+        } else {
+            let legacyPet = try container.decode(PetProfile.self, forKey: .pet)
+            pets = [
+                PetProfile(
+                    id: legacyPet.id,
+                    name: legacyPet.name,
+                    species: legacyPet.species,
+                    breed: legacyPet.breed,
+                    ageDescription: legacyPet.ageDescription,
+                    weightDescription: legacyPet.weightDescription,
+                    favoriteTreat: legacyPet.favoriteTreat,
+                    bondStatement: legacyPet.bondStatement,
+                    energySummary: legacyPet.energySummary,
+                    photoData: legacyPet.photoData ?? legacyPetPhotoData,
+                    bondPhotoData: legacyPet.bondPhotoData ?? legacyBondPhotoData
+                )
+            ]
+        }
+        selectedPetID = try container.decodeIfPresent(UUID.self, forKey: .selectedPetID) ?? pets.first?.id
         behaviorSnapshots = try container.decode([BehaviorSnapshot].self, forKey: .behaviorSnapshots)
         weightEntries = try container.decodeIfPresent([WeightEntry].self, forKey: .weightEntries) ?? []
         vaccinations = try container.decode([VaccineRecord].self, forKey: .vaccinations)
@@ -996,12 +1102,127 @@ struct PersistedAppState: Codable {
         careActivityEvents = try container.decodeIfPresent([CareActivityEvent].self, forKey: .careActivityEvents) ?? []
         onboardingFocus = try container.decodeIfPresent(OnboardingFocus.self, forKey: .onboardingFocus) ?? .dashboard
         hasCompletedOnboarding = try container.decodeIfPresent(Bool.self, forKey: .hasCompletedOnboarding) ?? false
+        self = normalizedForMultiPet()
+    }
+
+    func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(selectedTab, forKey: .selectedTab)
+        try container.encode(selectedDay, forKey: .selectedDay)
+        try container.encode(owner, forKey: .owner)
+        try container.encode(pets, forKey: .pets)
+        try container.encodeIfPresent(selectedPetID, forKey: .selectedPetID)
+        try container.encode(notificationPreferences, forKey: .notificationPreferences)
+        try container.encodeIfPresent(ownerPhotoData, forKey: .ownerPhotoData)
+        try container.encode(behaviorSnapshots, forKey: .behaviorSnapshots)
+        try container.encode(weightEntries, forKey: .weightEntries)
+        try container.encode(vaccinations, forKey: .vaccinations)
+        try container.encode(medications, forKey: .medications)
+        try container.encode(symptoms, forKey: .symptoms)
+        try container.encode(medicalHistory, forKey: .medicalHistory)
+        try container.encode(foodPreferences, forKey: .foodPreferences)
+        try container.encode(routines, forKey: .routines)
+        try container.encode(memories, forKey: .memories)
+        try container.encode(careCircleMembers, forKey: .careCircleMembers)
+        try container.encode(careActivityEvents, forKey: .careActivityEvents)
+        try container.encode(onboardingFocus, forKey: .onboardingFocus)
+        try container.encode(hasCompletedOnboarding, forKey: .hasCompletedOnboarding)
+    }
+
+    var primaryPetID: UUID {
+        selectedPetID ?? pets.first?.id ?? UUID()
+    }
+
+    var selectedPet: PetProfile {
+        if let selectedPetID, let pet = pets.first(where: { $0.id == selectedPetID }) {
+            return pet
+        }
+        return pets.first ?? PetProfile(
+            name: "",
+            species: "",
+            breed: "",
+            ageDescription: "",
+            weightDescription: "",
+            favoriteTreat: "",
+            bondStatement: "",
+            energySummary: ""
+        )
+    }
+
+    func normalizedForMultiPet() -> PersistedAppState {
+        var normalized = self
+        if normalized.pets.isEmpty {
+            normalized.pets = [
+                PetProfile(
+                    name: "",
+                    species: "",
+                    breed: "",
+                    ageDescription: "",
+                    weightDescription: "",
+                    favoriteTreat: "",
+                    bondStatement: "",
+                    energySummary: ""
+                )
+            ]
+        }
+
+        let fallbackPetID = normalized.selectedPetID ?? normalized.pets.first?.id
+        normalized.selectedPetID = fallbackPetID
+        guard let fallbackPetID else { return normalized }
+
+        normalized.behaviorSnapshots = normalized.behaviorSnapshots.map {
+            var snapshot = $0
+            snapshot.petID = snapshot.petID ?? fallbackPetID
+            return snapshot
+        }
+        normalized.weightEntries = normalized.weightEntries.map {
+            var entry = $0
+            entry.petID = entry.petID ?? fallbackPetID
+            return entry
+        }
+        normalized.vaccinations = normalized.vaccinations.map {
+            var vaccine = $0
+            vaccine.petID = vaccine.petID ?? fallbackPetID
+            return vaccine
+        }
+        normalized.medications = normalized.medications.map {
+            var medication = $0
+            medication.petID = medication.petID ?? fallbackPetID
+            return medication
+        }
+        normalized.symptoms = normalized.symptoms.map {
+            var symptom = $0
+            symptom.petID = symptom.petID ?? fallbackPetID
+            return symptom
+        }
+        normalized.medicalHistory = normalized.medicalHistory.map {
+            var entry = $0
+            entry.petID = entry.petID ?? fallbackPetID
+            return entry
+        }
+        normalized.foodPreferences = normalized.foodPreferences.map {
+            var preference = $0
+            preference.petID = preference.petID ?? fallbackPetID
+            return preference
+        }
+        normalized.routines = normalized.routines.map {
+            var routine = $0
+            routine.petID = routine.petID ?? fallbackPetID
+            return routine
+        }
+        normalized.memories = normalized.memories.map {
+            var memory = $0
+            memory.petID = memory.petID ?? fallbackPetID
+            return memory
+        }
+        return normalized
     }
 }
 
 struct AppSeed {
     let owner: OwnerProfile
-    let pet: PetProfile
+    let pets: [PetProfile]
+    let selectedPetID: UUID?
     let behaviorSnapshots: [BehaviorSnapshot]
     let weightEntries: [WeightEntry]
     let vaccinations: [VaccineRecord]
@@ -1021,16 +1242,19 @@ struct AppSeed {
             location: "",
             note: ""
         ),
-        pet: PetProfile(
-            name: "",
-            species: "",
-            breed: "",
-            ageDescription: "",
-            weightDescription: "",
-            favoriteTreat: "",
-            bondStatement: "",
-            energySummary: ""
-        ),
+        pets: [
+            PetProfile(
+                name: "",
+                species: "",
+                breed: "",
+                ageDescription: "",
+                weightDescription: "",
+                favoriteTreat: "",
+                bondStatement: "",
+                energySummary: ""
+            )
+        ],
+        selectedPetID: nil,
         behaviorSnapshots: [],
         weightEntries: [],
         vaccinations: [],
@@ -1044,6 +1268,9 @@ struct AppSeed {
         careActivityEvents: []
     )
 
+    private static let previewSolID = UUID(uuidString: "10000000-0000-0000-0000-000000000001")!
+    private static let previewLumiID = UUID(uuidString: "10000000-0000-0000-0000-000000000002")!
+
     static let preview = AppSeed(
         owner: OwnerProfile(
             name: "Maya",
@@ -1051,30 +1278,45 @@ struct AppSeed {
             location: "San Francisco, CA",
             note: "Pet parent who loves soft routines, travel notes, and keeping every memory."
         ),
-        pet: PetProfile(
-            name: "Sol",
-            species: "Dog",
-            breed: "Nova Scotia Duck Tolling Retriever",
-            ageDescription: "3 years old",
-            weightDescription: "19.4 kg",
-            favoriteTreat: "Blueberry yogurt drops",
-            bondStatement: "The most peaceful evenings happen after sniff walks and slower dinners.",
-            energySummary: "Best energy when play is paired with a quiet recovery block afterward."
-        ),
+        pets: [
+            PetProfile(
+                id: previewSolID,
+                name: "Sol",
+                species: "Dog",
+                breed: "Nova Scotia Duck Tolling Retriever",
+                ageDescription: "3 years old",
+                weightDescription: "19.4 kg",
+                favoriteTreat: "Blueberry yogurt drops",
+                bondStatement: "The most peaceful evenings happen after sniff walks and slower dinners.",
+                energySummary: "Best energy when play is paired with a quiet recovery block afterward."
+            ),
+            PetProfile(
+                id: previewLumiID,
+                name: "Lumi",
+                species: "Dog",
+                breed: "Miniature Dachshund",
+                ageDescription: "1 year old",
+                weightDescription: "5.1 kg",
+                favoriteTreat: "Freeze-dried minnows",
+                bondStatement: "Confidence grows fastest when play starts small and ends with one safe cuddle stop.",
+                energySummary: "Curious all day, but rests best after short bursts instead of one long outing."
+            )
+        ],
+        selectedPetID: previewSolID,
         behaviorSnapshots: [
-            BehaviorSnapshot(day: .monday, energy: 0.82, calmness: 0.78, appetite: 0.94, sleepHours: 12.0),
-            BehaviorSnapshot(day: .tuesday, energy: 0.88, calmness: 0.70, appetite: 0.90, sleepHours: 11.3),
-            BehaviorSnapshot(day: .wednesday, energy: 0.79, calmness: 0.85, appetite: 0.96, sleepHours: 12.4),
-            BehaviorSnapshot(day: .thursday, energy: 0.91, calmness: 0.68, appetite: 0.89, sleepHours: 10.9),
-            BehaviorSnapshot(day: .friday, energy: 0.75, calmness: 0.88, appetite: 0.97, sleepHours: 12.7),
-            BehaviorSnapshot(day: .saturday, energy: 0.93, calmness: 0.73, appetite: 0.92, sleepHours: 11.2),
-            BehaviorSnapshot(day: .sunday, energy: 0.74, calmness: 0.90, appetite: 0.98, sleepHours: 13.0),
+            BehaviorSnapshot(petID: previewSolID, day: .monday, energy: 0.82, calmness: 0.78, appetite: 0.94, sleepHours: 12.0),
+            BehaviorSnapshot(petID: previewSolID, day: .tuesday, energy: 0.88, calmness: 0.70, appetite: 0.90, sleepHours: 11.3),
+            BehaviorSnapshot(petID: previewSolID, day: .wednesday, energy: 0.79, calmness: 0.85, appetite: 0.96, sleepHours: 12.4),
+            BehaviorSnapshot(petID: previewSolID, day: .thursday, energy: 0.91, calmness: 0.68, appetite: 0.89, sleepHours: 10.9),
+            BehaviorSnapshot(petID: previewSolID, day: .friday, energy: 0.75, calmness: 0.88, appetite: 0.97, sleepHours: 12.7),
+            BehaviorSnapshot(petID: previewSolID, day: .saturday, energy: 0.93, calmness: 0.73, appetite: 0.92, sleepHours: 11.2),
+            BehaviorSnapshot(petID: previewSolID, day: .sunday, energy: 0.74, calmness: 0.90, appetite: 0.98, sleepHours: 13.0),
         ],
         weightEntries: [
-            WeightEntry(loggedAt: date(2026, 2, 12), value: 19.8, unit: .kilograms, note: "Post-winter checkup baseline."),
-            WeightEntry(loggedAt: date(2026, 2, 26), value: 19.6, unit: .kilograms, note: "A touch leaner after trail-heavy weeks."),
-            WeightEntry(loggedAt: date(2026, 3, 12), value: 19.5, unit: .kilograms, note: "Holding steady with calmer evenings."),
-            WeightEntry(loggedAt: date(2026, 3, 28), value: 19.4, unit: .kilograms, note: "Current passport weight."),
+            WeightEntry(petID: previewSolID, loggedAt: date(2026, 2, 12), value: 19.8, unit: .kilograms, note: "Post-winter checkup baseline."),
+            WeightEntry(petID: previewSolID, loggedAt: date(2026, 2, 26), value: 19.6, unit: .kilograms, note: "A touch leaner after trail-heavy weeks."),
+            WeightEntry(petID: previewSolID, loggedAt: date(2026, 3, 12), value: 19.5, unit: .kilograms, note: "Holding steady with calmer evenings."),
+            WeightEntry(petID: previewSolID, loggedAt: date(2026, 3, 28), value: 19.4, unit: .kilograms, note: "Current passport weight."),
         ],
         vaccinations: [
             VaccineRecord(title: "Rabies", lastGiven: date(2025, 1, 12), nextDue: date(2028, 1, 12), status: .covered, note: "Three-year booster complete."),

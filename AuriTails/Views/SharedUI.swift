@@ -597,10 +597,74 @@ struct SlideMenuPanel: View {
                         pet: viewModel.pet,
                         ownerPhotoData: viewModel.ownerPhotoData,
                         petPhotoData: viewModel.petPhotoData,
-                        careCircleCount: viewModel.totalCareCircleCount
+                        careCircleCount: viewModel.totalCareCircleCount,
+                        petCount: viewModel.pets.count
                     )
                 }
                 .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.98, pressedBrightness: 0.02))
+            }
+
+            VStack(alignment: .leading, spacing: 12) {
+                Text("PETS")
+                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .tracking(1.5)
+                    .foregroundStyle(.white.opacity(0.46))
+
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 10) {
+                        ForEach(viewModel.pets) { pet in
+                            Button {
+                                viewModel.selectPet(pet.id)
+                            } label: {
+                                HStack(spacing: 10) {
+                                    CircularProfilePhoto(imageData: pet.photoData, role: .pet, size: 38)
+
+                                    VStack(alignment: .leading, spacing: 3) {
+                                        Text(pet.name.trimmedOrNil ?? "New pet")
+                                            .font(.system(size: 14, weight: .semibold, design: .rounded))
+                                            .foregroundStyle(.white)
+
+                                        Text(pet.breed.trimmedOrNil ?? pet.species.trimmedOrNil ?? "Profile ready")
+                                            .font(.system(size: 11, weight: .medium, design: .rounded))
+                                            .foregroundStyle(.white.opacity(0.64))
+                                    }
+                                }
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 10)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                                        .fill(pet.id == viewModel.selectedPetID ? Color.white.opacity(0.16) : Color.white.opacity(0.08))
+                                        .overlay {
+                                            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                                                .strokeBorder(Color.white.opacity(pet.id == viewModel.selectedPetID ? 0.22 : 0.10), lineWidth: 1)
+                                        }
+                                )
+                            }
+                            .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.96, pressedBrightness: 0.03))
+                        }
+
+                        Button {
+                            viewModel.addPet()
+                            viewModel.openProfile()
+                        } label: {
+                            Label("Add Pet", systemImage: "plus")
+                                .font(.system(size: 14, weight: .bold, design: .rounded))
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 14)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                                        .fill(Color.white.opacity(0.08))
+                                        .overlay {
+                                            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                                                .strokeBorder(Color.white.opacity(0.10), lineWidth: 1)
+                                        }
+                                )
+                        }
+                        .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.96, pressedBrightness: 0.03))
+                    }
+                    .padding(.vertical, 2)
+                }
             }
 
             VStack(alignment: .leading, spacing: 12) {
@@ -708,6 +772,7 @@ private struct MenuProfileCard: View {
     let ownerPhotoData: Data?
     let petPhotoData: Data?
     let careCircleCount: Int
+    let petCount: Int
 
     var body: some View {
         HStack(spacing: 14) {
@@ -732,7 +797,7 @@ private struct MenuProfileCard: View {
                     .foregroundStyle(.white.opacity(0.48))
                     .fixedSize(horizontal: false, vertical: true)
 
-                Text("\(careCircleCount) in the Care Circle")
+                Text("\(petCount) pet\(petCount == 1 ? "" : "s") • \(careCircleCount) in the Care Circle")
                     .font(.system(size: 12, weight: .bold, design: .rounded))
                     .foregroundStyle(.white.opacity(0.64))
                     .fixedSize(horizontal: false, vertical: true)

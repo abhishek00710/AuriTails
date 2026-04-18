@@ -22,11 +22,10 @@ final class AppViewModel: ObservableObject {
     @Published var isMenuPresented = false
     @Published var activeSheet: AppSheet?
     @Published var owner: OwnerProfile { didSet { persistIfNeeded() } }
-    @Published var pet: PetProfile { didSet { persistIfNeeded() } }
+    @Published var pets: [PetProfile] { didSet { persistIfNeeded() } }
+    @Published var selectedPetID: UUID { didSet { persistIfNeeded() } }
     @Published var notificationPreferences: NotificationPreferences { didSet { persistIfNeeded() } }
     @Published var ownerPhotoData: Data? { didSet { persistIfNeeded() } }
-    @Published var petPhotoData: Data? { didSet { persistIfNeeded() } }
-    @Published var bondPhotoData: Data? { didSet { persistIfNeeded() } }
     @Published var behaviorSnapshots: [BehaviorSnapshot] { didSet { persistIfNeeded() } }
     @Published var weightEntries: [WeightEntry] { didSet { persistIfNeeded() } }
     @Published var vaccinations: [VaccineRecord] { didSet { persistIfNeeded() } }
@@ -72,17 +71,16 @@ final class AppViewModel: ObservableObject {
         nearbyPetCareService: NearbyPetCareService? = nil,
         prefersPersistedState: Bool = true
     ) {
-        let initialState = prefersPersistedState ? (store.load() ?? PersistedAppState(seed: seed)) : PersistedAppState(seed: seed)
+        let initialState = (prefersPersistedState ? (store.load() ?? PersistedAppState(seed: seed)) : PersistedAppState(seed: seed)).normalizedForMultiPet()
         let nearbyPetCareService = nearbyPetCareService ?? NearbyPetCareService()
 
         selectedTab = initialState.selectedTab
         selectedDay = initialState.selectedDay
         owner = initialState.owner
-        pet = initialState.pet
+        pets = initialState.pets
+        selectedPetID = initialState.selectedPetID ?? initialState.pets.first?.id ?? UUID()
         notificationPreferences = initialState.notificationPreferences
         ownerPhotoData = initialState.ownerPhotoData
-        petPhotoData = initialState.petPhotoData
-        bondPhotoData = initialState.bondPhotoData
         behaviorSnapshots = initialState.behaviorSnapshots
         weightEntries = initialState.weightEntries
         vaccinations = initialState.vaccinations
@@ -132,13 +130,95 @@ final class AppViewModel: ObservableObject {
 
     var insights: [CompanionInsight] {
         insightEngine.generateInsights(
-            snapshots: behaviorSnapshots,
-            routines: routines,
-            foodPreferences: foodPreferences,
-            medications: medications,
-            symptoms: symptoms,
+            snapshots: selectedPetBehaviorSnapshots,
+            routines: selectedPetRoutines,
+            foodPreferences: selectedPetFoodPreferences,
+            medications: selectedPetMedications,
+            symptoms: selectedPetSymptoms,
             pet: pet
         )
+    }
+
+    var pet: PetProfile {
+        get {
+            pets.first(where: { $0.id == selectedPetID }) ?? pets.first ?? PetProfile(
+                id: selectedPetID,
+                name: "",
+                species: "",
+                breed: "",
+                ageDescription: "",
+                weightDescription: "",
+                favoriteTreat: "",
+                bondStatement: "",
+                energySummary: ""
+            )
+        }
+        set {
+            guard let index = pets.firstIndex(where: { $0.id == newValue.id }) else {
+                pets.append(newValue)
+                selectedPetID = newValue.id
+                return
+            }
+            pets[index] = newValue
+        }
+    }
+
+    var petPhotoData: Data? { pet.photoData }
+    var bondPhotoData: Data? { pet.bondPhotoData }
+
+    var selectedPetBehaviorSnapshots: [BehaviorSnapshot] {
+        behaviorSnapshots
+            .filter { matchesSelectedPet($0.petID) }
+            .sorted { $0.day.rawValue < $1.day.rawValue }
+    }
+
+    var selectedPetWeightEntries: [WeightEntry] {
+        weightEntries
+            .filter { matchesSelectedPet($0.petID) }
+            .sorted { $0.loggedAt < $1.loggedAt }
+    }
+
+    var selectedPetVaccinations: [VaccineRecord] {
+        vaccinations
+            .filter { matchesSelectedPet($0.petID) }
+            .sorted { $0.nextDue < $1.nextDue }
+    }
+
+    var selectedPetMedications: [MedicationRecord] {
+        medications
+            .filter { matchesSelectedPet($0.petID) }
+            .sorted { $0.nextDose < $1.nextDose }
+    }
+
+    var selectedPetSymptoms: [SymptomEntry] {
+        symptoms
+            .filter { matchesSelectedPet($0.petID) }
+            .sorted { $0.observedAt > $1.observedAt }
+    }
+
+    var selectedPetMedicalHistory: [MedicalEntry] {
+        medicalHistory
+            .filter { matchesSelectedPet($0.petID) }
+            .sorted { $0.date > $1.date }
+    }
+
+    var selectedPetFoodPreferences: [FoodPreference] {
+        foodPreferences
+            .filter { matchesSelectedPet($0.petID) }
+            .sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
+    }
+
+    var selectedPetRoutines: [RoutineItem] {
+        routines
+            .filter { matchesSelectedPet($0.petID) }
+            .sorted {
+                if $0.day.rawValue != $1.day.rawValue { return $0.day.rawValue < $1.day.rawValue }
+                return $0.time < $1.time
+            }
+    }
+
+    var selectedPetMemories: [MemoryMoment] {
+        memories.filter { matchesSelectedPet($0.petID) }
     }
 
     var displayOwnerName: String {
@@ -154,11 +234,11 @@ final class AppViewModel: ObservableObject {
     }
 
     var todayBehaviorSnapshot: BehaviorSnapshot? {
-        behaviorSnapshots.first(where: { $0.day == .current })
+        selectedPetBehaviorSnapshots.first(where: { $0.day == .current })
     }
 
     var latestWeightEntry: WeightEntry? {
-        weightEntries.sorted { $0.loggedAt > $1.loggedAt }.first
+        selectedPetWeightEntries.sorted { $0.loggedAt > $1.loggedAt }.first
     }
 
     var preferredWeightUnit: WeightUnit {
@@ -166,18 +246,18 @@ final class AppViewModel: ObservableObject {
     }
 
     var recentWeightEntries: [WeightEntry] {
-        weightEntries.sorted { $0.loggedAt < $1.loggedAt }
+        selectedPetWeightEntries
     }
 
-    var hasBehaviorData: Bool { !behaviorSnapshots.isEmpty }
-    var hasWeightData: Bool { !weightEntries.isEmpty }
-    var hasRoutineData: Bool { !routines.isEmpty }
-    var hasMemoryData: Bool { !memories.isEmpty }
-    var hasVaccinationData: Bool { !vaccinations.isEmpty }
-    var hasMedicationData: Bool { !medications.isEmpty }
-    var hasSymptomData: Bool { !symptoms.isEmpty }
-    var hasMedicalData: Bool { !medicalHistory.isEmpty }
-    var hasFoodData: Bool { !foodPreferences.isEmpty }
+    var hasBehaviorData: Bool { !selectedPetBehaviorSnapshots.isEmpty }
+    var hasWeightData: Bool { !selectedPetWeightEntries.isEmpty }
+    var hasRoutineData: Bool { !selectedPetRoutines.isEmpty }
+    var hasMemoryData: Bool { !selectedPetMemories.isEmpty }
+    var hasVaccinationData: Bool { !selectedPetVaccinations.isEmpty }
+    var hasMedicationData: Bool { !selectedPetMedications.isEmpty }
+    var hasSymptomData: Bool { !selectedPetSymptoms.isEmpty }
+    var hasMedicalData: Bool { !selectedPetMedicalHistory.isEmpty }
+    var hasFoodData: Bool { !selectedPetFoodPreferences.isEmpty }
     var activeCareCircleMembers: [CareCircleMember] { careCircleMembers.filter { $0.status == .active } }
     var invitedCareCircleMembers: [CareCircleMember] { careCircleMembers.filter { $0.status == .invited } }
     var totalCareCircleCount: Int { 1 + activeCareCircleMembers.count }
@@ -197,18 +277,18 @@ final class AppViewModel: ObservableObject {
 
     var selectedDayRoutines: [RoutineItem] {
         routines
-            .filter { $0.day == selectedDay }
+            .filter { matchesSelectedPet($0.petID) && $0.day == selectedDay }
             .sorted { $0.time < $1.time }
     }
 
     var todaysRoutines: [RoutineItem] {
         routines
-            .filter { $0.day == .current }
+            .filter { matchesSelectedPet($0.petID) && $0.day == .current }
             .sorted { $0.time < $1.time }
     }
 
     var featuredMemories: [MemoryMoment] {
-        memories.sorted { lhs, rhs in
+        selectedPetMemories.sorted { lhs, rhs in
             let lhsCelebration = lhs.daysUntilNextCelebration ?? .max
             let rhsCelebration = rhs.daysUntilNextCelebration ?? .max
 
@@ -221,7 +301,7 @@ final class AppViewModel: ObservableObject {
     }
 
     var memoryTimeline: [MemoryMoment] {
-        memories.sorted { lhs, rhs in
+        selectedPetMemories.sorted { lhs, rhs in
             if lhs.isAnnualCelebration != rhs.isAnnualCelebration {
                 return lhs.isAnnualCelebration && !rhs.isAnnualCelebration
             }
@@ -242,6 +322,7 @@ final class AppViewModel: ObservableObject {
     }
 
     var weeklyCompletionRatio: Double {
+        let routines = selectedPetRoutines
         guard !routines.isEmpty else { return 0 }
         return Double(routines.filter(\.isCompleted).count) / Double(routines.count)
     }
@@ -263,16 +344,16 @@ final class AppViewModel: ObservableObject {
     }
 
     var nextMedication: MedicationRecord? {
-        medications.sorted { $0.nextDose < $1.nextDose }.first
+        selectedPetMedications.sorted { $0.nextDose < $1.nextDose }.first
     }
 
     var recentSymptoms: [SymptomEntry] {
-        symptoms.sorted { $0.observedAt > $1.observedAt }
+        selectedPetSymptoms.sorted { $0.observedAt > $1.observedAt }
     }
 
     var recentSymptomCounts: [(severity: SymptomSeverity, count: Int)] {
         SymptomSeverity.allCases.map { severity in
-            (severity, symptoms.filter { $0.severity == severity }.count)
+            (severity, selectedPetSymptoms.filter { $0.severity == severity }.count)
         }
     }
 
@@ -386,12 +467,12 @@ final class AppViewModel: ObservableObject {
             let document = try vetVisitPackBuilder.makeDocument(
                 owner: owner,
                 pet: pet,
-                vaccinations: vaccinations,
-                medications: medications,
-                symptoms: symptoms,
-                medicalHistory: medicalHistory,
-                foodPreferences: foodPreferences,
-                routines: routines,
+                vaccinations: selectedPetVaccinations,
+                medications: selectedPetMedications,
+                symptoms: selectedPetSymptoms,
+                medicalHistory: selectedPetMedicalHistory,
+                foodPreferences: selectedPetFoodPreferences,
+                routines: selectedPetRoutines,
                 bondPhotoData: bondPhotoData
             )
             sharePayload = SharePayload(items: [document.url])
@@ -614,10 +695,37 @@ final class AppViewModel: ObservableObject {
     func updateProfile(owner: OwnerProfile, pet: PetProfile, ownerPhotoData: Data?, petPhotoData: Data?, bondPhotoData: Data?) {
         withAnimation(.spring(response: 0.34, dampingFraction: 0.9)) {
             self.owner = owner
-            self.pet = pet
             self.ownerPhotoData = ownerPhotoData
-            self.petPhotoData = petPhotoData
-            self.bondPhotoData = bondPhotoData
+            var updatedPet = pet
+            updatedPet.photoData = petPhotoData
+            updatedPet.bondPhotoData = bondPhotoData
+            self.pet = updatedPet
+        }
+    }
+
+    func selectPet(_ petID: UUID) {
+        guard pets.contains(where: { $0.id == petID }) else { return }
+        withAnimation(.spring(response: 0.32, dampingFraction: 0.9)) {
+            selectedPetID = petID
+            isMenuPresented = false
+        }
+    }
+
+    func addPet(named name: String? = nil) {
+        let petCount = pets.count + 1
+        let newPet = PetProfile(
+            name: name?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false ? name! : L10n.format("Pet %d", default: "Pet %d", petCount),
+            species: "",
+            breed: "",
+            ageDescription: "",
+            weightDescription: "",
+            favoriteTreat: "",
+            bondStatement: "",
+            energySummary: ""
+        )
+        withAnimation(.spring(response: 0.34, dampingFraction: 0.88)) {
+            pets.append(newPet)
+            selectedPetID = newPet.id
         }
     }
 
@@ -712,28 +820,28 @@ final class AppViewModel: ObservableObject {
     }
 
     func toggleRoutine(_ routineID: UUID) {
-        guard let index = routines.firstIndex(where: { $0.id == routineID }) else { return }
+        guard let index = routines.firstIndex(where: { $0.id == routineID && matchesSelectedPet($0.petID) }) else { return }
         withAnimation(.spring(response: 0.28, dampingFraction: 0.9)) {
             routines[index].isCompleted.toggle()
         }
     }
 
     func toggleRoutineNotifications(_ routineID: UUID) {
-        guard let index = routines.firstIndex(where: { $0.id == routineID }) else { return }
+        guard let index = routines.firstIndex(where: { $0.id == routineID && matchesSelectedPet($0.petID) }) else { return }
         withAnimation(.spring(response: 0.28, dampingFraction: 0.9)) {
             routines[index].notificationsEnabled.toggle()
         }
     }
 
     func shiftRoutine(_ routineID: UUID, by minutes: Int) {
-        guard let index = routines.firstIndex(where: { $0.id == routineID }) else { return }
+        guard let index = routines.firstIndex(where: { $0.id == routineID && matchesSelectedPet($0.petID) }) else { return }
         withAnimation(.spring(response: 0.28, dampingFraction: 0.9)) {
             routines[index].time = routines[index].time.shifted(by: minutes)
         }
     }
 
     func rescheduleRoutine(_ routineID: UUID, to day: Weekday) {
-        guard let index = routines.firstIndex(where: { $0.id == routineID }) else { return }
+        guard let index = routines.firstIndex(where: { $0.id == routineID && matchesSelectedPet($0.petID) }) else { return }
         withAnimation(.spring(response: 0.32, dampingFraction: 0.9)) {
             routines[index].day = day
             selectedDay = day
@@ -743,11 +851,13 @@ final class AppViewModel: ObservableObject {
 
     func routine(for id: UUID?) -> RoutineItem? {
         guard let id else { return nil }
-        return routines.first(where: { $0.id == id })
+        return routines.first(where: { $0.id == id && matchesSelectedPet($0.petID) })
     }
 
     func saveRoutine(_ routine: RoutineItem) {
         withAnimation(.spring(response: 0.34, dampingFraction: 0.88)) {
+            var routine = routine
+            routine.petID = selectedPetID
             if let index = routines.firstIndex(where: { $0.id == routine.id }) {
                 routines[index] = routine
             } else {
@@ -760,29 +870,36 @@ final class AppViewModel: ObservableObject {
 
     func deleteRoutine(_ routineID: UUID) {
         withAnimation(.spring(response: 0.32, dampingFraction: 0.9)) {
-            routines.removeAll { $0.id == routineID }
+            routines.removeAll { $0.id == routineID && matchesSelectedPet($0.petID) }
         }
     }
 
     func behaviorSnapshot(for day: Weekday?) -> BehaviorSnapshot? {
         let resolvedDay = day ?? .current
-        return behaviorSnapshots.first(where: { $0.day == resolvedDay })
+        return selectedPetBehaviorSnapshots.first(where: { $0.day == resolvedDay })
     }
 
     func saveBehaviorSnapshot(_ snapshot: BehaviorSnapshot) {
         withAnimation(.spring(response: 0.34, dampingFraction: 0.88)) {
-            if let index = behaviorSnapshots.firstIndex(where: { $0.day == snapshot.day }) {
-                behaviorSnapshots[index] = snapshot
+            var scopedSnapshot = snapshot
+            scopedSnapshot.petID = selectedPetID
+            if let index = behaviorSnapshots.firstIndex(where: { matchesSelectedPet($0.petID) && $0.day == scopedSnapshot.day }) {
+                behaviorSnapshots[index] = scopedSnapshot
             } else {
-                behaviorSnapshots.append(snapshot)
+                behaviorSnapshots.append(scopedSnapshot)
             }
-            behaviorSnapshots.sort { $0.day.rawValue < $1.day.rawValue }
+            behaviorSnapshots.sort {
+                if ($0.petID ?? selectedPetID).uuidString != ($1.petID ?? selectedPetID).uuidString {
+                    return ($0.petID ?? selectedPetID).uuidString < ($1.petID ?? selectedPetID).uuidString
+                }
+                return $0.day.rawValue < $1.day.rawValue
+            }
         }
     }
 
     func deleteBehaviorSnapshot(for day: Weekday) {
         withAnimation(.spring(response: 0.32, dampingFraction: 0.9)) {
-            behaviorSnapshots.removeAll { $0.day == day }
+            behaviorSnapshots.removeAll { matchesSelectedPet($0.petID) && $0.day == day }
         }
     }
 
@@ -793,6 +910,8 @@ final class AppViewModel: ObservableObject {
 
     func saveWeightEntry(_ entry: WeightEntry) {
         withAnimation(.spring(response: 0.34, dampingFraction: 0.88)) {
+            var entry = entry
+            entry.petID = selectedPetID
             if let index = weightEntries.firstIndex(where: { $0.id == entry.id }) {
                 weightEntries[index] = entry
             } else {
@@ -810,11 +929,13 @@ final class AppViewModel: ObservableObject {
 
     func memory(for id: UUID?) -> MemoryMoment? {
         guard let id else { return nil }
-        return memories.first(where: { $0.id == id })
+        return memories.first(where: { $0.id == id && matchesSelectedPet($0.petID) })
     }
 
     func saveMemory(_ memory: MemoryMoment) {
         withAnimation(.spring(response: 0.34, dampingFraction: 0.88)) {
+            var memory = memory
+            memory.petID = selectedPetID
             if let index = memories.firstIndex(where: { $0.id == memory.id }) {
                 memories[index] = memory
             } else {
@@ -825,7 +946,7 @@ final class AppViewModel: ObservableObject {
     }
 
     func toggleMemoryNotifications(_ memoryID: UUID) {
-        guard let index = memories.firstIndex(where: { $0.id == memoryID }) else { return }
+        guard let index = memories.firstIndex(where: { $0.id == memoryID && matchesSelectedPet($0.petID) }) else { return }
         withAnimation(.spring(response: 0.28, dampingFraction: 0.9)) {
             memories[index].notificationsEnabled.toggle()
         }
@@ -833,17 +954,19 @@ final class AppViewModel: ObservableObject {
 
     func deleteMemory(_ memoryID: UUID) {
         withAnimation(.spring(response: 0.32, dampingFraction: 0.9)) {
-            memories.removeAll { $0.id == memoryID }
+            memories.removeAll { $0.id == memoryID && matchesSelectedPet($0.petID) }
         }
     }
 
     func vaccine(for id: UUID?) -> VaccineRecord? {
         guard let id else { return nil }
-        return vaccinations.first(where: { $0.id == id })
+        return vaccinations.first(where: { $0.id == id && matchesSelectedPet($0.petID) })
     }
 
     func saveVaccine(_ vaccine: VaccineRecord) {
         withAnimation(.spring(response: 0.34, dampingFraction: 0.88)) {
+            var vaccine = vaccine
+            vaccine.petID = selectedPetID
             if let index = vaccinations.firstIndex(where: { $0.id == vaccine.id }) {
                 vaccinations[index] = vaccine
             } else {
@@ -855,7 +978,7 @@ final class AppViewModel: ObservableObject {
     }
 
     func toggleVaccineNotifications(_ vaccineID: UUID) {
-        guard let index = vaccinations.firstIndex(where: { $0.id == vaccineID }) else { return }
+        guard let index = vaccinations.firstIndex(where: { $0.id == vaccineID && matchesSelectedPet($0.petID) }) else { return }
         withAnimation(.spring(response: 0.28, dampingFraction: 0.9)) {
             vaccinations[index].notificationsEnabled.toggle()
         }
@@ -863,17 +986,19 @@ final class AppViewModel: ObservableObject {
 
     func deleteVaccine(_ vaccineID: UUID) {
         withAnimation(.spring(response: 0.32, dampingFraction: 0.9)) {
-            vaccinations.removeAll { $0.id == vaccineID }
+            vaccinations.removeAll { $0.id == vaccineID && matchesSelectedPet($0.petID) }
         }
     }
 
     func medication(for id: UUID?) -> MedicationRecord? {
         guard let id else { return nil }
-        return medications.first(where: { $0.id == id })
+        return medications.first(where: { $0.id == id && matchesSelectedPet($0.petID) })
     }
 
     func saveMedication(_ medication: MedicationRecord) {
         withAnimation(.spring(response: 0.34, dampingFraction: 0.88)) {
+            var medication = medication
+            medication.petID = selectedPetID
             if let index = medications.firstIndex(where: { $0.id == medication.id }) {
                 medications[index] = medication
             } else {
@@ -884,7 +1009,7 @@ final class AppViewModel: ObservableObject {
     }
 
     func toggleMedicationNotifications(_ medicationID: UUID) {
-        guard let index = medications.firstIndex(where: { $0.id == medicationID }) else { return }
+        guard let index = medications.firstIndex(where: { $0.id == medicationID && matchesSelectedPet($0.petID) }) else { return }
         withAnimation(.spring(response: 0.28, dampingFraction: 0.9)) {
             medications[index].notificationsEnabled.toggle()
         }
@@ -892,17 +1017,19 @@ final class AppViewModel: ObservableObject {
 
     func deleteMedication(_ medicationID: UUID) {
         withAnimation(.spring(response: 0.32, dampingFraction: 0.9)) {
-            medications.removeAll { $0.id == medicationID }
+            medications.removeAll { $0.id == medicationID && matchesSelectedPet($0.petID) }
         }
     }
 
     func symptom(for id: UUID?) -> SymptomEntry? {
         guard let id else { return nil }
-        return symptoms.first(where: { $0.id == id })
+        return symptoms.first(where: { $0.id == id && matchesSelectedPet($0.petID) })
     }
 
     func saveSymptom(_ symptom: SymptomEntry) {
         withAnimation(.spring(response: 0.34, dampingFraction: 0.88)) {
+            var symptom = symptom
+            symptom.petID = selectedPetID
             if let index = symptoms.firstIndex(where: { $0.id == symptom.id }) {
                 symptoms[index] = symptom
             } else {
@@ -914,17 +1041,19 @@ final class AppViewModel: ObservableObject {
 
     func deleteSymptom(_ symptomID: UUID) {
         withAnimation(.spring(response: 0.32, dampingFraction: 0.9)) {
-            symptoms.removeAll { $0.id == symptomID }
+            symptoms.removeAll { $0.id == symptomID && matchesSelectedPet($0.petID) }
         }
     }
 
     func medicalEntry(for id: UUID?) -> MedicalEntry? {
         guard let id else { return nil }
-        return medicalHistory.first(where: { $0.id == id })
+        return medicalHistory.first(where: { $0.id == id && matchesSelectedPet($0.petID) })
     }
 
     func saveMedicalEntry(_ entry: MedicalEntry) {
         withAnimation(.spring(response: 0.34, dampingFraction: 0.88)) {
+            var entry = entry
+            entry.petID = selectedPetID
             if let index = medicalHistory.firstIndex(where: { $0.id == entry.id }) {
                 medicalHistory[index] = entry
             } else {
@@ -936,17 +1065,19 @@ final class AppViewModel: ObservableObject {
 
     func deleteMedicalEntry(_ entryID: UUID) {
         withAnimation(.spring(response: 0.32, dampingFraction: 0.9)) {
-            medicalHistory.removeAll { $0.id == entryID }
+            medicalHistory.removeAll { $0.id == entryID && matchesSelectedPet($0.petID) }
         }
     }
 
     func foodPreference(for id: UUID?) -> FoodPreference? {
         guard let id else { return nil }
-        return foodPreferences.first(where: { $0.id == id })
+        return foodPreferences.first(where: { $0.id == id && matchesSelectedPet($0.petID) })
     }
 
     func saveFoodPreference(_ preference: FoodPreference) {
         withAnimation(.spring(response: 0.34, dampingFraction: 0.88)) {
+            var preference = preference
+            preference.petID = selectedPetID
             if let index = foodPreferences.firstIndex(where: { $0.id == preference.id }) {
                 foodPreferences[index] = preference
             } else {
@@ -958,12 +1089,12 @@ final class AppViewModel: ObservableObject {
 
     func deleteFoodPreference(_ preferenceID: UUID) {
         withAnimation(.spring(response: 0.32, dampingFraction: 0.9)) {
-            foodPreferences.removeAll { $0.id == preferenceID }
+            foodPreferences.removeAll { $0.id == preferenceID && matchesSelectedPet($0.petID) }
         }
     }
 
     private var upcomingWellnessRecord: VaccineRecord? {
-        vaccinations.sorted { lhs, rhs in
+        selectedPetVaccinations.sorted { lhs, rhs in
             let lhsRank = priority(for: lhs.status)
             let rhsRank = priority(for: rhs.status)
 
@@ -1023,26 +1154,26 @@ final class AppViewModel: ObservableObject {
 
     private func load(seed: AppSeed, onboardingCompleted: Bool) {
         let state = PersistedAppState(seed: seed)
+        let normalizedState = state.normalizedForMultiPet()
         isApplyingState = true
         selectedTab = .dashboard
         selectedDay = .current
-        owner = state.owner
-        pet = state.pet
-        notificationPreferences = state.notificationPreferences
+        owner = normalizedState.owner
+        pets = normalizedState.pets
+        selectedPetID = normalizedState.selectedPetID ?? normalizedState.pets.first?.id ?? UUID()
+        notificationPreferences = normalizedState.notificationPreferences
         ownerPhotoData = nil
-        petPhotoData = nil
-        bondPhotoData = nil
-        behaviorSnapshots = state.behaviorSnapshots
-        weightEntries = state.weightEntries
-        vaccinations = state.vaccinations
-        medications = state.medications
-        symptoms = state.symptoms
-        medicalHistory = state.medicalHistory
-        foodPreferences = state.foodPreferences
-        routines = state.routines
-        memories = state.memories
-        careCircleMembers = state.careCircleMembers
-        careActivityEvents = state.careActivityEvents
+        behaviorSnapshots = normalizedState.behaviorSnapshots
+        weightEntries = normalizedState.weightEntries
+        vaccinations = normalizedState.vaccinations
+        medications = normalizedState.medications
+        symptoms = normalizedState.symptoms
+        medicalHistory = normalizedState.medicalHistory
+        foodPreferences = normalizedState.foodPreferences
+        routines = normalizedState.routines
+        memories = normalizedState.memories
+        careCircleMembers = normalizedState.careCircleMembers
+        careActivityEvents = normalizedState.careActivityEvents
         onboardingFocus = .dashboard
         hasCompletedOnboarding = onboardingCompleted
         vaccineEditorSeed = nil
@@ -1055,11 +1186,10 @@ final class AppViewModel: ObservableObject {
             selectedTab: selectedTab,
             selectedDay: selectedDay,
             owner: owner,
-            pet: pet,
+            pets: pets,
+            selectedPetID: selectedPetID,
             notificationPreferences: notificationPreferences,
             ownerPhotoData: ownerPhotoData,
-            petPhotoData: petPhotoData,
-            bondPhotoData: bondPhotoData,
             behaviorSnapshots: behaviorSnapshots,
             weightEntries: weightEntries,
             vaccinations: vaccinations,
@@ -1078,27 +1208,27 @@ final class AppViewModel: ObservableObject {
 
     private func apply(state: PersistedAppState) {
         isApplyingState = true
-        selectedTab = state.selectedTab
-        selectedDay = state.selectedDay
-        owner = state.owner
-        pet = state.pet
-        notificationPreferences = state.notificationPreferences
+        let normalizedState = state.normalizedForMultiPet()
+        selectedTab = normalizedState.selectedTab
+        selectedDay = normalizedState.selectedDay
+        owner = normalizedState.owner
+        pets = normalizedState.pets
+        selectedPetID = normalizedState.selectedPetID ?? normalizedState.pets.first?.id ?? UUID()
+        notificationPreferences = normalizedState.notificationPreferences
         ownerPhotoData = state.ownerPhotoData
-        petPhotoData = state.petPhotoData
-        bondPhotoData = state.bondPhotoData
-        behaviorSnapshots = state.behaviorSnapshots
-        weightEntries = state.weightEntries
-        vaccinations = state.vaccinations
-        medications = state.medications
-        symptoms = state.symptoms
-        medicalHistory = state.medicalHistory
-        foodPreferences = state.foodPreferences
-        routines = state.routines
-        memories = state.memories
-        careCircleMembers = state.careCircleMembers
-        careActivityEvents = state.careActivityEvents
-        onboardingFocus = state.onboardingFocus
-        hasCompletedOnboarding = state.hasCompletedOnboarding
+        behaviorSnapshots = normalizedState.behaviorSnapshots
+        weightEntries = normalizedState.weightEntries
+        vaccinations = normalizedState.vaccinations
+        medications = normalizedState.medications
+        symptoms = normalizedState.symptoms
+        medicalHistory = normalizedState.medicalHistory
+        foodPreferences = normalizedState.foodPreferences
+        routines = normalizedState.routines
+        memories = normalizedState.memories
+        careCircleMembers = normalizedState.careCircleMembers
+        careActivityEvents = normalizedState.careActivityEvents
+        onboardingFocus = normalizedState.onboardingFocus
+        hasCompletedOnboarding = normalizedState.hasCompletedOnboarding
         isApplyingState = false
         persist()
     }
@@ -1126,6 +1256,11 @@ final class AppViewModel: ObservableObject {
         if careActivityEvents.count > 12 {
             careActivityEvents = Array(careActivityEvents.prefix(12))
         }
+    }
+
+    private func matchesSelectedPet(_ petID: UUID?) -> Bool {
+        let resolvedPetID = petID ?? pets.first?.id
+        return resolvedPetID == selectedPetID
     }
 }
 

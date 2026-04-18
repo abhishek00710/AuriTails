@@ -60,6 +60,8 @@ enum CoreDataModelFactory {
         let ownerPhotoData = attribute(name: "ownerPhotoData", type: .binaryDataAttributeType, optional: true, externalBinary: true)
         let petPhotoData = attribute(name: "petPhotoData", type: .binaryDataAttributeType, optional: true, externalBinary: true)
         let bondPhotoData = attribute(name: "bondPhotoData", type: .binaryDataAttributeType, optional: true, externalBinary: true)
+        let petsData = attribute(name: "petsData", type: .binaryDataAttributeType, optional: true, externalBinary: true)
+        let selectedPetID = attribute(name: "selectedPetID", type: .UUIDAttributeType, optional: true)
         let careCircleMembersData = attribute(name: "careCircleMembersData", type: .binaryDataAttributeType, optional: true, externalBinary: true)
         let careActivityEventsData = attribute(name: "careActivityEventsData", type: .binaryDataAttributeType, optional: true, externalBinary: true)
         let routinesNotificationsEnabled = attribute(name: "routinesNotificationsEnabled", type: .booleanAttributeType, optional: false)
@@ -77,7 +79,7 @@ enum CoreDataModelFactory {
             id, selectedTab, selectedDay,
             ownerID, ownerName, ownerHeadline, ownerLocation, ownerNote,
             petID, petName, petSpecies, petBreed, petAgeDescription, petWeightDescription, petFavoriteTreat, petBondStatement, petEnergySummary,
-            ownerPhotoData, petPhotoData, bondPhotoData,
+            ownerPhotoData, petPhotoData, bondPhotoData, petsData, selectedPetID,
             careCircleMembersData, careActivityEventsData,
             routinesNotificationsEnabled, vaccinesNotificationsEnabled, medicationsNotificationsEnabled, memoriesNotificationsEnabled,
             routineLeadMinutes, vaccineLeadDays, medicationLeadMinutes, memoryLeadDays,
@@ -92,14 +94,16 @@ enum CoreDataModelFactory {
         let entity = NSEntityDescription()
         entity.name = AppStateStore.Entity.behaviorSnapshot.name
         entity.managedObjectClassName = NSStringFromClass(NSManagedObject.self)
+        let id = attribute(name: "id", type: .UUIDAttributeType, optional: false)
+        let petID = attribute(name: "petID", type: .UUIDAttributeType, optional: true)
         let day = attribute(name: "day", type: .integer16AttributeType, optional: false)
         let energy = attribute(name: "energy", type: .doubleAttributeType, optional: false)
         let calmness = attribute(name: "calmness", type: .doubleAttributeType, optional: false)
         let appetite = attribute(name: "appetite", type: .doubleAttributeType, optional: false)
         let sleepHours = attribute(name: "sleepHours", type: .doubleAttributeType, optional: false)
-        entity.properties = [day, energy, calmness, appetite, sleepHours]
-        entity.uniquenessConstraints = [["day"]]
-        entity.indexes = [index(named: "behaviorSnapshotDayIndex", property: day)]
+        entity.properties = [id, petID, day, energy, calmness, appetite, sleepHours]
+        entity.uniquenessConstraints = [["id"]]
+        entity.indexes = [index(named: "behaviorSnapshotIDIndex", property: id)]
         return entity
     }
 
@@ -108,8 +112,10 @@ enum CoreDataModelFactory {
         entity.name = AppStateStore.Entity.vaccine.name
         entity.managedObjectClassName = NSStringFromClass(NSManagedObject.self)
         let id = attribute(name: "id", type: .UUIDAttributeType, optional: false)
+        let petID = attribute(name: "petID", type: .UUIDAttributeType, optional: true)
         entity.properties = [
             id,
+            petID,
             attribute(name: "title", type: .stringAttributeType, optional: false),
             attribute(name: "lastGiven", type: .dateAttributeType, optional: false),
             attribute(name: "nextDue", type: .dateAttributeType, optional: false),
@@ -129,8 +135,10 @@ enum CoreDataModelFactory {
         entity.name = AppStateStore.Entity.weightEntry.name
         entity.managedObjectClassName = NSStringFromClass(NSManagedObject.self)
         let id = attribute(name: "id", type: .UUIDAttributeType, optional: false)
+        let petID = attribute(name: "petID", type: .UUIDAttributeType, optional: true)
         entity.properties = [
             id,
+            petID,
             attribute(name: "loggedAt", type: .dateAttributeType, optional: false),
             attribute(name: "kilogramsValue", type: .doubleAttributeType, optional: false),
             attribute(name: "unit", type: .stringAttributeType, optional: false),
@@ -147,8 +155,10 @@ enum CoreDataModelFactory {
         entity.name = AppStateStore.Entity.medicalEntry.name
         entity.managedObjectClassName = NSStringFromClass(NSManagedObject.self)
         let id = attribute(name: "id", type: .UUIDAttributeType, optional: false)
+        let petID = attribute(name: "petID", type: .UUIDAttributeType, optional: true)
         entity.properties = [
             id,
+            petID,
             attribute(name: "title", type: .stringAttributeType, optional: false),
             attribute(name: "date", type: .dateAttributeType, optional: false),
             attribute(name: "summary", type: .stringAttributeType, optional: false),
@@ -166,8 +176,10 @@ enum CoreDataModelFactory {
         entity.name = AppStateStore.Entity.medication.name
         entity.managedObjectClassName = NSStringFromClass(NSManagedObject.self)
         let id = attribute(name: "id", type: .UUIDAttributeType, optional: false)
+        let petID = attribute(name: "petID", type: .UUIDAttributeType, optional: true)
         entity.properties = [
             id,
+            petID,
             attribute(name: "title", type: .stringAttributeType, optional: false),
             attribute(name: "dosage", type: .stringAttributeType, optional: false),
             attribute(name: "scheduleNote", type: .stringAttributeType, optional: false),
@@ -188,8 +200,10 @@ enum CoreDataModelFactory {
         entity.name = AppStateStore.Entity.symptom.name
         entity.managedObjectClassName = NSStringFromClass(NSManagedObject.self)
         let id = attribute(name: "id", type: .UUIDAttributeType, optional: false)
+        let petID = attribute(name: "petID", type: .UUIDAttributeType, optional: true)
         entity.properties = [
             id,
+            petID,
             attribute(name: "title", type: .stringAttributeType, optional: false),
             attribute(name: "detail", type: .stringAttributeType, optional: false),
             attribute(name: "observedAt", type: .dateAttributeType, optional: false),
@@ -208,8 +222,10 @@ enum CoreDataModelFactory {
         entity.name = AppStateStore.Entity.foodPreference.name
         entity.managedObjectClassName = NSStringFromClass(NSManagedObject.self)
         let id = attribute(name: "id", type: .UUIDAttributeType, optional: false)
+        let petID = attribute(name: "petID", type: .UUIDAttributeType, optional: true)
         entity.properties = [
             id,
+            petID,
             attribute(name: "title", type: .stringAttributeType, optional: false),
             attribute(name: "detail", type: .stringAttributeType, optional: false),
             attribute(name: "systemImage", type: .stringAttributeType, optional: false),
@@ -225,8 +241,10 @@ enum CoreDataModelFactory {
         entity.name = AppStateStore.Entity.routine.name
         entity.managedObjectClassName = NSStringFromClass(NSManagedObject.self)
         let id = attribute(name: "id", type: .UUIDAttributeType, optional: false)
+        let petID = attribute(name: "petID", type: .UUIDAttributeType, optional: true)
         entity.properties = [
             id,
+            petID,
             attribute(name: "title", type: .stringAttributeType, optional: false),
             attribute(name: "subtitle", type: .stringAttributeType, optional: false),
             attribute(name: "day", type: .integer16AttributeType, optional: false),
@@ -250,8 +268,10 @@ enum CoreDataModelFactory {
         entity.name = AppStateStore.Entity.memory.name
         entity.managedObjectClassName = NSStringFromClass(NSManagedObject.self)
         let id = attribute(name: "id", type: .UUIDAttributeType, optional: false)
+        let petID = attribute(name: "petID", type: .UUIDAttributeType, optional: true)
         entity.properties = [
             id,
+            petID,
             attribute(name: "title", type: .stringAttributeType, optional: false),
             attribute(name: "date", type: .dateAttributeType, optional: false),
             attribute(name: "caption", type: .stringAttributeType, optional: false),

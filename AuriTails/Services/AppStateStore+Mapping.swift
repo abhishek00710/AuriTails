@@ -22,17 +22,22 @@ extension AppStateStore {
             location: metadata.string("ownerLocation"),
             note: metadata.string("ownerNote")
         )
-        let pet = PetProfile(
-            id: metadata.uuid("petID"),
-            name: metadata.string("petName"),
-            species: metadata.string("petSpecies"),
-            breed: metadata.string("petBreed"),
-            ageDescription: metadata.string("petAgeDescription"),
-            weightDescription: metadata.string("petWeightDescription"),
-            favoriteTreat: metadata.string("petFavoriteTreat"),
-            bondStatement: metadata.string("petBondStatement"),
-            energySummary: metadata.string("petEnergySummary")
-        )
+        let pets = decode([PetProfile].self, from: metadata.value(forKey: "petsData") as? Data) ?? [
+            PetProfile(
+                id: metadata.uuid("petID"),
+                name: metadata.string("petName"),
+                species: metadata.string("petSpecies"),
+                breed: metadata.string("petBreed"),
+                ageDescription: metadata.string("petAgeDescription"),
+                weightDescription: metadata.string("petWeightDescription"),
+                favoriteTreat: metadata.string("petFavoriteTreat"),
+                bondStatement: metadata.string("petBondStatement"),
+                energySummary: metadata.string("petEnergySummary"),
+                photoData: metadata.value(forKey: "petPhotoData") as? Data,
+                bondPhotoData: metadata.value(forKey: "bondPhotoData") as? Data
+            )
+        ]
+        let selectedPetID = (metadata.value(forKey: "selectedPetID") as? UUID) ?? pets.first?.id
         let notificationPreferences = NotificationPreferences(
             routinesEnabled: metadata.value(forKey: "routinesNotificationsEnabled") as? Bool ?? true,
             vaccinesEnabled: metadata.value(forKey: "vaccinesNotificationsEnabled") as? Bool ?? true,
@@ -49,6 +54,8 @@ extension AppStateStore {
         let behaviorSnapshots: [BehaviorSnapshot] = fetchSorted(Entity.behaviorSnapshot.name, by: "day", ascending: true, in: context).compactMap { object in
             guard let day = Weekday(rawValue: Int(object.int16("day"))) else { return nil }
             return BehaviorSnapshot(
+                id: object.uuid("id"),
+                petID: object.value(forKey: "petID") as? UUID,
                 day: day,
                 energy: object.double("energy"),
                 calmness: object.double("calmness"),
@@ -63,6 +70,7 @@ extension AppStateStore {
             else { return nil }
             return WeightEntry(
                 id: object.uuid("id"),
+                petID: object.value(forKey: "petID") as? UUID,
                 loggedAt: loggedAt,
                 value: unit.fromKilograms(object.double("kilogramsValue")),
                 unit: unit,
@@ -77,6 +85,7 @@ extension AppStateStore {
             else { return nil }
             return VaccineRecord(
                 id: object.uuid("id"),
+                petID: object.value(forKey: "petID") as? UUID,
                 title: object.string("title"),
                 lastGiven: lastGiven,
                 nextDue: nextDue,
@@ -94,6 +103,7 @@ extension AppStateStore {
             else { return nil }
             return MedicationRecord(
                 id: object.uuid("id"),
+                petID: object.value(forKey: "petID") as? UUID,
                 title: object.string("title"),
                 dosage: object.string("dosage"),
                 scheduleNote: object.string("scheduleNote"),
@@ -112,6 +122,7 @@ extension AppStateStore {
             else { return nil }
             return SymptomEntry(
                 id: object.uuid("id"),
+                petID: object.value(forKey: "petID") as? UUID,
                 title: object.string("title"),
                 detail: object.string("detail"),
                 observedAt: observedAt,
@@ -127,6 +138,7 @@ extension AppStateStore {
             else { return nil }
             return MedicalEntry(
                 id: object.uuid("id"),
+                petID: object.value(forKey: "petID") as? UUID,
                 title: object.string("title"),
                 date: date,
                 summary: object.string("summary"),
@@ -138,6 +150,7 @@ extension AppStateStore {
         let foodPreferences: [FoodPreference] = fetchSorted(Entity.foodPreference.name, by: "sortIndex", ascending: true, in: context).map { object in
             FoodPreference(
                 id: object.uuid("id"),
+                petID: object.value(forKey: "petID") as? UUID,
                 title: object.string("title"),
                 detail: object.string("detail"),
                 systemImage: object.string("systemImage")
@@ -151,6 +164,7 @@ extension AppStateStore {
             else { return nil }
             return RoutineItem(
                 id: object.uuid("id"),
+                petID: object.value(forKey: "petID") as? UUID,
                 title: object.string("title"),
                 subtitle: object.string("subtitle"),
                 day: day,
@@ -170,6 +184,7 @@ extension AppStateStore {
             else { return nil }
             return MemoryMoment(
                 id: object.uuid("id"),
+                petID: object.value(forKey: "petID") as? UUID,
                 title: object.string("title"),
                 date: date,
                 caption: object.string("caption"),
@@ -186,11 +201,10 @@ extension AppStateStore {
             selectedTab: selectedTab,
             selectedDay: selectedDay,
             owner: owner,
-            pet: pet,
+            pets: pets,
+            selectedPetID: selectedPetID,
             notificationPreferences: notificationPreferences,
             ownerPhotoData: metadata.value(forKey: "ownerPhotoData") as? Data,
-            petPhotoData: metadata.value(forKey: "petPhotoData") as? Data,
-            bondPhotoData: metadata.value(forKey: "bondPhotoData") as? Data,
             behaviorSnapshots: behaviorSnapshots,
             weightEntries: weightEntries,
             vaccinations: vaccinations,
@@ -220,18 +234,20 @@ extension AppStateStore {
         object.setValue(state.owner.headline, forKey: "ownerHeadline")
         object.setValue(state.owner.location, forKey: "ownerLocation")
         object.setValue(state.owner.note, forKey: "ownerNote")
-        object.setValue(state.pet.id, forKey: "petID")
-        object.setValue(state.pet.name, forKey: "petName")
-        object.setValue(state.pet.species, forKey: "petSpecies")
-        object.setValue(state.pet.breed, forKey: "petBreed")
-        object.setValue(state.pet.ageDescription, forKey: "petAgeDescription")
-        object.setValue(state.pet.weightDescription, forKey: "petWeightDescription")
-        object.setValue(state.pet.favoriteTreat, forKey: "petFavoriteTreat")
-        object.setValue(state.pet.bondStatement, forKey: "petBondStatement")
-        object.setValue(state.pet.energySummary, forKey: "petEnergySummary")
+        object.setValue(state.selectedPet.id, forKey: "petID")
+        object.setValue(state.selectedPet.name, forKey: "petName")
+        object.setValue(state.selectedPet.species, forKey: "petSpecies")
+        object.setValue(state.selectedPet.breed, forKey: "petBreed")
+        object.setValue(state.selectedPet.ageDescription, forKey: "petAgeDescription")
+        object.setValue(state.selectedPet.weightDescription, forKey: "petWeightDescription")
+        object.setValue(state.selectedPet.favoriteTreat, forKey: "petFavoriteTreat")
+        object.setValue(state.selectedPet.bondStatement, forKey: "petBondStatement")
+        object.setValue(state.selectedPet.energySummary, forKey: "petEnergySummary")
         object.setValue(state.ownerPhotoData, forKey: "ownerPhotoData")
-        object.setValue(state.petPhotoData, forKey: "petPhotoData")
-        object.setValue(state.bondPhotoData, forKey: "bondPhotoData")
+        object.setValue(state.selectedPet.photoData, forKey: "petPhotoData")
+        object.setValue(state.selectedPet.bondPhotoData, forKey: "bondPhotoData")
+        object.setValue(encode(state.pets), forKey: "petsData")
+        object.setValue(state.selectedPetID, forKey: "selectedPetID")
         object.setValue(encode(state.careCircleMembers), forKey: "careCircleMembersData")
         object.setValue(encode(state.careActivityEvents), forKey: "careActivityEventsData")
         object.setValue(state.notificationPreferences.routinesEnabled, forKey: "routinesNotificationsEnabled")

@@ -49,12 +49,13 @@ struct NotificationScheduler {
         guard state.notificationPreferences.routinesEnabled else { return [] }
         return state.routines.compactMap { routine in
             guard routine.notificationsEnabled else { return nil }
+            let petName = petName(for: routine.petID, in: state)
             guard let nextDate = nextDate(for: routine.day, time: routine.time) else { return nil }
             let fireDate = calendar.date(byAdding: .minute, value: -state.notificationPreferences.routineLeadMinutes, to: nextDate) ?? nextDate
             guard fireDate > .now else { return nil }
 
             let content = UNMutableNotificationContent()
-            content.title = "\(state.pet.name)'s \(routine.title)"
+            content.title = "\(petName)'s \(routine.title)"
             content.body = routine.subtitle
             content.sound = .default
 
@@ -72,6 +73,7 @@ struct NotificationScheduler {
         guard state.notificationPreferences.vaccinesEnabled else { return [] }
         return state.vaccinations.compactMap { vaccine in
             guard vaccine.notificationsEnabled else { return nil }
+            let petName = petName(for: vaccine.petID, in: state)
             let dueDate = calendar.startOfDay(for: vaccine.nextDue)
             guard dueDate >= calendar.startOfDay(for: .now) else { return nil }
 
@@ -80,7 +82,7 @@ struct NotificationScheduler {
             guard fireDate > .now else { return nil }
             let content = UNMutableNotificationContent()
             content.title = "\(vaccine.title) due soon"
-            content.body = "Wellness passport reminder for \(state.pet.name). \(vaccine.note)"
+            content.body = "Wellness passport reminder for \(petName). \(vaccine.note)"
             content.sound = .default
 
             let components = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: fireDate)
@@ -97,6 +99,7 @@ struct NotificationScheduler {
         guard state.notificationPreferences.medicationsEnabled else { return [] }
         return state.medications.compactMap { medication in
             guard medication.notificationsEnabled else { return nil }
+            let petName = petName(for: medication.petID, in: state)
             let fireDate = calendar.date(
                 byAdding: .minute,
                 value: -state.notificationPreferences.medicationLeadMinutes,
@@ -105,7 +108,7 @@ struct NotificationScheduler {
             guard fireDate > .now else { return nil }
 
             let content = UNMutableNotificationContent()
-            content.title = "\(medication.title) for \(state.pet.name)"
+            content.title = "\(medication.title) for \(petName)"
             content.body = [medication.dosage, medication.scheduleNote, medication.purpose]
                 .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
                 .filter { !$0.isEmpty }
@@ -129,12 +132,13 @@ struct NotificationScheduler {
                   memory.notificationsEnabled,
                   let celebrationDate = nextCelebrationDate(for: memory.date)
             else { return nil }
+            let petName = petName(for: memory.petID, in: state)
             let fireDate = calendar.date(byAdding: .day, value: -state.notificationPreferences.memoryLeadDays, to: celebrationDate) ?? celebrationDate
             guard fireDate > .now else { return nil }
 
             let content = UNMutableNotificationContent()
             content.title = memory.title
-            content.body = "A memory moment for \(state.owner.name) and \(state.pet.name): \(memory.caption)"
+            content.body = "A memory moment for \(state.owner.name) and \(petName): \(memory.caption)"
             content.sound = .default
 
             let components = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: fireDate)
@@ -195,5 +199,11 @@ struct NotificationScheduler {
         case .friday: return 6
         case .saturday: return 7
         }
+    }
+
+    private func petName(for petID: UUID?, in state: PersistedAppState) -> String {
+        let fallbackPet = state.selectedPet
+        let pet = state.pets.first(where: { $0.id == petID }) ?? fallbackPet
+        return pet.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "your pet" : pet.name
     }
 }

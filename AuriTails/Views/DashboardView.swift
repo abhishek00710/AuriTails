@@ -140,7 +140,7 @@ struct DashboardView: View {
                 .accessibilityLabel(viewModel.todayBehaviorSnapshot == nil ? "Add daily check-in" : "Edit daily check-in")
             }
             if viewModel.hasBehaviorData {
-                BehaviorSparkline(snapshots: viewModel.behaviorSnapshots)
+                BehaviorSparkline(snapshots: viewModel.selectedPetBehaviorSnapshots)
 
                 if let todaySnapshot = viewModel.todayBehaviorSnapshot {
                     HStack(alignment: .top, spacing: 0) {

@@ -34,6 +34,7 @@ struct ProfileStudioView: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 22) {
+                        petSwitcherSection
                         heroCard
                         bondPhotoSection
                         ownerSection
@@ -79,6 +80,75 @@ struct ProfileStudioView: View {
         .task(id: bondPickerItem) {
             if let bondPickerItem, let data = try? await bondPickerItem.loadTransferable(type: Data.self) {
                 bondPhotoData = data
+            }
+        }
+    }
+
+    private var petSwitcherSection: some View {
+        GlassCard(tone: .lagoon) {
+            SectionHeader(
+                eyebrow: "Household",
+                title: "Switch between pets",
+                detail: "Each pet gets its own wellness records, routines, memories, and Bond Pulse while your owner profile stays shared."
+            )
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    ForEach(viewModel.pets) { pet in
+                        Button {
+                            saveDraftIntoCurrentPet()
+                            viewModel.selectPet(pet.id)
+                            syncDraftsFromViewModel()
+                        } label: {
+                            HStack(spacing: 10) {
+                                CircularProfilePhoto(imageData: pet.photoData, role: .pet, size: 42)
+
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text(pet.name.trimmedOrNil ?? "New pet")
+                                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                                        .foregroundStyle(.white)
+
+                                    Text(pet.breed.trimmedOrNil ?? pet.species.trimmedOrNil ?? "Profile ready")
+                                        .font(.system(size: 11, weight: .medium, design: .rounded))
+                                        .foregroundStyle(.white.opacity(0.66))
+                                }
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 10)
+                            .background(
+                                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                                    .fill(pet.id == viewModel.selectedPetID ? Color.white.opacity(0.16) : Color.white.opacity(0.08))
+                                    .overlay {
+                                        RoundedRectangle(cornerRadius: 20, style: .continuous)
+                                            .strokeBorder(Color.white.opacity(pet.id == viewModel.selectedPetID ? 0.22 : 0.10), lineWidth: 1)
+                                    }
+                            )
+                        }
+                        .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.96, pressedBrightness: 0.03))
+                    }
+
+                    Button {
+                        saveDraftIntoCurrentPet()
+                        viewModel.addPet()
+                        syncDraftsFromViewModel()
+                    } label: {
+                        Label("Add Pet", systemImage: "plus")
+                            .font(.system(size: 14, weight: .bold, design: .rounded))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 14)
+                            .background(
+                                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                                    .fill(Color.white.opacity(0.08))
+                                    .overlay {
+                                        RoundedRectangle(cornerRadius: 20, style: .continuous)
+                                            .strokeBorder(Color.white.opacity(0.10), lineWidth: 1)
+                                    }
+                            )
+                    }
+                    .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.96, pressedBrightness: 0.03))
+                }
+                .padding(.vertical, 2)
             }
         }
     }
@@ -241,17 +311,19 @@ struct ProfileStudioView: View {
     }
 
     private func saveChanges() {
-        viewModel.updateProfile(
-            owner: ownerDraft,
-            pet: petDraft,
-            ownerPhotoData: ownerPhotoData,
-            petPhotoData: petPhotoData,
-            bondPhotoData: bondPhotoData
-        )
+        saveDraftIntoCurrentPet()
         dismiss()
     }
 
     private func openCareCircle() {
+        saveDraftIntoCurrentPet()
+        dismiss()
+        DispatchQueue.main.async {
+            viewModel.activeSheet = .careCircle
+        }
+    }
+
+    private func saveDraftIntoCurrentPet() {
         viewModel.updateProfile(
             owner: ownerDraft,
             pet: petDraft,
@@ -259,10 +331,17 @@ struct ProfileStudioView: View {
             petPhotoData: petPhotoData,
             bondPhotoData: bondPhotoData
         )
-        dismiss()
-        DispatchQueue.main.async {
-            viewModel.activeSheet = .careCircle
-        }
+    }
+
+    private func syncDraftsFromViewModel() {
+        ownerDraft = viewModel.owner
+        petDraft = viewModel.pet
+        ownerPhotoData = viewModel.ownerPhotoData
+        petPhotoData = viewModel.petPhotoData
+        bondPhotoData = viewModel.bondPhotoData
+        ownerPickerItem = nil
+        petPickerItem = nil
+        bondPickerItem = nil
     }
 }
 

@@ -70,7 +70,7 @@ struct WellnessView: View {
                 .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.92))
             }
 
-            if viewModel.medications.isEmpty {
+            if viewModel.selectedPetMedications.isEmpty {
                 Text("No medication records yet. Add ongoing meds, recovery support, or seasonal treatments so Bond Pulse can read the care picture more honestly.")
                     .font(.system(size: 14, weight: .medium, design: .rounded))
                     .foregroundStyle(.white.opacity(0.76))
@@ -79,7 +79,7 @@ struct WellnessView: View {
                     .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
             } else {
                 LazyVStack(spacing: 12) {
-                    ForEach(viewModel.medications) { medication in
+                    ForEach(viewModel.selectedPetMedications) { medication in
                         GlassHealthRow(tone: medication.tone) {
                             HStack(alignment: .top, spacing: 12) {
                                 VStack(alignment: .leading, spacing: 8) {
@@ -161,7 +161,7 @@ struct WellnessView: View {
                 .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.92))
             }
 
-            if viewModel.symptoms.isEmpty {
+            if viewModel.selectedPetSymptoms.isEmpty {
                 Text("No symptom notes yet. Add things like paw licking, appetite changes, sneezing, or low-energy days when they happen.")
                     .font(.system(size: 14, weight: .medium, design: .rounded))
                     .foregroundStyle(.white.opacity(0.76))
@@ -386,7 +386,7 @@ struct WellnessView: View {
                     .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.92))
                 }
 
-                if viewModel.vaccinations.isEmpty {
+                if viewModel.selectedPetVaccinations.isEmpty {
                     Text("No vaccine records yet. Add the first one manually, import a file, or scan a certificate to start the passport.")
                         .font(.system(size: 14, weight: .medium, design: .rounded))
                         .foregroundStyle(.white.opacity(0.76))
@@ -396,7 +396,7 @@ struct WellnessView: View {
                 } else {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 14) {
-                            ForEach(viewModel.vaccinations) { record in
+                            ForEach(viewModel.selectedPetVaccinations) { record in
                                 VaccinePassportCard(record: record, tone: tone(for: record.status)) {
                                     HStack(alignment: .top) {
                                         VStack(alignment: .leading, spacing: 10) {
@@ -477,14 +477,14 @@ struct WellnessView: View {
                 .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.92))
             }
 
-            if viewModel.medicalHistory.isEmpty {
+            if viewModel.selectedPetMedicalHistory.isEmpty {
                 Text("No medical history yet. Annual exams, allergy notes, and dental visits will show up here once added.")
                     .font(.system(size: 14, weight: .medium, design: .rounded))
                     .foregroundStyle(.white.opacity(0.76))
                     .frame(maxWidth: .infinity, alignment: .leading)
             } else {
                 VStack(spacing: 18) {
-                    ForEach(viewModel.medicalHistory) { entry in
+                    ForEach(viewModel.selectedPetMedicalHistory) { entry in
                         HStack(alignment: .top, spacing: 14) {
                             VStack(spacing: 0) {
                                 Circle()
@@ -548,7 +548,7 @@ struct WellnessView: View {
                 .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.92))
             }
 
-            if viewModel.foodPreferences.isEmpty {
+            if viewModel.selectedPetFoodPreferences.isEmpty {
                 Text("No food notes yet. Add meals, sensitivities, or hydration rituals to make this part useful.")
                     .font(.system(size: 14, weight: .medium, design: .rounded))
                     .foregroundStyle(.white.opacity(0.76))
@@ -557,7 +557,7 @@ struct WellnessView: View {
                     .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
             } else {
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                    ForEach(viewModel.foodPreferences) { preference in
+                    ForEach(viewModel.selectedPetFoodPreferences) { preference in
                         VStack(alignment: .leading, spacing: 10) {
                             HStack(alignment: .top) {
                                 Label(preference.title, systemImage: preference.systemImage)

@@ -33,7 +33,7 @@ struct AICompanionView: View {
                                 .foregroundStyle(.white)
 
                             if viewModel.hasBehaviorData {
-                                BehaviorSparkline(snapshots: viewModel.behaviorSnapshots)
+                                BehaviorSparkline(snapshots: viewModel.selectedPetBehaviorSnapshots)
 
                                 Text("Energy peaks are healthy, but calmness dips later in the week hint that \(viewModel.displayPetName) does best when active rituals get a softer landing afterward.")
                                     .font(.system(size: 14, weight: .medium, design: .rounded))
@@ -131,7 +131,7 @@ struct AICompanionView: View {
                                     title: "Behavior rhythm",
                                     subtitle: "Energy, calmness, appetite, and sleep become easier to compare once the week is visible as one shape."
                                 ) {
-                                    WeeklyBehaviorTrendChart(snapshots: viewModel.behaviorSnapshots)
+                                    WeeklyBehaviorTrendChart(snapshots: viewModel.selectedPetBehaviorSnapshots)
                                 }
                             } else {
                                 AIEmptyTrendPanel(
