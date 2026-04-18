@@ -5,6 +5,7 @@ import UIKit
 struct RootView: View {
     @ObservedObject var viewModel: AppViewModel
     @State private var isShowingSplash = true
+    @State private var isPetSwitcherPresented = false
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
@@ -44,6 +45,34 @@ struct RootView: View {
                     }
             }
 
+            if isPetSwitcherPresented {
+                Color.black.opacity(0.001)
+                    .ignoresSafeArea()
+                    .transition(.opacity)
+                    .onTapGesture {
+                        withAnimation(.spring(response: 0.34, dampingFraction: 0.9)) {
+                            isPetSwitcherPresented = false
+                        }
+                    }
+            }
+
+            if isPetSwitcherPresented {
+                GeometryReader { _ in
+                    VStack {
+                        HStack {
+                            petSwitcherPanel
+                            Spacer()
+                        }
+                        .padding(.top, 78)
+                        .padding(.leading, 20)
+
+                        Spacer()
+                    }
+                }
+                .transition(.move(edge: .top).combined(with: .opacity))
+                .zIndex(4)
+            }
+
             if viewModel.isMenuPresented {
                 GeometryReader { proxy in
                     HStack {
@@ -70,6 +99,7 @@ struct RootView: View {
             }
         }
         .animation(.spring(response: 0.42, dampingFraction: 0.88), value: viewModel.isMenuPresented)
+        .animation(.spring(response: 0.34, dampingFraction: 0.9), value: isPetSwitcherPresented)
         .animation(.easeInOut(duration: 0.45), value: isShowingSplash)
         .sheet(item: $viewModel.activeSheet) { sheet in
             switch sheet {
@@ -169,6 +199,62 @@ struct RootView: View {
                     .font(.system(size: 14, weight: .semibold, design: .rounded))
                     .foregroundStyle(colorScheme.topBarTitleColor.opacity(0.78))
 
+                Button {
+                    withAnimation(.spring(response: 0.34, dampingFraction: 0.9)) {
+                        isPetSwitcherPresented.toggle()
+                        viewModel.closeMenu()
+                    }
+                } label: {
+                    HStack(spacing: 8) {
+                        CircularProfilePhoto(imageData: viewModel.petPhotoData, role: .pet, size: 30)
+
+                        Text(viewModel.displayPetName)
+                            .font(.system(size: 13, weight: .bold, design: .rounded))
+                            .foregroundStyle(colorScheme.topBarTitleColor)
+
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundStyle(colorScheme.topBarTitleColor.opacity(0.78))
+                            .rotationEffect(.degrees(isPetSwitcherPresented ? 180 : 0))
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 8)
+                    .background {
+                        Capsule()
+                            .fill(.ultraThinMaterial)
+                            .overlay {
+                                Capsule()
+                                    .fill(
+                                        LinearGradient(
+                                            colors: colorScheme == .dark
+                                            ? [
+                                                Color.white.opacity(0.18),
+                                                Color.white.opacity(0.08),
+                                                Color.black.opacity(0.10)
+                                            ]
+                                            : [
+                                                Color.white.opacity(0.48),
+                                                Color.white.opacity(0.24),
+                                                Color.black.opacity(0.06)
+                                            ],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                            }
+                    }
+                    .overlay {
+                        Capsule()
+                            .strokeBorder(
+                                colorScheme == .dark
+                                ? Color.white.opacity(0.20)
+                                : Color.white.opacity(0.34),
+                                lineWidth: 1
+                            )
+                    }
+                }
+                .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.94, pressedBrightness: 0.04))
+
                 Text(viewModel.selectedTab.headerTitle(for: viewModel.pet.name))
                     .font(.system(size: 30, weight: .semibold, design: .serif))
                     .foregroundStyle(colorScheme.topBarTitleColor)
@@ -181,6 +267,7 @@ struct RootView: View {
             Spacer()
 
             Button {
+                isPetSwitcherPresented = false
                 viewModel.toggleMenu()
             } label: {
                 Image(systemName: "line.3.horizontal")
@@ -199,6 +286,93 @@ struct RootView: View {
         .padding(.horizontal, 20)
         .padding(.top, 18)
         .padding(.bottom, 12)
+    }
+
+    private var petSwitcherPanel: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Switch Pet")
+                .font(.system(size: 13, weight: .bold, design: .rounded))
+                .foregroundStyle(.white.opacity(0.62))
+
+            ForEach(viewModel.pets) { pet in
+                Button {
+                    viewModel.selectPet(pet.id)
+                    withAnimation(.spring(response: 0.34, dampingFraction: 0.9)) {
+                        isPetSwitcherPresented = false
+                    }
+                } label: {
+                    HStack(spacing: 10) {
+                        CircularProfilePhoto(imageData: pet.photoData, role: .pet, size: 36)
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(pet.name.trimmedOrNil ?? "New pet")
+                                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                                .foregroundStyle(.white)
+
+                            Text(pet.breed.trimmedOrNil ?? pet.species.trimmedOrNil ?? "Profile ready")
+                                .font(.system(size: 11, weight: .medium, design: .rounded))
+                                .foregroundStyle(.white.opacity(0.62))
+                        }
+
+                        Spacer(minLength: 0)
+
+                        if pet.id == viewModel.selectedPetID {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundStyle(Color.white)
+                        }
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .background(
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .fill(pet.id == viewModel.selectedPetID ? Color.white.opacity(0.12) : Color.white.opacity(0.06))
+                    )
+                }
+                .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.97, pressedBrightness: 0.03))
+            }
+
+            Button {
+                withAnimation(.spring(response: 0.34, dampingFraction: 0.9)) {
+                    isPetSwitcherPresented = false
+                }
+                viewModel.addPet()
+                viewModel.openProfile()
+            } label: {
+                Label("Add Pet", systemImage: "plus")
+                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color(red: 0.10, green: 0.13, blue: 0.22))
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 12)
+                    .background(Color.white, in: Capsule())
+            }
+            .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.96, pressedBrightness: 0.04))
+        }
+        .padding(16)
+        .frame(width: 250)
+        .background {
+            RoundedRectangle(cornerRadius: 26, style: .continuous)
+                .fill(.ultraThinMaterial)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 26, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    Color.white.opacity(0.16),
+                                    Color.white.opacity(0.08),
+                                    Color.black.opacity(0.10)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                }
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 26, style: .continuous)
+                .strokeBorder(Color.white.opacity(0.16), lineWidth: 1)
+        }
+        .shadow(color: .black.opacity(0.18), radius: 20, y: 10)
     }
 
     @ViewBuilder

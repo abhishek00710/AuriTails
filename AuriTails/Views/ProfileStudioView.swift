@@ -11,6 +11,7 @@ struct ProfileStudioView: View {
     @State private var ownerPhotoData: Data?
     @State private var petPhotoData: Data?
     @State private var bondPhotoData: Data?
+    @State private var petPendingDeletion: PetProfile?
     @State private var ownerPickerItem: PhotosPickerItem?
     @State private var petPickerItem: PhotosPickerItem?
     @State private var bondPickerItem: PhotosPickerItem?
@@ -82,6 +83,22 @@ struct ProfileStudioView: View {
                 bondPhotoData = data
             }
         }
+        .alert("Delete this pet?", isPresented: deletePetAlertBinding) {
+            Button("Delete", role: .destructive) {
+                guard let petPendingDeletion else { return }
+                let wasSelectedPet = petPendingDeletion.id == viewModel.selectedPetID
+                viewModel.deletePet(petPendingDeletion.id)
+                if wasSelectedPet {
+                    syncDraftsFromViewModel()
+                }
+                self.petPendingDeletion = nil
+            }
+            Button("Cancel", role: .cancel) {
+                petPendingDeletion = nil
+            }
+        } message: {
+            Text(deletePetMessage)
+        }
     }
 
     private var petSwitcherSection: some View {
@@ -89,42 +106,62 @@ struct ProfileStudioView: View {
             SectionHeader(
                 eyebrow: "Household",
                 title: "Switch between pets",
-                detail: "Each pet gets its own wellness records, routines, memories, and Bond Pulse while your owner profile stays shared."
+                detail: "Each pet gets its own wellness records, routines, memories, and Bond Pulse while your owner profile stays shared. You can also remove a pet here if you no longer want it in the household."
             )
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 10) {
                     ForEach(viewModel.pets) { pet in
-                        Button {
-                            saveDraftIntoCurrentPet()
-                            viewModel.selectPet(pet.id)
-                            syncDraftsFromViewModel()
-                        } label: {
-                            HStack(spacing: 10) {
-                                CircularProfilePhoto(imageData: pet.photoData, role: .pet, size: 42)
+                        HStack(spacing: 8) {
+                            Button {
+                                saveDraftIntoCurrentPet()
+                                viewModel.selectPet(pet.id)
+                                syncDraftsFromViewModel()
+                            } label: {
+                                HStack(spacing: 10) {
+                                    CircularProfilePhoto(imageData: pet.photoData, role: .pet, size: 42)
 
-                                VStack(alignment: .leading, spacing: 3) {
-                                    Text(pet.name.trimmedOrNil ?? "New pet")
-                                        .font(.system(size: 14, weight: .semibold, design: .rounded))
-                                        .foregroundStyle(.white)
+                                    VStack(alignment: .leading, spacing: 3) {
+                                        Text(pet.name.trimmedOrNil ?? "New pet")
+                                            .font(.system(size: 14, weight: .semibold, design: .rounded))
+                                            .foregroundStyle(.white)
 
-                                    Text(pet.breed.trimmedOrNil ?? pet.species.trimmedOrNil ?? "Profile ready")
-                                        .font(.system(size: 11, weight: .medium, design: .rounded))
-                                        .foregroundStyle(.white.opacity(0.66))
-                                }
-                            }
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 10)
-                            .background(
-                                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                                    .fill(pet.id == viewModel.selectedPetID ? Color.white.opacity(0.16) : Color.white.opacity(0.08))
-                                    .overlay {
-                                        RoundedRectangle(cornerRadius: 20, style: .continuous)
-                                            .strokeBorder(Color.white.opacity(pet.id == viewModel.selectedPetID ? 0.22 : 0.10), lineWidth: 1)
+                                        Text(pet.breed.trimmedOrNil ?? pet.species.trimmedOrNil ?? "Profile ready")
+                                            .font(.system(size: 11, weight: .medium, design: .rounded))
+                                            .foregroundStyle(.white.opacity(0.66))
                                     }
-                            )
+                                }
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 10)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                                        .fill(pet.id == viewModel.selectedPetID ? Color.white.opacity(0.16) : Color.white.opacity(0.08))
+                                        .overlay {
+                                            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                                                .strokeBorder(Color.white.opacity(pet.id == viewModel.selectedPetID ? 0.22 : 0.10), lineWidth: 1)
+                                        }
+                                )
+                            }
+                            .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.96, pressedBrightness: 0.03))
+
+                            if viewModel.pets.count > 1 {
+                                Button {
+                                    saveDraftIntoCurrentPet()
+                                    petPendingDeletion = pet
+                                } label: {
+                                    Image(systemName: "trash")
+                                        .font(.system(size: 13, weight: .bold))
+                                        .foregroundStyle(.white.opacity(0.82))
+                                        .frame(width: 36, height: 36)
+                                        .background(Color.white.opacity(0.08), in: Circle())
+                                        .overlay {
+                                            Circle()
+                                                .strokeBorder(Color.white.opacity(0.10), lineWidth: 1)
+                                        }
+                                }
+                                .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.92, pressedBrightness: 0.04))
+                            }
                         }
-                        .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.96, pressedBrightness: 0.03))
                     }
 
                     Button {
@@ -342,6 +379,19 @@ struct ProfileStudioView: View {
         ownerPickerItem = nil
         petPickerItem = nil
         bondPickerItem = nil
+    }
+
+    private var deletePetAlertBinding: Binding<Bool> {
+        Binding(
+            get: { petPendingDeletion != nil },
+            set: { if !$0 { petPendingDeletion = nil } }
+        )
+    }
+
+    private var deletePetMessage: String {
+        guard let petPendingDeletion else { return "" }
+        let petName = petPendingDeletion.name.trimmedOrNil ?? "This pet"
+        return "\(petName)'s routines, wellness records, memories, and Bond Pulse history on this device will be removed."
     }
 }
 

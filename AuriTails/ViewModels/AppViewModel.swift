@@ -729,6 +729,45 @@ final class AppViewModel: ObservableObject {
         }
     }
 
+    var canDeleteSelectedPet: Bool {
+        pets.count > 1
+    }
+
+    func deletePet(_ petID: UUID) {
+        guard let petToDelete = pets.first(where: { $0.id == petID }) else { return }
+        guard pets.count > 1 else {
+            backupNotice = BackupNotice(
+                title: L10n.tr("Keep One Pet", default: "Keep One Pet"),
+                message: L10n.tr("AuriTails needs at least one pet profile. Add another pet first if you want to remove this one.", default: "AuriTails needs at least one pet profile. Add another pet first if you want to remove this one.")
+            )
+            return
+        }
+
+        withAnimation(.spring(response: 0.34, dampingFraction: 0.88)) {
+            pets.removeAll { $0.id == petID }
+            behaviorSnapshots.removeAll { $0.petID == petID }
+            weightEntries.removeAll { $0.petID == petID }
+            vaccinations.removeAll { $0.petID == petID }
+            medications.removeAll { $0.petID == petID }
+            symptoms.removeAll { $0.petID == petID }
+            medicalHistory.removeAll { $0.petID == petID }
+            foodPreferences.removeAll { $0.petID == petID }
+            routines.removeAll { $0.petID == petID }
+            memories.removeAll { $0.petID == petID }
+
+            if selectedPetID == petID, let fallbackPetID = pets.first?.id {
+                selectedPetID = fallbackPetID
+            }
+
+            prependCareActivity(
+                title: L10n.format("%@ was removed", default: "%@ was removed", petToDelete.name.trimmedOrNil ?? L10n.tr("Pet profile", default: "Pet profile")),
+                detail: L10n.tr("That pet's routines, wellness records, memories, and Bond Pulse data were removed from this device.", default: "That pet's routines, wellness records, memories, and Bond Pulse data were removed from this device."),
+                systemImage: "pawprint.circle.fill",
+                tone: .apricot
+            )
+        }
+    }
+
     func inviteCaregiver(name: String, contact: String, relationshipLabel: String, note: String) {
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedName.isEmpty else { return }
