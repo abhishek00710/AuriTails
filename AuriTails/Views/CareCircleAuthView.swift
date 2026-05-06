@@ -10,7 +10,7 @@ struct CareCircleAuthView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                AppBackground()
+                FormBackground()
                     .ignoresSafeArea()
 
                 ScrollView(showsIndicators: false) {
@@ -35,7 +35,7 @@ struct CareCircleAuthView: View {
                     Button("Close") {
                         dismiss()
                     }
-                    .foregroundStyle(colorScheme.topBarButtonColor)
+                    .foregroundStyle(.white)
                 }
             }
         }

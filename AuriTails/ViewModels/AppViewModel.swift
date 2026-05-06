@@ -39,6 +39,7 @@ final class AppViewModel: ObservableObject {
     @Published var careActivityEvents: [CareActivityEvent] { didSet { persistIfNeeded() } }
     @Published var onboardingFocus: OnboardingFocus { didSet { persistIfNeeded() } }
     @Published var hasCompletedOnboarding: Bool { didSet { persistIfNeeded() } }
+    @Published var appReviewState: AppReviewState { didSet { persistIfNeeded() } }
     @Published var exportBackupDocument: AppBackupDocument?
     @Published var isExportingBackup = false
     @Published var isImportingBackup = false
@@ -59,6 +60,7 @@ final class AppViewModel: ObservableObject {
     private let notificationScheduler: NotificationScheduler
     private let nearbyPetCareService: NearbyPetCareService
     private let careCircleRepository: FirebaseCareCircleRepository
+    private let appReviewPrompter: AppReviewPrompter
     private let vetVisitPackBuilder = VetVisitPackBuilder()
     private let vaccineDocumentImportService = VaccineDocumentImportService()
     private var isApplyingState = false
@@ -71,6 +73,7 @@ final class AppViewModel: ObservableObject {
         notificationScheduler: NotificationScheduler? = nil,
         nearbyPetCareService: NearbyPetCareService? = nil,
         careCircleRepository: FirebaseCareCircleRepository? = nil,
+        appReviewPrompter: AppReviewPrompter? = nil,
         prefersPersistedState: Bool = true
     ) {
         let store = store ?? AppStateStore()
@@ -99,11 +102,13 @@ final class AppViewModel: ObservableObject {
         careActivityEvents = initialState.careActivityEvents
         onboardingFocus = initialState.onboardingFocus
         hasCompletedOnboarding = initialState.hasCompletedOnboarding
+        appReviewState = initialState.appReviewState
         self.store = store
         self.insightEngine = insightEngine ?? PetInsightEngine()
         self.notificationScheduler = notificationScheduler
         self.nearbyPetCareService = nearbyPetCareService
         self.careCircleRepository = careCircleRepository
+        self.appReviewPrompter = appReviewPrompter ?? AppReviewPrompter()
 
         nearbyPetCareService.$places
             .sink { [weak self] in self?.nearbyPetCare = $0 }
@@ -918,26 +923,7 @@ final class AppViewModel: ObservableObject {
         )
         selectedTab = focus.preferredTab
         hasCompletedOnboarding = true
-    }
-
-    func enterDemoMode() {
-        load(seed: .preview, onboardingCompleted: true)
-    }
-
-    func beginCleanSetup() {
-        load(seed: .empty, onboardingCompleted: false)
-    }
-
-    func reopenOnboardingForDevelopment() {
-        closeMenu()
-        activeSheet = nil
-        isShowingVaccineScanner = false
-        isExportingBackup = false
-        isImportingBackup = false
-        isImportingVaccineDocument = false
-        sharePayload = nil
-        backupNotice = nil
-        hasCompletedOnboarding = false
+        recordPositiveMoment(.onboardingCompleted)
     }
 
     func toggleRoutine(_ routineID: UUID) {
@@ -987,6 +973,7 @@ final class AppViewModel: ObservableObject {
             sortRoutines()
             selectedDay = routine.day
         }
+        recordPositiveMoment(.routineSaved)
     }
 
     func deleteRoutine(_ routineID: UUID) {
@@ -1016,6 +1003,7 @@ final class AppViewModel: ObservableObject {
                 return $0.day.rawValue < $1.day.rawValue
             }
         }
+        recordPositiveMoment(.behaviorSaved)
     }
 
     func deleteBehaviorSnapshot(for day: Weekday) {
@@ -1040,6 +1028,7 @@ final class AppViewModel: ObservableObject {
             }
             weightEntries.sort { $0.loggedAt < $1.loggedAt }
         }
+        recordPositiveMoment(.weightSaved)
     }
 
     func deleteWeightEntry(_ entryID: UUID) {
@@ -1064,6 +1053,7 @@ final class AppViewModel: ObservableObject {
             }
             sortMemories()
         }
+        recordPositiveMoment(.memorySaved)
     }
 
     func toggleMemoryNotifications(_ memoryID: UUID) {
@@ -1096,6 +1086,7 @@ final class AppViewModel: ObservableObject {
             vaccinations.sort { $0.nextDue < $1.nextDue }
             vaccineEditorSeed = nil
         }
+        recordPositiveMoment(.vaccineSaved)
     }
 
     func toggleVaccineNotifications(_ vaccineID: UUID) {
@@ -1127,6 +1118,7 @@ final class AppViewModel: ObservableObject {
             }
             medications.sort { $0.nextDose < $1.nextDose }
         }
+        recordPositiveMoment(.medicationSaved)
     }
 
     func toggleMedicationNotifications(_ medicationID: UUID) {
@@ -1158,6 +1150,7 @@ final class AppViewModel: ObservableObject {
             }
             symptoms.sort { $0.observedAt > $1.observedAt }
         }
+        recordPositiveMoment(.symptomSaved)
     }
 
     func deleteSymptom(_ symptomID: UUID) {
@@ -1182,6 +1175,7 @@ final class AppViewModel: ObservableObject {
             }
             medicalHistory.sort { $0.date > $1.date }
         }
+        recordPositiveMoment(.medicalEntrySaved)
     }
 
     func deleteMedicalEntry(_ entryID: UUID) {
@@ -1206,6 +1200,7 @@ final class AppViewModel: ObservableObject {
             }
             foodPreferences.sort { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
         }
+        recordPositiveMoment(.foodPreferenceSaved)
     }
 
     func deleteFoodPreference(_ preferenceID: UUID) {
@@ -1297,6 +1292,7 @@ final class AppViewModel: ObservableObject {
         careActivityEvents = normalizedState.careActivityEvents
         onboardingFocus = .dashboard
         hasCompletedOnboarding = onboardingCompleted
+        appReviewState = normalizedState.appReviewState
         vaccineEditorSeed = nil
         isApplyingState = false
         persist()
@@ -1323,7 +1319,8 @@ final class AppViewModel: ObservableObject {
             careCircleMembers: careCircleMembers,
             careActivityEvents: careActivityEvents,
             onboardingFocus: onboardingFocus,
-            hasCompletedOnboarding: hasCompletedOnboarding
+            hasCompletedOnboarding: hasCompletedOnboarding,
+            appReviewState: appReviewState
         )
     }
 
@@ -1350,6 +1347,7 @@ final class AppViewModel: ObservableObject {
         careActivityEvents = normalizedState.careActivityEvents
         onboardingFocus = normalizedState.onboardingFocus
         hasCompletedOnboarding = normalizedState.hasCompletedOnboarding
+        appReviewState = normalizedState.appReviewState
         isApplyingState = false
         persist()
     }
@@ -1455,11 +1453,98 @@ final class AppViewModel: ObservableObject {
         let resolvedPetID = petID ?? pets.first?.id
         return resolvedPetID == selectedPetID
     }
+
+    private func recordPositiveMoment(_ moment: ReviewPositiveMoment) {
+        appReviewState.positiveActionCount += moment.weight
+        if moment.isDelightMoment {
+            appReviewState.delightActionCount += 1
+        }
+        scheduleReviewPromptIfNeeded()
+    }
+
+    private func scheduleReviewPromptIfNeeded() {
+        guard shouldAskForReview else { return }
+
+        let targetActionCount = appReviewState.positiveActionCount
+        let currentVersion = appReviewPrompter.currentAppVersion
+
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(0.9))
+            guard let self else { return }
+            guard self.shouldAskForReview,
+                  self.appReviewState.positiveActionCount == targetActionCount,
+                  self.activeSheet == nil,
+                  !self.isMenuPresented
+            else { return }
+
+            self.appReviewPrompter.requestReviewIfPossible()
+            self.appReviewState.lastPromptedActionCount = self.appReviewState.positiveActionCount
+            self.appReviewState.lastPromptedAppVersion = currentVersion
+        }
+    }
+
+    private var shouldAskForReview: Bool {
+        guard hasCompletedOnboarding else { return false }
+
+        let milestones: [(actionCount: Int, delightCount: Int)] = [
+            (6, 1),
+            (14, 3)
+        ]
+
+        guard let milestone = milestones.first(where: {
+            appReviewState.positiveActionCount >= $0.actionCount &&
+            appReviewState.delightActionCount >= $0.delightCount &&
+            appReviewState.lastPromptedActionCount < $0.actionCount
+        }) else {
+            return false
+        }
+
+        let currentVersion = appReviewPrompter.currentAppVersion
+        if appReviewState.lastPromptedAppVersion == currentVersion,
+           appReviewState.lastPromptedActionCount >= milestone.actionCount {
+            return false
+        }
+
+        return true
+    }
 }
 
 private extension Array where Element == Double {
     var average: Double {
         guard !isEmpty else { return 0 }
         return reduce(0, +) / Double(count)
+    }
+}
+
+private enum ReviewPositiveMoment {
+    case onboardingCompleted
+    case routineSaved
+    case behaviorSaved
+    case weightSaved
+    case memorySaved
+    case vaccineSaved
+    case medicationSaved
+    case symptomSaved
+    case medicalEntrySaved
+    case foodPreferenceSaved
+
+    var weight: Int {
+        switch self {
+        case .onboardingCompleted:
+            return 1
+        case .routineSaved, .behaviorSaved, .weightSaved:
+            return 1
+        case .memorySaved, .vaccineSaved, .medicationSaved, .symptomSaved, .medicalEntrySaved, .foodPreferenceSaved:
+            return 2
+        }
+    }
+
+    var isDelightMoment: Bool {
+        switch self {
+        case .memorySaved, .vaccineSaved, .medicationSaved, .symptomSaved, .medicalEntrySaved, .foodPreferenceSaved:
+            return true
+        case .onboardingCompleted, .routineSaved, .behaviorSaved, .weightSaved:
+            return false
+        }
     }
 }

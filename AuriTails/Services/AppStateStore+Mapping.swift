@@ -217,7 +217,8 @@ extension AppStateStore {
             careCircleMembers: careCircleMembers,
             careActivityEvents: careActivityEvents,
             onboardingFocus: OnboardingFocus(rawValue: metadata.string("onboardingFocus")) ?? .dashboard,
-            hasCompletedOnboarding: metadata.bool("hasCompletedOnboarding")
+            hasCompletedOnboarding: metadata.bool("hasCompletedOnboarding"),
+            appReviewState: AppReviewState()
         )
     }
 

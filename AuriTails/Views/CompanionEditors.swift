@@ -6,9 +6,11 @@ struct RoutineEditorView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var draft: RoutineItem
     @State private var showsDeleteAlert = false
+    private let isNewRoutine: Bool
 
     init(viewModel: AppViewModel, routineID: UUID?) {
         self.viewModel = viewModel
+        self.isNewRoutine = routineID == nil
         _draft = State(initialValue: viewModel.routine(for: routineID) ?? RoutineItem(
             title: "",
             subtitle: "",
@@ -98,6 +100,57 @@ struct RoutineEditorView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("This removes the ritual from the weekly planner.")
+        }
+        .task {
+            applyStarterIfNeeded(for: draft.category)
+        }
+        .onChange(of: draft.category) { _, newCategory in
+            applyStarterIfNeeded(for: newCategory)
+        }
+    }
+
+    private func applyStarterIfNeeded(for category: RoutineCategory) {
+        guard isNewRoutine else { return }
+        let starter = routineStarter(for: category)
+        let titleIsEmpty = draft.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let subtitleIsEmpty = draft.subtitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let isUsingDefaultWalkShell =
+            draft.title.isEmpty &&
+            draft.subtitle.isEmpty &&
+            draft.systemImage == "sunrise.fill" &&
+            draft.category == .walk
+
+        guard titleIsEmpty || subtitleIsEmpty || isUsingDefaultWalkShell else { return }
+
+        if titleIsEmpty || isUsingDefaultWalkShell {
+            draft.title = starter.title
+        }
+        if subtitleIsEmpty || isUsingDefaultWalkShell {
+            draft.subtitle = starter.subtitle
+        }
+        if draft.systemImage == "sunrise.fill" || isUsingDefaultWalkShell {
+            draft.systemImage = starter.systemImage
+        }
+        if isUsingDefaultWalkShell || category == .grooming {
+            draft.durationMinutes = starter.durationMinutes
+            draft.tone = starter.tone
+        }
+    }
+
+    private func routineStarter(for category: RoutineCategory) -> (title: String, subtitle: String, systemImage: String, durationMinutes: Int, tone: PaletteTone) {
+        switch category {
+        case .walk:
+            return ("Morning walk", "A calm leash-led start to the day.", "sunrise.fill", 30, .apricot)
+        case .meal:
+            return ("Meal routine", "Food, water, and any easy supplements in one calm reset.", "carrot.fill", 20, .lagoon)
+        case .training:
+            return ("Training block", "A short skill session with one clear focus and reward.", "brain.head.profile", 25, .twilight)
+        case .care:
+            return ("Care check-in", "A simple health, comfort, or recovery moment.", "heart.text.square.fill", 20, .meadow)
+        case .grooming:
+            return ("Bath + brush", "Coat care, paw check, and a clean reset day.", "comb.fill", 35, .meadow)
+        case .play:
+            return ("Play session", "A high-energy release followed by a calmer wind-down.", "tennisball.fill", 30, .apricot)
         }
     }
 }
@@ -623,10 +676,11 @@ private struct WeightValueEditor: View {
                     .font(.system(size: 12, weight: .bold, design: .rounded))
                     .foregroundStyle(.white.opacity(0.72))
 
-                TextField("", text: $valueText)
+                TextField("12.5", text: $valueText)
                     .keyboardType(.decimalPad)
                     .font(.system(size: 15, weight: .medium, design: .rounded))
                     .foregroundStyle(.white)
+                    .tint(.white)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 14)
                     .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
@@ -941,7 +995,7 @@ private struct EditorShell<Content: View>: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                AppBackground()
+                FormBackground()
                     .ignoresSafeArea()
 
                 ScrollView(showsIndicators: false) {
@@ -959,13 +1013,13 @@ private struct EditorShell<Content: View>: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Close", action: onClose)
-                        .foregroundStyle(colorScheme.topBarButtonColor)
+                        .foregroundStyle(.white)
                 }
 
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(saveLabel, action: onSave)
                         .font(.system(size: 15, weight: .bold, design: .rounded))
-                        .foregroundStyle(isSaveDisabled ? colorScheme.topBarButtonColor.opacity(0.45) : colorScheme.topBarButtonColor)
+                        .foregroundStyle(isSaveDisabled ? Color.white.opacity(0.45) : .white)
                         .disabled(isSaveDisabled)
                 }
             }
@@ -977,8 +1031,21 @@ private struct EditorShell<Content: View>: View {
 
 private struct EditorTextField: View {
     let title: LocalizedStringKey
+    let placeholder: LocalizedStringKey
     @Binding var text: String
     let icon: String
+
+    init(
+        title: LocalizedStringKey,
+        placeholder: LocalizedStringKey? = nil,
+        text: Binding<String>,
+        icon: String
+    ) {
+        self.title = title
+        self.placeholder = placeholder ?? title
+        self._text = text
+        self.icon = icon
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -986,10 +1053,11 @@ private struct EditorTextField: View {
                 .font(.system(size: 12, weight: .bold, design: .rounded))
                 .foregroundStyle(.white.opacity(0.72))
 
-            TextField("", text: $text)
+            TextField(placeholder, text: $text)
                 .textInputAutocapitalization(.words)
                 .font(.system(size: 15, weight: .medium, design: .rounded))
                 .foregroundStyle(.white)
+                .tint(.white)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 14)
                 .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
@@ -999,9 +1067,24 @@ private struct EditorTextField: View {
 
 private struct EditorTextEditor: View {
     let title: LocalizedStringKey
+    let placeholder: LocalizedStringKey
     @Binding var text: String
     let icon: String
     let height: CGFloat
+
+    init(
+        title: LocalizedStringKey,
+        placeholder: LocalizedStringKey? = nil,
+        text: Binding<String>,
+        icon: String,
+        height: CGFloat
+    ) {
+        self.title = title
+        self.placeholder = placeholder ?? title
+        self._text = text
+        self.icon = icon
+        self.height = height
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -1009,13 +1092,25 @@ private struct EditorTextEditor: View {
                 .font(.system(size: 12, weight: .bold, design: .rounded))
                 .foregroundStyle(.white.opacity(0.72))
 
-            TextEditor(text: $text)
-                .scrollContentBackground(.hidden)
-                .font(.system(size: 15, weight: .medium, design: .rounded))
-                .foregroundStyle(.white)
-                .frame(height: height)
-                .padding(12)
-                .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+            ZStack(alignment: .topLeading) {
+                if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    Text(placeholder)
+                        .font(.system(size: 15, weight: .medium, design: .rounded))
+                        .foregroundStyle(.white.opacity(0.38))
+                        .padding(.horizontal, 17)
+                        .padding(.vertical, 20)
+                        .allowsHitTesting(false)
+                }
+
+                TextEditor(text: $text)
+                    .scrollContentBackground(.hidden)
+                    .font(.system(size: 15, weight: .medium, design: .rounded))
+                    .foregroundStyle(.white)
+                    .frame(height: height)
+                    .padding(12)
+                    .background(Color.clear)
+            }
+            .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
         }
     }
 }
@@ -1237,6 +1332,7 @@ private enum EditorAssetOptions {
         "carrot.fill",
         "brain.head.profile",
         "comb.fill",
+        "shower.fill",
         "figure.run.circle.fill",
         "cup.and.saucer.fill",
         "mountain.2.fill",

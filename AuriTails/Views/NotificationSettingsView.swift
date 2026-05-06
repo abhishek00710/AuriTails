@@ -29,7 +29,7 @@ struct NotificationSettingsView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") { dismiss() }
-                        .foregroundStyle(colorScheme.topBarButtonColor)
+                        .foregroundStyle(.white)
                 }
             }
         }

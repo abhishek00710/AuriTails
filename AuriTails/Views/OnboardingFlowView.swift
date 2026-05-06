@@ -7,9 +7,6 @@ struct OnboardingFlowView: View {
     @State private var ownerDraft: OwnerProfile
     @State private var petDraft: PetProfile
     @State private var focus: OnboardingFocus
-    #if DEBUG
-    @State private var showsStartMode = true
-    #endif
 
     init(viewModel: AppViewModel) {
         self.viewModel = viewModel
@@ -20,7 +17,7 @@ struct OnboardingFlowView: View {
 
     var body: some View {
         ZStack {
-            AppBackground()
+            FormBackground()
                 .ignoresSafeArea()
 
             VStack(spacing: 24) {
@@ -41,14 +38,7 @@ struct OnboardingFlowView: View {
     private var progressHeader: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
-                Text(
-                    {
-                        #if DEBUG
-                        if showsStartMode { return "Choose your start" }
-                        #endif
-                        return "Welcome to AuriTails"
-                    }()
-                )
+                Text("Welcome to AuriTails")
                     .font(.system(size: 28, weight: .semibold, design: .serif))
                     .foregroundStyle(.white)
 
@@ -74,24 +64,6 @@ struct OnboardingFlowView: View {
 
     @ViewBuilder
     private var currentStep: some View {
-        #if DEBUG
-        if showsStartMode {
-            startModeStep
-                .transition(.opacity.combined(with: .move(edge: .trailing)))
-        } else {
-            switch step {
-            case 0:
-                welcomeStep
-                    .transition(.opacity.combined(with: .move(edge: .trailing)))
-            case 1:
-                detailStep
-                    .transition(.opacity.combined(with: .move(edge: .trailing)))
-            default:
-                focusStep
-                    .transition(.opacity.combined(with: .move(edge: .trailing)))
-            }
-        }
-        #else
         switch step {
         case 0:
             welcomeStep
@@ -103,66 +75,7 @@ struct OnboardingFlowView: View {
             focusStep
                 .transition(.opacity.combined(with: .move(edge: .trailing)))
         }
-        #endif
     }
-
-    #if DEBUG
-    private var startModeStep: some View {
-        VStack(spacing: 22) {
-            GlassCard(tone: .lagoon) {
-                SectionHeader(
-                    eyebrow: "Debug tools",
-                    title: "Choose a clean setup or a demo world",
-                    detail: "Release builds always start clean. Demo mode exists only in Debug so you can preview the app with seeded content while building."
-                )
-
-                VStack(spacing: 14) {
-                    Button {
-                        viewModel.beginCleanSetup()
-                        ownerDraft = viewModel.owner
-                        petDraft = viewModel.pet
-                        focus = viewModel.onboardingFocus
-                        withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) {
-                            showsStartMode = false
-                            step = 0
-                        }
-                    } label: {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("Start Fresh")
-                                .font(.system(size: 18, weight: .semibold, design: .rounded))
-                            Text("Production-style empty data, polished onboarding, and no sample records.")
-                                .font(.system(size: 13, weight: .medium, design: .rounded))
-                                .foregroundStyle(Color(red: 0.10, green: 0.13, blue: 0.22).opacity(0.78))
-                        }
-                        .foregroundStyle(Color(red: 0.10, green: 0.13, blue: 0.22))
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(18)
-                        .background(Color.white, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-                    }
-                    .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.97))
-
-                    Button {
-                        viewModel.enterDemoMode()
-                    } label: {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("Open Demo Mode")
-                                .font(.system(size: 18, weight: .semibold, design: .rounded))
-                            Text("Loads seeded sample wellness, routines, memories, and Bond Pulse content for testing.")
-                                .font(.system(size: 13, weight: .medium, design: .rounded))
-                                .foregroundStyle(.white.opacity(0.76))
-                        }
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(18)
-                        .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-                    }
-                    .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.97))
-                }
-            }
-            Spacer()
-        }
-    }
-    #endif
 
     private var welcomeStep: some View {
         ScrollView(showsIndicators: false) {
@@ -312,15 +225,7 @@ struct OnboardingFlowView: View {
 
     @ViewBuilder
     private var footer: some View {
-        #if DEBUG
-        if showsStartMode {
-            EmptyView()
-        } else {
-            footerContent
-        }
-        #else
         footerContent
-        #endif
     }
 
     private var footerContent: some View {
@@ -433,19 +338,27 @@ struct OnboardingFlowView: View {
     }
 
     private var progressText: String {
-        #if DEBUG
-        if showsStartMode {
-            return "Debug only"
-        }
-        #endif
         return "Step  \(step + 1) of 3"
     }
 }
 
 private struct OnboardingField: View {
     let title: LocalizedStringKey
+    let placeholder: LocalizedStringKey
     @Binding var text: String
     let icon: String
+
+    init(
+        title: LocalizedStringKey,
+        placeholder: LocalizedStringKey? = nil,
+        text: Binding<String>,
+        icon: String
+    ) {
+        self.title = title
+        self.placeholder = placeholder ?? title
+        self._text = text
+        self.icon = icon
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -453,10 +366,11 @@ private struct OnboardingField: View {
                 .font(.system(size: 12, weight: .bold, design: .rounded))
                 .foregroundStyle(.white.opacity(0.72))
 
-            TextField("", text: $text)
+            TextField(placeholder, text: $text)
                 .textInputAutocapitalization(.words)
                 .font(.system(size: 15, weight: .medium, design: .rounded))
                 .foregroundStyle(.white)
+                .tint(.white)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 14)
                 .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 22, style: .continuous))

@@ -215,7 +215,7 @@ struct AICompanionView: View {
                     Button("Done") {
                         dismiss()
                     }
-                    .foregroundStyle(colorScheme.topBarButtonColor)
+                    .foregroundStyle(.white)
                 }
             }
         }

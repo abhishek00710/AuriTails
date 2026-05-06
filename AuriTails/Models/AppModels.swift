@@ -272,6 +272,7 @@ enum RoutineCategory: String, CaseIterable, Identifiable, Codable {
     case meal
     case training
     case care
+    case grooming
     case play
 
     var id: String { rawValue }
@@ -286,6 +287,7 @@ enum RoutineCategory: String, CaseIterable, Identifiable, Codable {
         case .meal: "fork.knife"
         case .training: "brain.head.profile"
         case .care: "heart.text.square.fill"
+        case .grooming: "comb.fill"
         case .play: "tennisball.fill"
         }
     }
@@ -965,6 +967,25 @@ struct CompanionInsight: Identifiable {
     let systemImage: String
 }
 
+struct AppReviewState: Codable {
+    var positiveActionCount: Int
+    var delightActionCount: Int
+    var lastPromptedActionCount: Int
+    var lastPromptedAppVersion: String?
+
+    init(
+        positiveActionCount: Int = 0,
+        delightActionCount: Int = 0,
+        lastPromptedActionCount: Int = 0,
+        lastPromptedAppVersion: String? = nil
+    ) {
+        self.positiveActionCount = positiveActionCount
+        self.delightActionCount = delightActionCount
+        self.lastPromptedActionCount = lastPromptedActionCount
+        self.lastPromptedAppVersion = lastPromptedAppVersion
+    }
+}
+
 struct PersistedAppState: Codable {
     var selectedTab: RootTab
     var selectedDay: Weekday
@@ -986,6 +1007,7 @@ struct PersistedAppState: Codable {
     var careActivityEvents: [CareActivityEvent]
     var onboardingFocus: OnboardingFocus
     var hasCompletedOnboarding: Bool
+    var appReviewState: AppReviewState
 
     private enum CodingKeys: String, CodingKey {
         case selectedTab
@@ -1008,6 +1030,7 @@ struct PersistedAppState: Codable {
         case careActivityEvents
         case onboardingFocus
         case hasCompletedOnboarding
+        case appReviewState
         case pet
         case petPhotoData
         case bondPhotoData
@@ -1033,7 +1056,8 @@ struct PersistedAppState: Codable {
         careCircleMembers: [CareCircleMember],
         careActivityEvents: [CareActivityEvent],
         onboardingFocus: OnboardingFocus,
-        hasCompletedOnboarding: Bool
+        hasCompletedOnboarding: Bool,
+        appReviewState: AppReviewState
     ) {
         self.selectedTab = selectedTab
         self.selectedDay = selectedDay
@@ -1055,6 +1079,7 @@ struct PersistedAppState: Codable {
         self.careActivityEvents = careActivityEvents
         self.onboardingFocus = onboardingFocus
         self.hasCompletedOnboarding = hasCompletedOnboarding
+        self.appReviewState = appReviewState
     }
 
     init(seed: AppSeed) {
@@ -1078,6 +1103,7 @@ struct PersistedAppState: Codable {
         careActivityEvents = seed.careActivityEvents
         onboardingFocus = .dashboard
         hasCompletedOnboarding = false
+        appReviewState = AppReviewState()
     }
 
     init(from decoder: any Decoder) throws {
@@ -1123,6 +1149,7 @@ struct PersistedAppState: Codable {
         careActivityEvents = try container.decodeIfPresent([CareActivityEvent].self, forKey: .careActivityEvents) ?? []
         onboardingFocus = try container.decodeIfPresent(OnboardingFocus.self, forKey: .onboardingFocus) ?? .dashboard
         hasCompletedOnboarding = try container.decodeIfPresent(Bool.self, forKey: .hasCompletedOnboarding) ?? false
+        appReviewState = try container.decodeIfPresent(AppReviewState.self, forKey: .appReviewState) ?? AppReviewState()
         self = normalizedForMultiPet()
     }
 
@@ -1148,6 +1175,7 @@ struct PersistedAppState: Codable {
         try container.encode(careActivityEvents, forKey: .careActivityEvents)
         try container.encode(onboardingFocus, forKey: .onboardingFocus)
         try container.encode(hasCompletedOnboarding, forKey: .hasCompletedOnboarding)
+        try container.encode(appReviewState, forKey: .appReviewState)
     }
 
     var primaryPetID: UUID {

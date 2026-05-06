@@ -36,7 +36,7 @@ struct ProfileStudioView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                AppBackground()
+                FormBackground()
                     .ignoresSafeArea()
 
                 ScrollView(showsIndicators: false) {
@@ -62,7 +62,7 @@ struct ProfileStudioView: View {
                     Button("Close") {
                         dismiss()
                     }
-                    .foregroundStyle(colorScheme.topBarButtonColor)
+                    .foregroundStyle(.white)
                 }
 
                 ToolbarItem(placement: .topBarTrailing) {
@@ -70,7 +70,7 @@ struct ProfileStudioView: View {
                         saveChanges()
                     }
                     .font(.system(size: 16, weight: .bold, design: .rounded))
-                    .foregroundStyle(colorScheme.topBarButtonColor)
+                    .foregroundStyle(.white)
                 }
             }
         }
@@ -541,7 +541,7 @@ struct CareCircleView: View {
                     Button("Done") {
                         dismiss()
                     }
-                    .foregroundStyle(colorScheme.topBarButtonColor)
+                    .foregroundStyle(.white)
                 }
             }
         }
@@ -999,8 +999,21 @@ private struct WideBondPhotoCard: View {
 
 private struct ProfileInputField: View {
     let title: LocalizedStringKey
+    let placeholder: LocalizedStringKey
     @Binding var text: String
     let icon: String
+
+    init(
+        title: LocalizedStringKey,
+        placeholder: LocalizedStringKey? = nil,
+        text: Binding<String>,
+        icon: String
+    ) {
+        self.title = title
+        self.placeholder = placeholder ?? title
+        self._text = text
+        self.icon = icon
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -1008,10 +1021,11 @@ private struct ProfileInputField: View {
                 .font(.system(size: 12, weight: .bold, design: .rounded))
                 .foregroundStyle(.white.opacity(0.72))
 
-            TextField("", text: $text)
+            TextField(placeholder, text: $text)
                 .textInputAutocapitalization(.words)
                 .font(.system(size: 15, weight: .medium, design: .rounded))
                 .foregroundStyle(.white)
+                .tint(.white)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 14)
                 .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
@@ -1021,9 +1035,24 @@ private struct ProfileInputField: View {
 
 private struct ProfileInputEditor: View {
     let title: LocalizedStringKey
+    let placeholder: LocalizedStringKey
     @Binding var text: String
     let icon: String
     let height: CGFloat
+
+    init(
+        title: LocalizedStringKey,
+        placeholder: LocalizedStringKey? = nil,
+        text: Binding<String>,
+        icon: String,
+        height: CGFloat
+    ) {
+        self.title = title
+        self.placeholder = placeholder ?? title
+        self._text = text
+        self.icon = icon
+        self.height = height
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -1031,13 +1060,25 @@ private struct ProfileInputEditor: View {
                 .font(.system(size: 12, weight: .bold, design: .rounded))
                 .foregroundStyle(.white.opacity(0.72))
 
-            TextEditor(text: $text)
-                .scrollContentBackground(.hidden)
-                .font(.system(size: 15, weight: .medium, design: .rounded))
-                .foregroundStyle(.white)
-                .frame(height: height)
-                .padding(12)
-                .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+            ZStack(alignment: .topLeading) {
+                if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    Text(placeholder)
+                        .font(.system(size: 15, weight: .medium, design: .rounded))
+                        .foregroundStyle(.white.opacity(0.38))
+                        .padding(.horizontal, 17)
+                        .padding(.vertical, 20)
+                        .allowsHitTesting(false)
+                }
+
+                TextEditor(text: $text)
+                    .scrollContentBackground(.hidden)
+                    .font(.system(size: 15, weight: .medium, design: .rounded))
+                    .foregroundStyle(.white)
+                    .frame(height: height)
+                    .padding(12)
+                    .background(Color.clear)
+            }
+            .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
         }
     }
 }

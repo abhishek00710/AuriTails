@@ -267,6 +267,40 @@ struct AppBackground: View {
     }
 }
 
+struct FormBackground: View {
+    var body: some View {
+        ZStack {
+            LinearGradient(
+                colors: [
+                    Color(red: 0.04, green: 0.16, blue: 0.22),
+                    Color(red: 0.08, green: 0.27, blue: 0.34),
+                    Color(red: 0.12, green: 0.20, blue: 0.31),
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+
+            Circle()
+                .fill(Color(red: 1.00, green: 0.71, blue: 0.48).opacity(0.22))
+                .frame(width: 220)
+                .blur(radius: 24)
+                .offset(x: -120, y: -260)
+
+            Circle()
+                .fill(Color(red: 0.43, green: 0.84, blue: 0.88).opacity(0.16))
+                .frame(width: 220)
+                .blur(radius: 26)
+                .offset(x: 150, y: -70)
+
+            Circle()
+                .fill(Color(red: 0.58, green: 0.91, blue: 0.76).opacity(0.12))
+                .frame(width: 260)
+                .blur(radius: 34)
+                .offset(x: 80, y: 280)
+        }
+    }
+}
+
 struct TabBarSeparationLayer: View {
     var body: some View {
         ZStack {
@@ -804,24 +838,6 @@ struct SlideMenuPanel: View {
                     viewModel.openAI()
                 }
             }
-
-            #if DEBUG
-            VStack(alignment: .leading, spacing: 12) {
-                Text("DEVELOPMENT")
-                    .font(.system(size: 11, weight: .bold, design: .rounded))
-                    .tracking(1.5)
-                    .foregroundStyle(.white.opacity(0.46))
-
-                SocialMenuActionRow(
-                    icon: "arrow.triangle.2.circlepath.circle.fill",
-                    iconTint: .meadow,
-                    title: "Switch app mode",
-                    subtitle: "Re-open onboarding so you can jump back into demo mode or start fresh."
-                ) {
-                    viewModel.reopenOnboardingForDevelopment()
-                }
-            }
-            #endif
 
             Text("Designed to feel more like a companion hub than a settings drawer.")
                 .font(.system(size: 12, weight: .medium, design: .rounded))

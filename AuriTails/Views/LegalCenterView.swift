@@ -56,7 +56,7 @@ struct LegalCenterView: View {
                     Button(L10n.tr("Done", default: "Done")) {
                         dismiss()
                     }
-                    .foregroundStyle(colorScheme.topBarButtonColor)
+                    .foregroundStyle(.white)
                 }
             }
         }

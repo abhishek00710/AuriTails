@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>FIREBASE_EMAIL_LINK_URL</key>
-	<string>https://auritails.firebaseapp.com/auth</string>
+	<string>https://auritails.firebaseapp.com/</string>
 	<key>UILaunchScreen</key>
 	<false/>
 </dict>
