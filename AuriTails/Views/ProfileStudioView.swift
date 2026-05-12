@@ -627,6 +627,14 @@ struct CareCircleView: View {
                 .foregroundStyle(.white.opacity(0.78))
                 .fixedSize(horizontal: false, vertical: true)
 
+            Label(viewModel.cloudDataSyncStatusMessage, systemImage: "icloud.fill")
+                .font(.system(size: 13, weight: .bold, design: .rounded))
+                .foregroundStyle(.white.opacity(0.84))
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 12)
+                .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+
             HStack(spacing: 12) {
                 CareCircleMetricPill(
                     title: "Cloud quota",

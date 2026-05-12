@@ -4,6 +4,7 @@ import UIKit
 
 struct RootView: View {
     @ObservedObject var viewModel: AppViewModel
+    @EnvironmentObject private var authController: AuthSessionController
     @State private var isShowingSplash = true
     @State private var isPetSwitcherPresented = false
     @Environment(\.colorScheme) private var colorScheme
@@ -174,6 +175,12 @@ struct RootView: View {
         }
         .fullScreenCover(isPresented: onboardingBinding) {
             OnboardingFlowView(viewModel: viewModel)
+        }
+        .task {
+            viewModel.handleAuthPhase(authController.phase)
+        }
+        .onChange(of: authController.phase) { _, phase in
+            viewModel.handleAuthPhase(phase)
         }
     }
 

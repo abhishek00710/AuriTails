@@ -54,16 +54,23 @@ final class AppViewModel: ObservableObject {
         "Find nearby pet hospitals and emergency care around you.",
         default: "Find nearby pet hospitals and emergency care around you."
     )
+    @Published private(set) var cloudDataSyncStatusMessage = L10n.tr(
+        "Sign in to keep your pet data restorable after reinstall.",
+        default: "Sign in to keep your pet data restorable after reinstall."
+    )
 
     private let store: AppStateStore
     private let insightEngine: PetInsightEngine
     private let notificationScheduler: NotificationScheduler
     private let nearbyPetCareService: NearbyPetCareService
     private let careCircleRepository: FirebaseCareCircleRepository
+    private let appStateRepository: FirebaseAppStateRepository
     private let appReviewPrompter: AppReviewPrompter
     private let vetVisitPackBuilder = VetVisitPackBuilder()
     private let vaccineDocumentImportService = VaccineDocumentImportService()
     private var isApplyingState = false
+    private var isApplyingCloudState = false
+    private var cloudSyncTask: Task<Void, Never>?
     private var cancellables = Set<AnyCancellable>()
 
     init(
@@ -73,6 +80,7 @@ final class AppViewModel: ObservableObject {
         notificationScheduler: NotificationScheduler? = nil,
         nearbyPetCareService: NearbyPetCareService? = nil,
         careCircleRepository: FirebaseCareCircleRepository? = nil,
+        appStateRepository: FirebaseAppStateRepository? = nil,
         appReviewPrompter: AppReviewPrompter? = nil,
         prefersPersistedState: Bool = true
     ) {
@@ -80,6 +88,7 @@ final class AppViewModel: ObservableObject {
         let notificationScheduler = notificationScheduler ?? NotificationScheduler()
         let nearbyPetCareService = nearbyPetCareService ?? NearbyPetCareService()
         let careCircleRepository = careCircleRepository ?? FirebaseCareCircleRepository()
+        let appStateRepository = appStateRepository ?? FirebaseAppStateRepository()
         let initialState = (prefersPersistedState ? (store.load() ?? PersistedAppState(seed: seed)) : PersistedAppState(seed: seed)).normalizedForMultiPet()
 
         selectedTab = initialState.selectedTab
@@ -108,6 +117,7 @@ final class AppViewModel: ObservableObject {
         self.notificationScheduler = notificationScheduler
         self.nearbyPetCareService = nearbyPetCareService
         self.careCircleRepository = careCircleRepository
+        self.appStateRepository = appStateRepository
         self.appReviewPrompter = appReviewPrompter ?? AppReviewPrompter()
 
         nearbyPetCareService.$places
@@ -129,6 +139,10 @@ final class AppViewModel: ObservableObject {
 
         Task {
             await refreshCareCircleFromCloudIfNeeded()
+        }
+
+        Task {
+            await restoreOrUploadCloudStateIfNeeded()
         }
 
         nearbyPetCareService.refresh()
@@ -436,8 +450,39 @@ final class AppViewModel: ObservableObject {
         closeMenu()
         Task {
             await refreshCareCircleFromCloudIfNeeded()
+            await restoreOrUploadCloudStateIfNeeded()
         }
         activeSheet = .careCircle
+    }
+
+    func handleAuthPhase(_ phase: AuthSessionController.Phase) {
+        switch phase {
+        case let .signedIn(user):
+            guard user.id != nil else {
+                cloudDataSyncStatusMessage = L10n.tr(
+                    "Simulated sign-in keeps cloud restore disabled. Use real Firebase sign-in to sync app data.",
+                    default: "Simulated sign-in keeps cloud restore disabled. Use real Firebase sign-in to sync app data."
+                )
+                return
+            }
+
+            Task {
+                await restoreOrUploadCloudStateIfNeeded()
+                await refreshCareCircleFromCloudIfNeeded()
+            }
+        case .signedOut:
+            cloudDataSyncStatusMessage = L10n.tr(
+                "Sign in to keep your pet data restorable after reinstall.",
+                default: "Sign in to keep your pet data restorable after reinstall."
+            )
+        case .notConfigured:
+            cloudDataSyncStatusMessage = L10n.tr(
+                "Add Firebase config before cloud data restore can run.",
+                default: "Add Firebase config before cloud data restore can run."
+            )
+        case .sendingLink, .linkSent, .error:
+            break
+        }
     }
 
     func openNotificationSettings() {
@@ -1261,6 +1306,7 @@ final class AppViewModel: ObservableObject {
         Task {
             await notificationScheduler.refreshNotifications(for: state)
         }
+        scheduleCloudStateUpload(state)
     }
 
     private func persistIfNeeded() {
@@ -1352,6 +1398,116 @@ final class AppViewModel: ObservableObject {
         persist()
     }
 
+    func restoreOrUploadCloudStateIfNeeded() async {
+        guard appStateRepository.isReadyForLiveSync else { return }
+
+        cloudDataSyncStatusMessage = L10n.tr(
+            "Checking your Firebase backup...",
+            default: "Checking your Firebase backup..."
+        )
+
+        do {
+            if let cloudSnapshot = try await appStateRepository.fetchSnapshot() {
+                if shouldRestoreFromCloud(cloudSnapshot.state) {
+                    isApplyingCloudState = true
+                    apply(state: cloudSnapshot.state)
+                    isApplyingCloudState = false
+                    cloudDataSyncStatusMessage = L10n.format(
+                        "Restored your AuriTails data from Firebase. Last cloud save: %@.",
+                        default: "Restored your AuriTails data from Firebase. Last cloud save: %@.",
+                        Self.cloudDateFormatter.string(from: cloudSnapshot.updatedAt)
+                    )
+                    FirebaseTelemetry.logEvent("app_state_cloud_restored", parameters: [
+                        "pet_count": cloudSnapshot.state.pets.count,
+                        "routine_count": cloudSnapshot.state.routines.count,
+                        "memory_count": cloudSnapshot.state.memories.count
+                    ])
+                } else {
+                    cloudDataSyncStatusMessage = L10n.tr(
+                        "Cloud backup is connected. Local changes will sync automatically.",
+                        default: "Cloud backup is connected. Local changes will sync automatically."
+                    )
+                }
+            } else {
+                try await appStateRepository.save(snapshotState())
+                cloudDataSyncStatusMessage = L10n.tr(
+                    "Created your Firebase backup for this account.",
+                    default: "Created your Firebase backup for this account."
+                )
+            }
+        } catch {
+            appStateRepository.record(error: error, context: "app_state_cloud_restore_or_upload")
+            cloudDataSyncStatusMessage = L10n.tr(
+                "Cloud backup could not sync right now. Your local data is still safe on this device.",
+                default: "Cloud backup could not sync right now. Your local data is still safe on this device."
+            )
+            isApplyingCloudState = false
+        }
+    }
+
+    private func scheduleCloudStateUpload(_ state: PersistedAppState) {
+        guard !isApplyingCloudState, appStateRepository.isReadyForLiveSync else { return }
+
+        cloudSyncTask?.cancel()
+        cloudSyncTask = Task { [appStateRepository] in
+            try? await Task.sleep(for: .seconds(1.25))
+            guard !Task.isCancelled else { return }
+
+            do {
+                try await appStateRepository.save(state)
+                await MainActor.run {
+                    self.cloudDataSyncStatusMessage = L10n.tr(
+                        "Cloud backup updated. Photos and certificates remain local until media sync is enabled.",
+                        default: "Cloud backup updated. Photos and certificates remain local until media sync is enabled."
+                    )
+                }
+            } catch {
+                appStateRepository.record(error: error, context: "app_state_cloud_save")
+                await MainActor.run {
+                    self.cloudDataSyncStatusMessage = L10n.tr(
+                        "Cloud backup could not update right now. AuriTails will keep your local data on this device.",
+                        default: "Cloud backup could not update right now. AuriTails will keep your local data on this device."
+                    )
+                }
+            }
+        }
+    }
+
+    private func shouldRestoreFromCloud(_ cloudState: PersistedAppState) -> Bool {
+        let localRecordCount = restorableRecordCount(in: snapshotState())
+        let cloudRecordCount = restorableRecordCount(in: cloudState)
+
+        if !hasCompletedOnboarding && cloudRecordCount > 0 {
+            return true
+        }
+
+        return localRecordCount == 0 && cloudRecordCount > 0
+    }
+
+    private func restorableRecordCount(in state: PersistedAppState) -> Int {
+        let namedPetCount = state.pets.filter {
+            !$0.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+            !$0.species.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+            !$0.breed.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        }.count
+
+        return namedPetCount +
+            state.behaviorSnapshots.count +
+            state.weightEntries.count +
+            state.vaccinations.count +
+            state.medications.count +
+            state.symptoms.count +
+            state.medicalHistory.count +
+            state.foodPreferences.count +
+            state.routines.count +
+            state.memories.count
+    }
+
+    private static let cloudDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM d, h:mm a"
+        return formatter
+    }()
 
     func refreshCareCircleFromCloudIfNeeded() async {
     guard careCircleRepository.isReadyForLiveSync else { return }

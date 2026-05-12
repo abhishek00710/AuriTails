@@ -66,7 +66,7 @@ final class AuthSessionController: ObservableObject {
         case .notConfigured:
             return "Firebase not connected"
         case .signedOut:
-            return "Sign in for shared Care Circle"
+            return "Sign in for cloud restore"
         case .sendingLink:
             return "Sending email link"
         case let .linkSent(email):
@@ -83,13 +83,13 @@ final class AuthSessionController: ObservableObject {
         case .notConfigured:
             return "Add GoogleService-Info.plist and a FIREBASE_EMAIL_LINK_URL before turning on live family sharing. Until then, AuriTails stays local-first."
         case .signedOut:
-            return "Firebase auth is ready when you want real Care Circle members, Analytics, and Crashlytics-backed cloud features."
+            return "Firebase auth is ready to back up your pet profiles, routines, wellness records, memories, and Care Circle data under your account."
         case .sendingLink:
             return "AuriTails is preparing a Firebase email link for your Care Circle account."
         case .linkSent:
             return "Open the email on this device and come back through the link so we can complete sign-in automatically."
         case .signedIn:
-            return "This device is connected to Firebase for real Care Circle membership, analytics, and crash reporting."
+            return "This device is connected to Firebase for account restore, Care Circle membership, analytics, and crash reporting."
         case let .error(message):
             return message
         }
