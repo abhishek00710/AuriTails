@@ -716,6 +716,7 @@ private struct VaccinePassportCard<Content: View>: View {
                 .strokeBorder(.white.opacity(0.16), lineWidth: 1)
         }
         .shadow(color: Color.black.opacity(0.10), radius: 20, x: 0, y: 12)
+        .imageViewer(imageData: record.certificateData, cornerRadius: 30)
     }
 }
 

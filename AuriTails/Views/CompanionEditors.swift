@@ -309,6 +309,7 @@ private struct AttachmentImageEditor: View {
                 RoundedRectangle(cornerRadius: 24, style: .continuous)
                     .strokeBorder(.white.opacity(0.12), lineWidth: 1)
             }
+            .imageViewer(imageData: imageData, cornerRadius: 24)
 
             if imageData != nil {
                 Button {

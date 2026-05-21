@@ -35,6 +35,232 @@ struct CachedDataImage<Placeholder: View>: View {
     }
 }
 
+struct ImageViewerModifier: ViewModifier {
+    let imageData: Data?
+    let cornerRadius: CGFloat
+    @State private var isPresented = false
+
+    func body(content: Content) -> some View {
+        content
+            .contentShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+            .onTapGesture {
+                guard imageData != nil else { return }
+                isPresented = true
+            }
+            .fullScreenCover(isPresented: $isPresented) {
+                FullScreenImageViewer(imageData: imageData) {
+                    isPresented = false
+                }
+            }
+    }
+}
+
+extension View {
+    func imageViewer(imageData: Data?, cornerRadius: CGFloat = 0) -> some View {
+        modifier(ImageViewerModifier(imageData: imageData, cornerRadius: cornerRadius))
+    }
+}
+
+private struct FullScreenImageViewer: View {
+    let imageData: Data?
+    let onClose: () -> Void
+
+    @State private var scale: CGFloat = 1
+    @State private var lastScale: CGFloat = 1
+    @State private var offset: CGSize = .zero
+    @State private var lastOffset: CGSize = .zero
+    @State private var dragToCloseOffset: CGFloat = 0
+
+    var body: some View {
+        ZStack {
+            Color.black
+                .opacity(backgroundOpacity)
+                .ignoresSafeArea()
+
+            GeometryReader { proxy in
+                ZStack {
+                    if let imageData, let image = DecodedImageCache.image(from: imageData) {
+                        Image(uiImage: image)
+                            .resizable()
+                            .scaledToFit()
+                            .scaleEffect(scale)
+                            .offset(x: offset.width, y: offset.height + dragToCloseOffset)
+                            .padding(.horizontal, 10)
+                            .frame(width: proxy.size.width, height: proxy.size.height, alignment: .center)
+                            .contentShape(Rectangle())
+                            .onTapGesture(count: 2) {
+                                toggleZoom()
+                            }
+                            .gesture(imageDragGesture)
+                            .simultaneousGesture(zoomGesture)
+                            .animation(.spring(response: 0.28, dampingFraction: 0.86), value: scale)
+                            .animation(.spring(response: 0.28, dampingFraction: 0.86), value: offset)
+                            .animation(.spring(response: 0.28, dampingFraction: 0.86), value: dragToCloseOffset)
+                    }
+                }
+                .frame(width: proxy.size.width, height: proxy.size.height, alignment: .center)
+            }
+
+            VStack {
+                HStack {
+                    Spacer()
+
+                    Button(action: onClose) {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundStyle(.white)
+                            .frame(width: 44, height: 44)
+                            .background(.white.opacity(0.14), in: Circle())
+                            .overlay {
+                                Circle()
+                                    .strokeBorder(.white.opacity(0.20), lineWidth: 1)
+                            }
+                    }
+                    .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.92))
+                }
+                .padding(.top, 22)
+                .padding(.trailing, 18)
+
+                Spacer()
+
+                zoomControls
+                    .padding(.bottom, 34)
+            }
+        }
+        .preferredColorScheme(.dark)
+        .statusBarHidden()
+    }
+
+    private var backgroundOpacity: Double {
+        guard dragToCloseOffset > 0 else { return 1 }
+        return max(0.45, 1 - Double(dragToCloseOffset / 420))
+    }
+
+    private var zoomGesture: some Gesture {
+        MagnificationGesture()
+            .onChanged { value in
+                scale = min(max(lastScale * value, 1), 5)
+            }
+            .onEnded { _ in
+                if scale < 1.05 {
+                    resetZoom()
+                } else {
+                    lastScale = scale
+                    offset = clampedOffset(offset)
+                    lastOffset = offset
+                }
+            }
+    }
+
+    private var zoomControls: some View {
+        HStack(spacing: 14) {
+            Button {
+                zoomOut()
+            } label: {
+                Image(systemName: "minus.magnifyingglass")
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 48, height: 48)
+                    .background(.white.opacity(0.14), in: Circle())
+            }
+            .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.92))
+
+            Text("\(Int(scale.rounded()))x")
+                .font(.system(size: 13, weight: .bold, design: .rounded))
+                .foregroundStyle(.white.opacity(0.86))
+                .frame(width: 44, height: 36)
+                .background(.white.opacity(0.10), in: Capsule())
+
+            Button {
+                zoomIn()
+            } label: {
+                Image(systemName: "plus.magnifyingglass")
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 48, height: 48)
+                    .background(.white.opacity(0.14), in: Circle())
+            }
+            .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.92))
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(.black.opacity(0.34), in: Capsule())
+        .overlay {
+            Capsule()
+                .strokeBorder(.white.opacity(0.14), lineWidth: 1)
+        }
+    }
+
+    private var imageDragGesture: some Gesture {
+        DragGesture(minimumDistance: 6)
+            .onChanged { value in
+                if scale > 1.02 {
+                    offset = clampedOffset(
+                        CGSize(
+                            width: lastOffset.width + value.translation.width,
+                            height: lastOffset.height + value.translation.height
+                        )
+                    )
+                } else if value.translation.height > 0 {
+                    dragToCloseOffset = value.translation.height
+                }
+            }
+            .onEnded { value in
+                if scale <= 1.02 && (value.translation.height > 120 || value.predictedEndTranslation.height > 220) {
+                    onClose()
+                    return
+                }
+
+                dragToCloseOffset = 0
+                offset = clampedOffset(offset)
+                lastOffset = offset
+            }
+    }
+
+    private func resetZoom() {
+        scale = 1
+        lastScale = 1
+        offset = .zero
+        lastOffset = .zero
+    }
+
+    private func toggleZoom() {
+        if scale > 1.02 {
+            resetZoom()
+        } else {
+            scale = 2.4
+            lastScale = scale
+        }
+    }
+
+    private func zoomIn() {
+        scale = min(scale + 0.5, 5)
+        lastScale = scale
+        offset = clampedOffset(offset)
+        lastOffset = offset
+    }
+
+    private func zoomOut() {
+        scale = max(scale - 0.5, 1)
+        if scale <= 1.05 {
+            resetZoom()
+        } else {
+            lastScale = scale
+            offset = clampedOffset(offset)
+            lastOffset = offset
+        }
+    }
+
+    private func clampedOffset(_ proposedOffset: CGSize) -> CGSize {
+        guard scale > 1 else { return .zero }
+        let maxOffset = min(220 * (scale - 1), 520)
+        return CGSize(
+            width: min(max(proposedOffset.width, -maxOffset), maxOffset),
+            height: min(max(proposedOffset.height, -maxOffset), maxOffset)
+        )
+    }
+}
+
 extension ColorScheme {
     var topBarTitleColor: Color {
         self == .dark ? .white : Color.black.opacity(0.9)
@@ -124,6 +350,7 @@ struct CircularProfilePhoto: View {
                 .strokeBorder(.white.opacity(0.28), lineWidth: 1)
         }
         .shadow(color: .black.opacity(0.16), radius: 10, y: 5)
+        .imageViewer(imageData: imageData, cornerRadius: size / 2)
     }
 
     @ViewBuilder
@@ -158,6 +385,7 @@ struct RoundedProfilePhoto: View {
                 .strokeBorder(.white.opacity(0.18), lineWidth: 1)
         }
         .shadow(color: .black.opacity(0.18), radius: 18, y: 10)
+        .imageViewer(imageData: imageData, cornerRadius: cornerRadius)
     }
 
     @ViewBuilder
@@ -189,6 +417,7 @@ struct BondHeroPhoto: View {
                 .strokeBorder(.white.opacity(0.16), lineWidth: 1)
         }
         .shadow(color: .black.opacity(0.16), radius: 18, y: 10)
+        .imageViewer(imageData: imageData, cornerRadius: cornerRadius)
     }
 }
 
@@ -1088,6 +1317,7 @@ struct MemoryPostcard: View {
             RoundedRectangle(cornerRadius: 30, style: .continuous)
                 .strokeBorder(.white.opacity(0.16), lineWidth: 1)
         }
+        .imageViewer(imageData: memory.photoData, cornerRadius: 30)
     }
 }
 
