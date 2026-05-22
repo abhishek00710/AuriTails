@@ -665,7 +665,10 @@ final class AppViewModel: ObservableObject {
 
     func importBackup() {
         closeMenu()
-        isImportingBackup = true
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 280_000_000)
+            isImportingBackup = true
+        }
     }
 
     func handleBackupExport(result: Result<URL, Error>) {

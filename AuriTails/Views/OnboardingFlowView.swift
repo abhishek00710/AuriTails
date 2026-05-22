@@ -28,7 +28,7 @@ struct OnboardingFlowView: View {
 
                 footer
             }
-            .padding(.horizontal, 20)
+            .padding(.horizontal, 16)
             .padding(.top, 16)
             .padding(.bottom, 28)
         }
@@ -88,27 +88,36 @@ struct OnboardingFlowView: View {
                     )
 
                     GeometryReader { proxy in
-                        let cardWidth = max(0, (proxy.size.width - 14) / 2)
+                        let imageSpacing: CGFloat = 18
+                        let imageHeight: CGFloat = 184
+                        let imageWidth = max(0, (proxy.size.width - imageSpacing) / 2)
 
-                        HStack(spacing: 14) {
+                        HStack(spacing: imageSpacing) {
                             RoundedProfilePhoto(
                                 imageData: viewModel.ownerPhotoData,
                                 role: .owner,
-                                height: 190,
-                                cornerRadius: 30
+                                height: imageHeight,
+                                cornerRadius: 28,
+                                expandsHorizontally: true,
+                                maxWidth: imageWidth
                             )
-                            .frame(width: cardWidth)
+                            .frame(width: imageWidth, height: imageHeight)
+                            .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
 
                             RoundedProfilePhoto(
                                 imageData: viewModel.petPhotoData,
                                 role: .pet,
-                                height: 190,
-                                cornerRadius: 30
+                                height: imageHeight,
+                                cornerRadius: 28,
+                                expandsHorizontally: true,
+                                maxWidth: imageWidth
                             )
-                            .frame(width: cardWidth)
+                            .frame(width: imageWidth, height: imageHeight)
+                            .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
                         }
+                        .frame(maxWidth: .infinity, alignment: .center)
                     }
-                    .frame(height: 190)
+                    .frame(height: 184)
                 }
 
                 GlassCard(tone: .lagoon) {

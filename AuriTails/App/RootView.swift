@@ -142,11 +142,10 @@ struct RootView: View {
         ) { result in
             viewModel.handleBackupExport(result: result)
         }
-        .fileImporter(
-            isPresented: $viewModel.isImportingBackup,
-            allowedContentTypes: [.json]
-        ) { result in
-            viewModel.handleBackupImport(result: result)
+        .sheet(isPresented: $viewModel.isImportingBackup) {
+            BackupDocumentPicker { result in
+                viewModel.handleBackupImport(result: result)
+            }
         }
         .fileImporter(
             isPresented: $viewModel.isImportingVaccineDocument,
@@ -411,4 +410,42 @@ private struct ActivityView: UIViewControllerRepresentable {
     }
 
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+
+private struct BackupDocumentPicker: UIViewControllerRepresentable {
+    let onComplete: (Result<URL, Error>) -> Void
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(onComplete: onComplete)
+    }
+
+    func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
+        let picker = UIDocumentPickerViewController(forOpeningContentTypes: [.json, .data], asCopy: true)
+        picker.allowsMultipleSelection = false
+        picker.delegate = context.coordinator
+        return picker
+    }
+
+    func updateUIViewController(_ uiViewController: UIDocumentPickerViewController, context: Context) {}
+
+    final class Coordinator: NSObject, UIDocumentPickerDelegate {
+        let onComplete: (Result<URL, Error>) -> Void
+
+        init(onComplete: @escaping (Result<URL, Error>) -> Void) {
+            self.onComplete = onComplete
+        }
+
+        func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+            guard let url = urls.first else {
+                onComplete(.failure(CocoaError(.fileNoSuchFile)))
+                return
+            }
+
+            onComplete(.success(url))
+        }
+
+        func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
+            onComplete(.failure(CocoaError(.userCancelled)))
+        }
+    }
 }
