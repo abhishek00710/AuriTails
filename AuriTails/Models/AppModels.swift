@@ -1321,8 +1321,8 @@ struct AppSeed {
         careActivityEvents: []
     )
 
-    private static let previewSolID = UUID(uuidString: "10000000-0000-0000-0000-000000000001")!
-    private static let previewLumiID = UUID(uuidString: "10000000-0000-0000-0000-000000000002")!
+    static let previewSolID = UUID(uuidString: "10000000-0000-0000-0000-000000000001")!
+    static let previewLumiID = UUID(uuidString: "10000000-0000-0000-0000-000000000002")!
 
     static let preview = AppSeed(
         owner: OwnerProfile(
@@ -1346,8 +1346,8 @@ struct AppSeed {
             PetProfile(
                 id: previewLumiID,
                 name: "Lumi",
-                species: "Dog",
-                breed: "Miniature Dachshund",
+                species: "Cat",
+                breed: "Silver tabby domestic shorthair",
                 ageDescription: "1 year old",
                 weightDescription: "5.1 kg",
                 favoriteTreat: "Freeze-dried minnows",
@@ -1364,18 +1364,32 @@ struct AppSeed {
             BehaviorSnapshot(petID: previewSolID, day: .friday, energy: 0.75, calmness: 0.88, appetite: 0.97, sleepHours: 12.7),
             BehaviorSnapshot(petID: previewSolID, day: .saturday, energy: 0.93, calmness: 0.73, appetite: 0.92, sleepHours: 11.2),
             BehaviorSnapshot(petID: previewSolID, day: .sunday, energy: 0.74, calmness: 0.90, appetite: 0.98, sleepHours: 13.0),
+            BehaviorSnapshot(petID: previewLumiID, day: .monday, energy: 0.64, calmness: 0.82, appetite: 0.88, sleepHours: 14.1),
+            BehaviorSnapshot(petID: previewLumiID, day: .tuesday, energy: 0.71, calmness: 0.76, appetite: 0.91, sleepHours: 13.8),
+            BehaviorSnapshot(petID: previewLumiID, day: .wednesday, energy: 0.69, calmness: 0.86, appetite: 0.94, sleepHours: 14.4),
+            BehaviorSnapshot(petID: previewLumiID, day: .thursday, energy: 0.78, calmness: 0.70, appetite: 0.87, sleepHours: 13.2),
+            BehaviorSnapshot(petID: previewLumiID, day: .friday, energy: 0.66, calmness: 0.89, appetite: 0.95, sleepHours: 14.7),
+            BehaviorSnapshot(petID: previewLumiID, day: .saturday, energy: 0.82, calmness: 0.74, appetite: 0.90, sleepHours: 13.5),
+            BehaviorSnapshot(petID: previewLumiID, day: .sunday, energy: 0.61, calmness: 0.92, appetite: 0.96, sleepHours: 15.0),
         ],
         weightEntries: [
             WeightEntry(petID: previewSolID, loggedAt: date(2026, 2, 12), value: 19.8, unit: .kilograms, note: "Post-winter checkup baseline."),
             WeightEntry(petID: previewSolID, loggedAt: date(2026, 2, 26), value: 19.6, unit: .kilograms, note: "A touch leaner after trail-heavy weeks."),
             WeightEntry(petID: previewSolID, loggedAt: date(2026, 3, 12), value: 19.5, unit: .kilograms, note: "Holding steady with calmer evenings."),
             WeightEntry(petID: previewSolID, loggedAt: date(2026, 3, 28), value: 19.4, unit: .kilograms, note: "Current passport weight."),
+            WeightEntry(petID: previewLumiID, loggedAt: date(2026, 2, 10), value: 5.3, unit: .kilograms, note: "Young-dog baseline after adoption paperwork."),
+            WeightEntry(petID: previewLumiID, loggedAt: date(2026, 2, 24), value: 5.2, unit: .kilograms, note: "Settling into smaller portions and more sniff breaks."),
+            WeightEntry(petID: previewLumiID, loggedAt: date(2026, 3, 10), value: 5.1, unit: .kilograms, note: "Steady after switching to puzzle-feeder dinners."),
+            WeightEntry(petID: previewLumiID, loggedAt: date(2026, 3, 26), value: 5.1, unit: .kilograms, note: "Holding well with training treat adjustments."),
         ],
         vaccinations: [
             VaccineRecord(title: "Rabies", lastGiven: date(2025, 1, 12), nextDue: date(2028, 1, 12), status: .covered, note: "Three-year booster complete."),
             VaccineRecord(title: "DHPP", lastGiven: date(2026, 2, 8), nextDue: date(2027, 2, 8), status: .onTrack, note: "Annual booster logged with no reactions."),
             VaccineRecord(title: "Bordetella", lastGiven: date(2026, 3, 2), nextDue: date(2026, 9, 2), status: .watch, note: "Needed before boarding and social daycare."),
             VaccineRecord(title: "Leptospirosis", lastGiven: date(2026, 2, 8), nextDue: date(2027, 2, 8), status: .onTrack, note: "Tracked because of weekend trail exposure."),
+            VaccineRecord(petID: previewLumiID, title: "Rabies", lastGiven: date(2026, 1, 19), nextDue: date(2029, 1, 19), status: .covered, note: "Three-year certificate imported from adoption folder."),
+            VaccineRecord(petID: previewLumiID, title: "DAPP", lastGiven: date(2026, 2, 14), nextDue: date(2027, 2, 14), status: .onTrack, note: "No reaction, but kept the evening quiet."),
+            VaccineRecord(petID: previewLumiID, title: "Bordetella", lastGiven: date(2026, 3, 12), nextDue: date(2026, 9, 12), status: .watch, note: "Required before small-dog daycare trial."),
         ],
         medications: [
             MedicationRecord(
@@ -1396,6 +1410,26 @@ struct AppSeed {
                 status: .watch,
                 tone: .lagoon
             ),
+            MedicationRecord(
+                petID: previewLumiID,
+                title: "Probiotic sprinkle",
+                dosage: "1 small scoop",
+                scheduleNote: "Breakfast during food transitions",
+                purpose: "Keeps Lumi's digestion steadier when trying new toppers.",
+                nextDose: dateTime(2026, 4, 7, 7, 45),
+                status: .active,
+                tone: .lagoon
+            ),
+            MedicationRecord(
+                petID: previewLumiID,
+                title: "Calming chew",
+                dosage: "1/2 chew",
+                scheduleNote: "Before busy visitor evenings",
+                purpose: "Supports confidence while social greetings are still being practiced.",
+                nextDose: dateTime(2026, 4, 8, 17, 45),
+                status: .watch,
+                tone: .twilight
+            ),
         ],
         symptoms: [
             SymptomEntry(
@@ -1413,6 +1447,24 @@ struct AppSeed {
                 severity: .moderate,
                 systemImage: "fork.knife.circle.fill",
                 tone: .twilight
+            ),
+            SymptomEntry(
+                petID: previewLumiID,
+                title: "Reverse sneeze spell",
+                detail: "Brief episode after dusty sidewalk sniffing, settled with calm holding and water.",
+                observedAt: dateTime(2026, 4, 4, 16, 35),
+                severity: .mild,
+                systemImage: "wind",
+                tone: .lagoon
+            ),
+            SymptomEntry(
+                petID: previewLumiID,
+                title: "Nervous tummy",
+                detail: "Soft stool after a high-noise afternoon. Improved after bland dinner and extra rest.",
+                observedAt: dateTime(2026, 4, 1, 20, 20),
+                severity: .moderate,
+                systemImage: "stethoscope",
+                tone: .apricot
             ),
         ],
         medicalHistory: [
@@ -1437,12 +1489,31 @@ struct AppSeed {
                 clinician: "Pacific Pet Dental",
                 tone: .meadow
             ),
+            MedicalEntry(
+                petID: previewLumiID,
+                title: "New pet intake exam",
+                date: date(2026, 1, 19),
+                summary: "Healthy baseline. Vet recommended confidence-building routines and careful weight tracking.",
+                clinician: "Dr. Sen",
+                tone: .lagoon
+            ),
+            MedicalEntry(
+                petID: previewLumiID,
+                title: "Sensitive stomach consult",
+                date: date(2026, 3, 7),
+                summary: "No urgent findings. Suggested slow topper introductions and probiotic support during changes.",
+                clinician: "Dr. Sen",
+                tone: .apricot
+            ),
         ],
         foodPreferences: [
             FoodPreference(title: "Main bowl", detail: "Salmon kibble with pumpkin topper.", systemImage: "fork.knife.circle.fill"),
             FoodPreference(title: "Sensitive note", detail: "Chicken-heavy treats can soften appetite the next day.", systemImage: "exclamationmark.triangle.fill"),
             FoodPreference(title: "Hydration ritual", detail: "Warm bone broth splash at dinner.", systemImage: "drop.fill"),
             FoodPreference(title: "Favorite enrichment", detail: "Frozen lick mat after bath nights.", systemImage: "sparkles"),
+            FoodPreference(petID: previewLumiID, title: "Tiny bowl", detail: "Small-breed kibble softened with warm water.", systemImage: "fork.knife.circle.fill"),
+            FoodPreference(petID: previewLumiID, title: "Confidence treat", detail: "Minnow bits for new surfaces and polite greetings.", systemImage: "sparkles"),
+            FoodPreference(petID: previewLumiID, title: "Slow change rule", detail: "New toppers get introduced over three meals.", systemImage: "clock.badge.checkmark.fill"),
         ],
         routines: [
             RoutineItem(id: UUID(uuidString: "AAAAAAAA-BBBB-CCCC-DDDD-000000000001")!, title: "Sunrise sniff walk", subtitle: "Leash-led decompression route by the marina.", day: .monday, time: ClockTime(hour: 6, minute: 45), durationMinutes: 35, systemImage: "sunrise.fill", category: .walk, tone: .apricot, isCompleted: true),
@@ -1453,9 +1524,21 @@ struct AppSeed {
             RoutineItem(id: UUID(uuidString: "AAAAAAAA-BBBB-CCCC-DDDD-000000000006")!, title: "Quiet cafe settle", subtitle: "Mat place-training and people-watching.", day: .friday, time: ClockTime(hour: 8, minute: 10), durationMinutes: 30, systemImage: "cup.and.saucer.fill", category: .training, tone: .lagoon, isCompleted: true),
             RoutineItem(id: UUID(uuidString: "AAAAAAAA-BBBB-CCCC-DDDD-000000000007")!, title: "Hill trail loop", subtitle: "Longline walk with recovery stretch after.", day: .saturday, time: ClockTime(hour: 9, minute: 0), durationMinutes: 75, systemImage: "mountain.2.fill", category: .walk, tone: .meadow, isCompleted: false),
             RoutineItem(id: UUID(uuidString: "AAAAAAAA-BBBB-CCCC-DDDD-000000000008")!, title: "Soft Sunday reset", subtitle: "Light groom, broth bowl, and nap soundtrack.", day: .sunday, time: ClockTime(hour: 17, minute: 30), durationMinutes: 30, systemImage: "moon.stars.fill", category: .care, tone: .twilight, isCompleted: false),
+            RoutineItem(id: UUID(uuidString: "AAAAAAAA-BBBB-CCCC-DDDD-000000000009")!, title: "Paw rinse ritual", subtitle: "Warm towel wipe, paw check, and balm after grass-heavy walks.", day: .tuesday, time: ClockTime(hour: 20, minute: 10), durationMinutes: 12, systemImage: "drop.fill", category: .care, tone: .meadow, isCompleted: true),
+            RoutineItem(id: UUID(uuidString: "AAAAAAAA-BBBB-CCCC-DDDD-000000000010")!, title: "Calm crate wind-down", subtitle: "Low lights, chew mat, and one quiet cue before bedtime.", day: .wednesday, time: ClockTime(hour: 21, minute: 15), durationMinutes: 20, systemImage: "bed.double.fill", category: .training, tone: .twilight, isCompleted: false),
+            RoutineItem(id: UUID(uuidString: "AAAAAAAA-BBBB-CCCC-DDDD-000000000011")!, title: "Sunday meal prep", subtitle: "Portion toppers, refill treat pouch, and prep broth cubes.", day: .sunday, time: ClockTime(hour: 10, minute: 30), durationMinutes: 25, systemImage: "takeoutbag.and.cup.and.straw.fill", category: .meal, tone: .lagoon, isCompleted: false),
+            RoutineItem(id: UUID(uuidString: "AAAAAAAA-BBBB-CCCC-DDDD-000000000012")!, title: "Friday coat check", subtitle: "Quick brush, ear peek, and tick check before weekend trails.", day: .friday, time: ClockTime(hour: 18, minute: 20), durationMinutes: 14, systemImage: "comb.fill", category: .care, tone: .meadow, isCompleted: false),
+            RoutineItem(id: UUID(uuidString: "AAAAAAAA-BBBB-CCCC-DDDD-000000000013")!, title: "Evening decompression mat", subtitle: "Ten quiet minutes on the mat after dinner and street noise.", day: .friday, time: ClockTime(hour: 20, minute: 30), durationMinutes: 10, systemImage: "rectangle.inset.filled.and.person.filled", category: .training, tone: .twilight, isCompleted: false),
+            RoutineItem(id: UUID(uuidString: "BBBBBBBB-CCCC-DDDD-EEEE-000000000001")!, petID: previewLumiID, title: "Tiny confidence walk", subtitle: "Short loop with choice-led sniff stops and one new surface.", day: .monday, time: ClockTime(hour: 7, minute: 20), durationMinutes: 18, systemImage: "figure.walk.motion", category: .walk, tone: .apricot, isCompleted: true),
+            RoutineItem(id: UUID(uuidString: "BBBBBBBB-CCCC-DDDD-EEEE-000000000002")!, petID: previewLumiID, title: "Puzzle breakfast", subtitle: "Softened kibble in the slow puzzle tray.", day: .tuesday, time: ClockTime(hour: 8, minute: 0), durationMinutes: 16, systemImage: "puzzlepiece.extension.fill", category: .meal, tone: .lagoon, isCompleted: false),
+            RoutineItem(id: UUID(uuidString: "BBBBBBBB-CCCC-DDDD-EEEE-000000000003")!, petID: previewLumiID, title: "Harness happy reps", subtitle: "Three tiny sessions with treats before clipping the harness.", day: .wednesday, time: ClockTime(hour: 18, minute: 10), durationMinutes: 12, systemImage: "checkmark.seal.fill", category: .training, tone: .meadow, isCompleted: true),
+            RoutineItem(id: UUID(uuidString: "BBBBBBBB-CCCC-DDDD-EEEE-000000000004")!, petID: previewLumiID, title: "Friday balcony sniff", subtitle: "Low-stimulation fresh-air pause before visitor sounds start.", day: .friday, time: ClockTime(hour: 17, minute: 10), durationMinutes: 15, systemImage: "leaf.fill", category: .care, tone: .meadow, isCompleted: false),
+            RoutineItem(id: UUID(uuidString: "BBBBBBBB-CCCC-DDDD-EEEE-000000000005")!, petID: previewLumiID, title: "Visitor greeting script", subtitle: "Mat, treat scatter, and one calm hello before cuddles.", day: .friday, time: ClockTime(hour: 19, minute: 0), durationMinutes: 20, systemImage: "person.2.fill", category: .training, tone: .twilight, isCompleted: false),
+            RoutineItem(id: UUID(uuidString: "BBBBBBBB-CCCC-DDDD-EEEE-000000000006")!, petID: previewLumiID, title: "Sunday blanket reset", subtitle: "Wash travel blanket and refill the tiny treat pouch.", day: .sunday, time: ClockTime(hour: 11, minute: 15), durationMinutes: 22, systemImage: "washer.fill", category: .care, tone: .lagoon, isCompleted: false),
         ],
         memories: [
             MemoryMoment(
+                petID: previewSolID,
                 title: "Gotcha Day",
                 date: date(2021, 4, 18),
                 caption: "The day Sol fell asleep in Maya’s lap on the way home.",
@@ -1465,6 +1548,7 @@ struct AppSeed {
                 isAnnualCelebration: true
             ),
             MemoryMoment(
+                petID: previewSolID,
                 title: "Birthday picnic",
                 date: date(2021, 5, 9),
                 caption: "Blueberries, a tiny hat, and wind at Crissy Field.",
@@ -1474,6 +1558,7 @@ struct AppSeed {
                 isAnnualCelebration: true
             ),
             MemoryMoment(
+                petID: previewSolID,
                 title: "The first beach sprint",
                 date: date(2025, 8, 14),
                 caption: "Seven perfect minutes of fearless zoomies by the water.",
@@ -1483,6 +1568,7 @@ struct AppSeed {
                 isAnnualCelebration: false
             ),
             MemoryMoment(
+                petID: previewSolID,
                 title: "Brave at the dentist",
                 date: date(2025, 7, 18),
                 caption: "Still asked politely for yogurt drops after the appointment.",
@@ -1492,6 +1578,7 @@ struct AppSeed {
                 isAnnualCelebration: false
             ),
             MemoryMoment(
+                petID: previewSolID,
                 title: "Rainy window nap",
                 date: date(2025, 12, 3),
                 caption: "The first day Sol chose the travel blanket all on his own.",
@@ -1499,6 +1586,36 @@ struct AppSeed {
                 systemImage: "cloud.drizzle.fill",
                 tone: .lagoon,
                 isAnnualCelebration: false
+            ),
+            MemoryMoment(
+                petID: previewLumiID,
+                title: "Lumi's first brave step",
+                date: date(2026, 1, 22),
+                caption: "One paw onto the lobby tile, then a proud look back.",
+                detail: "A tiny confidence moment that became the first marker in Lumi's relationship story.",
+                systemImage: "pawprint.circle.fill",
+                tone: .meadow,
+                isAnnualCelebration: false
+            ),
+            MemoryMoment(
+                petID: previewLumiID,
+                title: "Pocket picnic",
+                date: date(2026, 3, 16),
+                caption: "A sunny bench, minnow treats, and a blanket that made the city feel smaller.",
+                detail: "Short outings are still outings. Lumi's best memories happen when the world is introduced gently.",
+                systemImage: "sun.max.circle.fill",
+                tone: .apricot,
+                isAnnualCelebration: false
+            ),
+            MemoryMoment(
+                petID: previewLumiID,
+                title: "Adoption day",
+                date: date(2026, 1, 19),
+                caption: "The day Lumi came home wrapped in the blue travel blanket.",
+                detail: "A yearly celebration for the tiny cat who made every routine feel more intentional.",
+                systemImage: "heart.circle.fill",
+                tone: .twilight,
+                isAnnualCelebration: true
             ),
         ],
         careCircleMembers: [

@@ -47,11 +47,22 @@ struct DashboardView: View {
                     .foregroundStyle(.white.opacity(0.8))
 
                 GeometryReader { proxy in
-                    let cardWidth = max(0, (proxy.size.width - 14) / 2)
+                    let imageSpacing = AppLayoutMetrics.screenWidth * 0.045
+                    let cardWidth = max(0, (proxy.size.width - imageSpacing) / 2)
 
-                    HStack(spacing: 14) {
+                    HStack(spacing: imageSpacing) {
                         VStack(alignment: .leading, spacing: 10) {
-                            RoundedProfilePhoto(imageData: viewModel.ownerPhotoData, role: .owner, height: 122, cornerRadius: 26)
+                            RoundedProfilePhoto(
+                                imageData: viewModel.ownerPhotoData,
+                                role: .owner,
+                                height: 122,
+                                cornerRadius: 26,
+                                expandsHorizontally: true,
+                                maxWidth: cardWidth
+                            )
+                            .frame(width: cardWidth, height: 122)
+                            .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
+
                             Text(viewModel.displayOwnerName)
                                 .font(.system(size: 14, weight: .semibold, design: .rounded))
                                 .foregroundStyle(.white)
@@ -60,7 +71,17 @@ struct DashboardView: View {
                         .frame(width: cardWidth, alignment: .leading)
 
                         VStack(alignment: .leading, spacing: 10) {
-                            RoundedProfilePhoto(imageData: viewModel.petPhotoData, role: .pet, height: 122, cornerRadius: 26)
+                            RoundedProfilePhoto(
+                                imageData: viewModel.petPhotoData,
+                                role: .pet,
+                                height: 122,
+                                cornerRadius: 26,
+                                expandsHorizontally: true,
+                                maxWidth: cardWidth
+                            )
+                            .frame(width: cardWidth, height: 122)
+                            .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
+
                             Text(viewModel.displayPetName)
                                 .font(.system(size: 14, weight: .semibold, design: .rounded))
                                 .foregroundStyle(.white)

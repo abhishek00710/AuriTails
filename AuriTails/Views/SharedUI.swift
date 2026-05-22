@@ -1056,6 +1056,15 @@ struct SlideMenuPanel: View {
                     restoreAction: viewModel.importBackup
                 )
 
+                #if DEBUG
+                DemoModeToggleCard(
+                    isEnabled: Binding(
+                        get: { viewModel.isDemoModeEnabled },
+                        set: { viewModel.setDemoModeEnabled($0) }
+                    )
+                )
+                #endif
+
                 SocialMenuActionRow(
                     icon: "square.and.arrow.up.fill",
                     iconTint: .twilight,
@@ -1421,6 +1430,57 @@ private struct BackupActionButton: View {
         .buttonStyle(LiquidGlassButtonStyle(pressScale: 0.97, pressedBrightness: 0.02))
     }
 }
+
+#if DEBUG
+private struct DemoModeToggleCard: View {
+    @Binding var isEnabled: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Toggle(isOn: $isEnabled) {
+                HStack(spacing: 14) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .fill(PaletteTone.twilight.primaryColor.opacity(0.24))
+
+                        Image(systemName: "sparkles.rectangle.stack.fill")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundStyle(PaletteTone.twilight.secondaryColor)
+                    }
+                    .frame(width: 46, height: 46)
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Demo Mode")
+                            .font(.system(size: 16, weight: .semibold, design: .rounded))
+                            .foregroundStyle(.white)
+
+                        Text(isEnabled ? "Sample data is active for walkthroughs." : "Fill the app with polished sample data for demos.")
+                            .font(.system(size: 13, weight: .medium, design: .rounded))
+                            .foregroundStyle(.white.opacity(0.66))
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+            .tint(Color.white.opacity(0.95))
+
+            Text("Turning this off restores your previous local state when available, otherwise the app returns to clean first-run data.")
+                .font(.system(size: 12, weight: .medium, design: .rounded))
+                .foregroundStyle(.white.opacity(0.52))
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .fill(Color.white.opacity(0.08))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        .strokeBorder(Color.white.opacity(0.10), lineWidth: 1)
+                }
+        )
+    }
+}
+#endif
 
 struct OwnerPetRow: View {
     let owner: OwnerProfile

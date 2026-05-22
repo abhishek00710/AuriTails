@@ -48,6 +48,7 @@ final class AppViewModel: ObservableObject {
     @Published var backupNotice: BackupNotice?
     @Published var sharePayload: SharePayload?
     @Published var vaccineEditorSeed: VaccineRecord?
+    @Published var isDemoModeEnabled = false
     @Published private(set) var nearbyPetCare: [PetCarePlace] = []
     @Published private(set) var isLoadingNearbyPetCare = false
     @Published private(set) var nearbyPetCareStatusMessage = L10n.tr(
@@ -68,6 +69,8 @@ final class AppViewModel: ObservableObject {
     private let appReviewPrompter: AppReviewPrompter
     private let vetVisitPackBuilder = VetVisitPackBuilder()
     private let vaccineDocumentImportService = VaccineDocumentImportService()
+    private static let demoModeEnabledKey = "AuriTails.demoModeEnabled"
+    private static let demoModeBackupStateKey = "AuriTails.demoModeBackupState"
     private var isApplyingState = false
     private var isApplyingCloudState = false
     private var cloudSyncTask: Task<Void, Never>?
@@ -89,7 +92,19 @@ final class AppViewModel: ObservableObject {
         let nearbyPetCareService = nearbyPetCareService ?? NearbyPetCareService()
         let careCircleRepository = careCircleRepository ?? FirebaseCareCircleRepository()
         let appStateRepository = appStateRepository ?? FirebaseAppStateRepository()
-        let initialState = (prefersPersistedState ? (store.load() ?? PersistedAppState(seed: seed)) : PersistedAppState(seed: seed)).normalizedForMultiPet()
+        #if DEBUG
+        let demoModeEnabled = UserDefaults.standard.bool(forKey: Self.demoModeEnabledKey)
+        let initialState = (
+            demoModeEnabled
+            ? Self.demoStateWithPhotos()
+            : (prefersPersistedState ? (store.load() ?? PersistedAppState(seed: seed)) : PersistedAppState(seed: seed))
+        ).normalizedForMultiPet()
+        #else
+        let demoModeEnabled = false
+        let initialState = (
+            prefersPersistedState ? (store.load() ?? PersistedAppState(seed: seed)) : PersistedAppState(seed: seed)
+        ).normalizedForMultiPet()
+        #endif
 
         selectedTab = initialState.selectedTab
         selectedDay = initialState.selectedDay
@@ -112,6 +127,7 @@ final class AppViewModel: ObservableObject {
         onboardingFocus = initialState.onboardingFocus
         hasCompletedOnboarding = initialState.hasCompletedOnboarding
         appReviewState = initialState.appReviewState
+        isDemoModeEnabled = demoModeEnabled
         self.store = store
         self.insightEngine = insightEngine ?? PetInsightEngine()
         self.notificationScheduler = notificationScheduler
@@ -729,6 +745,34 @@ final class AppViewModel: ObservableObject {
         backupNotice = nil
     }
 
+    func setDemoModeEnabled(_ isEnabled: Bool) {
+        #if DEBUG
+        guard isDemoModeEnabled != isEnabled else { return }
+
+        if isEnabled {
+            savePreDemoStateIfNeeded()
+            isDemoModeEnabled = true
+            UserDefaults.standard.set(true, forKey: Self.demoModeEnabledKey)
+            apply(state: Self.demoStateWithPhotos())
+            backupNotice = BackupNotice(
+                title: L10n.tr("Demo Mode Enabled", default: "Demo Mode Enabled"),
+                message: L10n.tr("AuriTails is now filled with sample pet-care data for walkthroughs.", default: "AuriTails is now filled with sample pet-care data for walkthroughs.")
+            )
+        } else {
+            isDemoModeEnabled = false
+            UserDefaults.standard.set(false, forKey: Self.demoModeEnabledKey)
+            restorePreDemoStateOrReset()
+            backupNotice = BackupNotice(
+                title: L10n.tr("Demo Mode Off", default: "Demo Mode Off"),
+                message: L10n.tr("Demo content was removed and your previous local app state was restored when available.", default: "Demo content was removed and your previous local app state was restored when available.")
+            )
+        }
+        #else
+        isDemoModeEnabled = false
+        UserDefaults.standard.set(false, forKey: Self.demoModeEnabledKey)
+        #endif
+    }
+
     func openRoutineEditor(_ routineID: UUID? = nil) {
         activeSheet = .routineEditor(routineID)
     }
@@ -1315,6 +1359,121 @@ final class AppViewModel: ObservableObject {
     private func persistIfNeeded() {
         guard !isApplyingState else { return }
         persist()
+    }
+
+    private func savePreDemoStateIfNeeded() {
+        guard UserDefaults.standard.data(forKey: Self.demoModeBackupStateKey) == nil else { return }
+
+        do {
+            let encoder = JSONEncoder()
+            encoder.dateEncodingStrategy = .iso8601
+            let data = try encoder.encode(snapshotState())
+            UserDefaults.standard.set(data, forKey: Self.demoModeBackupStateKey)
+        } catch {
+            UserDefaults.standard.removeObject(forKey: Self.demoModeBackupStateKey)
+        }
+    }
+
+    private func restorePreDemoStateOrReset() {
+        defer {
+            UserDefaults.standard.removeObject(forKey: Self.demoModeBackupStateKey)
+        }
+
+        guard let data = UserDefaults.standard.data(forKey: Self.demoModeBackupStateKey) else {
+            load(seed: .empty, onboardingCompleted: false)
+            return
+        }
+
+        do {
+            let decoder = JSONDecoder()
+            decoder.dateDecodingStrategy = .iso8601
+            let state = try decoder.decode(PersistedAppState.self, from: data)
+            apply(state: state)
+        } catch {
+            load(seed: .empty, onboardingCompleted: false)
+        }
+    }
+
+    private static func demoStateWithPhotos() -> PersistedAppState {
+        var state = PersistedAppState(seed: .preview).normalizedForMultiPet()
+        state.hasCompletedOnboarding = true
+        state.ownerPhotoData = demoImageData(named: "DemoOwnerPortrait")
+
+        state.pets = state.pets.map { pet in
+            var pet = pet
+            switch pet.name {
+            case "Sol":
+                pet.photoData = demoImageData(named: "DemoSolPortrait")
+                pet.bondPhotoData = demoImageData(named: "DemoSolSelfie")
+            case "Lumi":
+                pet.photoData = demoImageData(named: "DemoLumiPortrait")
+                pet.bondPhotoData = demoImageData(named: "DemoLumiSofa")
+            default:
+                break
+            }
+            return pet
+        }
+
+        state.memories = state.memories.map { memory in
+            var memory = memory
+            memory.photoData = demoMemoryPhotoData(for: memory)
+            return memory
+        }
+
+        return state
+    }
+
+    private static func demoImageData(named name: String) -> Data? {
+        UIImage(named: name)?.pngData()
+    }
+
+    private static func demoMemoryPhotoData(for memory: MemoryMoment) -> Data? {
+        switch (memory.petID, memory.title) {
+        case (_, "Gotcha Day"),
+             (_, "Birthday picnic"),
+             (_, "The first beach sprint"),
+             (_, "Brave at the dentist"),
+             (_, "Rainy window nap")
+            where memory.petID == AppSeed.previewSolID:
+            return solMemoryPhotoData(for: memory.title)
+        case (_, "Lumi's first brave step"),
+             (_, "Pocket picnic"),
+             (_, "Adoption day")
+            where memory.petID == AppSeed.previewLumiID:
+            return lumiMemoryPhotoData(for: memory.title)
+        default:
+            return nil
+        }
+    }
+
+    private static func solMemoryPhotoData(for title: String) -> Data? {
+        switch title {
+        case "Gotcha Day":
+            return demoImageData(named: "DemoSolSelfie")
+        case "Birthday picnic":
+            return demoImageData(named: "DemoSolPlay")
+        case "The first beach sprint":
+            return demoImageData(named: "DemoSolReading")
+        case "Brave at the dentist":
+            return demoImageData(named: "DemoSolWellness")
+        case "Rainy window nap":
+            return demoImageData(named: "DemoSolSelfie")
+        default:
+            return nil
+        }
+    }
+
+    private static func lumiMemoryPhotoData(for title: String) -> Data? {
+        switch title {
+        case "Lumi's first brave step":
+            return demoImageData(named: "DemoLumiSofa")
+        case "Pocket picnic":
+            return demoImageData(named: "DemoLumiWalk")
+        case "Adoption day":
+            return demoImageData(named: "DemoLumiPlay")
+        default:
+            return nil
+        }
     }
 
     private func load(seed: AppSeed, onboardingCompleted: Bool) {

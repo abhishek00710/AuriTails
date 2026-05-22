@@ -22,6 +22,7 @@ struct MemoriesView: View {
                         }
                     }
                     .frame(height: 310)
+                    .id(viewModel.selectedPetID)
                     .tabViewStyle(.page(indexDisplayMode: .always))
                     .onReceive(timer) { _ in
                         let count = min(viewModel.featuredMemories.count, 4)
@@ -29,6 +30,9 @@ struct MemoriesView: View {
                         withAnimation(.easeInOut(duration: 0.8)) {
                             selectedSlide = (selectedSlide + 1) % count
                         }
+                    }
+                    .onChange(of: viewModel.selectedPetID) { _, _ in
+                        selectedSlide = 0
                     }
                 } else {
                     EmptyDelightCard(
