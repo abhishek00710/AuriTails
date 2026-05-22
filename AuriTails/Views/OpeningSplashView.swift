@@ -53,23 +53,23 @@ struct OpeningSplashView: View {
         ZStack {
             Circle()
                 .fill(Color(red: 0.99, green: 0.79, blue: 0.56).opacity(0.20))
-                .frame(width: 340, height: 340)
+                .frame(width: splashGlowSize, height: splashGlowSize)
                 .blur(radius: 24)
                 .scaleEffect(haloBreathing ? 1.08 : 0.92)
-                .offset(x: -124, y: -302)
+                .offset(x: -AppLayoutMetrics.screenWidth * 0.30, y: -AppLayoutMetrics.screenHeight * 0.33)
 
             Circle()
                 .fill(Color(red: 0.45, green: 0.83, blue: 0.85).opacity(0.18))
-                .frame(width: 310, height: 310)
+                .frame(width: secondaryGlowSize, height: secondaryGlowSize)
                 .blur(radius: 28)
                 .scaleEffect(haloBreathing ? 0.94 : 1.10)
-                .offset(x: 154, y: -178)
+                .offset(x: AppLayoutMetrics.screenWidth * 0.37, y: -AppLayoutMetrics.screenHeight * 0.19)
 
             Ellipse()
                 .fill(Color.white.opacity(0.08))
-                .frame(width: 420, height: 130)
+                .frame(width: AppLayoutMetrics.screenWidth * 1.15, height: AppLayoutMetrics.screenHeight * 0.14)
                 .blur(radius: 24)
-                .offset(y: 232)
+                .offset(y: AppLayoutMetrics.screenHeight * 0.25)
         }
         .animation(.easeInOut(duration: 3.6).repeatForever(autoreverses: true), value: haloBreathing)
         .allowsHitTesting(false)
@@ -79,7 +79,7 @@ struct OpeningSplashView: View {
         ZStack {
             Circle()
                 .fill(Color.white.opacity(0.09))
-                .frame(width: 300, height: 300)
+                .frame(width: artworkHaloSize, height: artworkHaloSize)
                 .blur(radius: 18)
                 .scaleEffect(haloBreathing ? 1.06 : 0.94)
 
@@ -106,7 +106,7 @@ struct OpeningSplashView: View {
                     Image("SplashScene")
                         .resizable()
                         .scaledToFill()
-                        .frame(height: 292)
+                        .frame(height: splashImageHeight)
                         .clipShape(RoundedRectangle(cornerRadius: 34, style: .continuous))
                         .overlay {
                             RoundedRectangle(cornerRadius: 34, style: .continuous)
@@ -130,8 +130,8 @@ struct OpeningSplashView: View {
             }
             .padding(18)
         }
-        .frame(maxWidth: 380)
-        .frame(height: 410)
+        .frame(maxWidth: splashArtworkWidth)
+        .frame(height: splashArtworkHeight)
         .scaleEffect(artworkLifted ? 1 : 0.90)
         .offset(y: artworkLifted ? 0 : 28)
         .rotationEffect(.degrees(artworkLifted ? 0 : -4))
@@ -153,7 +153,7 @@ struct OpeningSplashView: View {
                 .font(.system(size: 14, weight: .medium, design: .rounded))
                 .foregroundStyle(.white.opacity(0.70))
                 .multilineTextAlignment(.center)
-                .frame(maxWidth: 320)
+                .frame(maxWidth: AppLayoutMetrics.screenWidth * 0.78)
         }
         .opacity(copyVisible ? 1 : 0)
         .offset(y: copyVisible ? 0 : 18)
@@ -174,7 +174,7 @@ struct OpeningSplashView: View {
                                 endPoint: .bottom
                             )
                         )
-                        .frame(width: 30, height: 10)
+                        .frame(width: AppLayoutMetrics.screenWidth * 0.07, height: AppLayoutMetrics.screenHeight * 0.011)
                         .scaleEffect(x: loaderAnimating ? 1 : 0.56, y: loaderAnimating ? 1 : 0.56)
                         .opacity(loaderAnimating ? 1 : 0.34)
                         .animation(
@@ -228,6 +228,30 @@ struct OpeningSplashView: View {
                 onFinish()
             }
         }
+    }
+
+    private var splashGlowSize: CGFloat {
+        AppLayoutMetrics.shortSide * 0.82
+    }
+
+    private var secondaryGlowSize: CGFloat {
+        AppLayoutMetrics.shortSide * 0.75
+    }
+
+    private var artworkHaloSize: CGFloat {
+        AppLayoutMetrics.shortSide * 0.72
+    }
+
+    private var splashArtworkWidth: CGFloat {
+        AppLayoutMetrics.screenWidth * 0.92
+    }
+
+    private var splashArtworkHeight: CGFloat {
+        AppLayoutMetrics.screenHeight * 0.44
+    }
+
+    private var splashImageHeight: CGFloat {
+        splashArtworkHeight * 0.71
     }
 }
 

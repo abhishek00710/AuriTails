@@ -2,6 +2,13 @@ import SwiftUI
 import Foundation
 import UIKit
 
+enum AppLayoutMetrics {
+    static var screenSize: CGSize { UIScreen.main.bounds.size }
+    static var screenWidth: CGFloat { screenSize.width }
+    static var screenHeight: CGFloat { screenSize.height }
+    static var shortSide: CGFloat { min(screenWidth, screenHeight) }
+}
+
 private enum DecodedImageCache {
     private static let cache = NSCache<NSData, UIImage>()
 
@@ -471,27 +478,27 @@ struct AppBackground: View {
 
             Circle()
                 .fill(Color(red: 1.00, green: 0.71, blue: 0.48).opacity(0.50))
-                .frame(width: 350)
+                .frame(width: AppLayoutMetrics.screenWidth * 0.84)
                 .blur(radius: 68)
-                .offset(x: -150, y: -314)
+                .offset(x: -AppLayoutMetrics.screenWidth * 0.36, y: -AppLayoutMetrics.screenHeight * 0.34)
 
             Circle()
                 .fill(Color(red: 0.43, green: 0.84, blue: 0.88).opacity(0.40))
-                .frame(width: 300)
+                .frame(width: AppLayoutMetrics.screenWidth * 0.72)
                 .blur(radius: 76)
-                .offset(x: 178, y: -108)
+                .offset(x: AppLayoutMetrics.screenWidth * 0.43, y: -AppLayoutMetrics.screenHeight * 0.12)
 
             Circle()
                 .fill(Color(red: 0.58, green: 0.91, blue: 0.76).opacity(0.28))
-                .frame(width: 376)
+                .frame(width: AppLayoutMetrics.screenWidth * 0.90)
                 .blur(radius: 88)
-                .offset(x: 94, y: 326)
+                .offset(x: AppLayoutMetrics.screenWidth * 0.23, y: AppLayoutMetrics.screenHeight * 0.35)
 
             Ellipse()
                 .fill(Color(red: 0.99, green: 0.84, blue: 0.62).opacity(0.12))
-                .frame(width: 420, height: 170)
+                .frame(width: AppLayoutMetrics.screenWidth, height: AppLayoutMetrics.screenHeight * 0.18)
                 .blur(radius: 40)
-                .offset(x: 44, y: 382)
+                .offset(x: AppLayoutMetrics.screenWidth * 0.10, y: AppLayoutMetrics.screenHeight * 0.41)
         }
     }
 }
@@ -511,21 +518,21 @@ struct FormBackground: View {
 
             Circle()
                 .fill(Color(red: 1.00, green: 0.71, blue: 0.48).opacity(0.22))
-                .frame(width: 220)
+                .frame(width: AppLayoutMetrics.screenWidth * 0.53)
                 .blur(radius: 24)
-                .offset(x: -120, y: -260)
+                .offset(x: -AppLayoutMetrics.screenWidth * 0.29, y: -AppLayoutMetrics.screenHeight * 0.28)
 
             Circle()
                 .fill(Color(red: 0.43, green: 0.84, blue: 0.88).opacity(0.16))
-                .frame(width: 220)
+                .frame(width: AppLayoutMetrics.screenWidth * 0.53)
                 .blur(radius: 26)
-                .offset(x: 150, y: -70)
+                .offset(x: AppLayoutMetrics.screenWidth * 0.36, y: -AppLayoutMetrics.screenHeight * 0.08)
 
             Circle()
                 .fill(Color(red: 0.58, green: 0.91, blue: 0.76).opacity(0.12))
-                .frame(width: 260)
+                .frame(width: AppLayoutMetrics.screenWidth * 0.62)
                 .blur(radius: 34)
-                .offset(x: 80, y: 280)
+                .offset(x: AppLayoutMetrics.screenWidth * 0.19, y: AppLayoutMetrics.screenHeight * 0.30)
         }
     }
 }
