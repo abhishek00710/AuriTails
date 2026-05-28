@@ -6,6 +6,10 @@
 	<string>https://auritails.firebaseapp.com/</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>AuriTails uses the microphone when you choose to dictate a Pet Speak phrase.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>AuriTails uses speech recognition when you choose to turn your voice into text for Pet Speak.</string>
 	<key>UILaunchScreen</key>
 	<false/>
 	<key>UIUserInterfaceStyle</key>
